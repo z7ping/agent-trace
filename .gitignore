@@ -1,0 +1,16 @@
+# 忽略运行时生成的文件
+logs/
+states/
+projects.json
+trace.jsonl
+trace_state.json
+trace_error.log
+
+# 忽略分发目录
+dist/
+
+# 忽略临时文件
+*.tmp
+*.bak
+__pycache__/
+*.pyc
