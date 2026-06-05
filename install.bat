@@ -43,7 +43,7 @@ if exist "%SCRIPT_DIR%hooks\prelog.js" (
     copy "%SCRIPT_DIR%hooks\prelog.py" "%TOOLTRACE_DIR%\hooks\" >nul
     copy "%SCRIPT_DIR%hooks\log.js" "%TOOLTRACE_DIR%\hooks\" >nul
     copy "%SCRIPT_DIR%hooks\log.py" "%TOOLTRACE_DIR%\hooks\" >nul
-    copy "%SCRIPT_DIR%viewer.html" "%TOOLTRACE_DIR%\" >nul
+    copy "%SCRIPT_DIR%index.html" "%TOOLTRACE_DIR%\" >nul
     copy "%SCRIPT_DIR%server.js" "%TOOLTRACE_DIR%\" >nul
     copy "%SCRIPT_DIR%start.sh" "%TOOLTRACE_DIR%\" >nul
     copy "%SCRIPT_DIR%start.bat" "%TOOLTRACE_DIR%\" >nul
@@ -54,7 +54,7 @@ if exist "%SCRIPT_DIR%hooks\prelog.js" (
     copy "%SCRIPT_DIR%.claude\tooltrace\hooks\prelog.py" "%TOOLTRACE_DIR%\hooks\" >nul
     copy "%SCRIPT_DIR%.claude\tooltrace\hooks\log.js" "%TOOLTRACE_DIR%\hooks\" >nul
     copy "%SCRIPT_DIR%.claude\tooltrace\hooks\log.py" "%TOOLTRACE_DIR%\hooks\" >nul
-    copy "%SCRIPT_DIR%.claude\tooltrace\viewer.html" "%TOOLTRACE_DIR%\" >nul
+    copy "%SCRIPT_DIR%.claude\tooltrace\index.html" "%TOOLTRACE_DIR%\" >nul
     copy "%SCRIPT_DIR%.claude\tooltrace\server.js" "%TOOLTRACE_DIR%\" >nul
     copy "%SCRIPT_DIR%.claude\tooltrace\start.sh" "%TOOLTRACE_DIR%\" >nul
     copy "%SCRIPT_DIR%.claude\tooltrace\start.bat" "%TOOLTRACE_DIR%\" >nul
@@ -122,7 +122,7 @@ echo    1. 重启 Claude Code（使配置生效）
 echo    2. 启动 HTTP 服务器查看工具调用：
 echo       cd %TOOLTRACE_DIR%
 echo       %NODE_CMD% server.js 8080
-echo    3. 打开浏览器访问: http://localhost:8080/viewer.html
+echo    3. 打开浏览器访问: http://localhost:8080/
 echo.
 echo 📚 文档: %TOOLTRACE_DIR%\README.md
 echo ============================================

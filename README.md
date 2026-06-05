@@ -98,7 +98,7 @@ cp -r .claude/tooltrace ~/.claude/
 │   ├── prelog.py         # Python 版本（备选）
 │   ├── log.js            # Node.js 版本（推荐）
 │   └── log.py            # Python 版本（备选）
-├── viewer.html           # 可视化页面
+├── index.html            # 可视化页面
 ├── server.js             # Node.js HTTP 服务器
 ├── start.sh              # 启动脚本（Linux/macOS）
 ├── start.bat             # 启动脚本（Windows CMD）
@@ -141,14 +141,14 @@ python -m http.server 8080
 
 ### 访问可视化页面
 
-打开浏览器访问：**http://localhost:8080/viewer.html**
+打开浏览器访问：**http://localhost:8080/**
 
 ## 🎯 使用步骤
 
 1. **安装工具**：运行安装脚本或手动配置
 2. **重启 Claude Code**：使 hooks 配置生效
 3. **启动服务器**：运行智能启动脚本
-4. **打开浏览器**：访问 http://localhost:8080/viewer.html
+4. **打开浏览器**：访问 http://localhost:8080/
 5. **使用 Claude Code**：工具调用会自动记录
 
 ## 📋 功能说明
@@ -172,7 +172,7 @@ python -m http.server 8080
 
 ### 页面没有数据显示？
 1. 确认 HTTP 服务器正在运行
-2. 确认浏览器访问的是 `http://localhost:8080/viewer.html`
+2. 确认浏览器访问的是 `http://localhost:8080/`
 3. 确认已执行过一些 Claude Code 操作
 
 ### 需要安装 Python 吗？

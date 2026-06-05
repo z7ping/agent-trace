@@ -57,7 +57,7 @@ function log(message, color = 'reset') {
 const server = http.createServer((req, res) => {
     // 解析 URL
     let urlPath = req.url.split('?')[0];
-    if (urlPath === '/') urlPath = '/viewer.html';
+    if (urlPath === '/') urlPath = '/index.html';
 
     const filePath = path.join(DIR, urlPath);
     const ext = path.extname(filePath).toLowerCase();
@@ -106,7 +106,7 @@ server.listen(PORT, () => {
     console.log('');
     log(`✅ 服务器已启动`, 'green');
     log(`📂 服务目录: ${DIR}`, 'cyan');
-    log(`🌐 访问地址: http://localhost:${PORT}/viewer.html`, 'cyan');
+    log(`🌐 访问地址: http://localhost:${PORT}/`, 'cyan');
     console.log('');
     log('📋 可用功能:', 'yellow');
     log('   • 顶部下拉框切换项目', 'dim');
@@ -118,7 +118,7 @@ server.listen(PORT, () => {
     console.log('');
 
     // 尝试自动打开浏览器
-    const url = `http://localhost:${PORT}/viewer.html`;
+    const url = `http://localhost:${PORT}/`;
     const platform = process.platform;
 
     if (platform === 'win32') {
