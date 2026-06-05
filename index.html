@@ -24,6 +24,14 @@
     --timeline-line: #e4e6eb;
     --tree-line: #d4d6dd;
 
+    /* 字体大小规范 */
+    --font-xs: 12px;   /* 辅助文字、时间 */
+    --font-sm: 13px;   /* 按钮、工具名、标签 */
+    --font-base: 14px; /* 正文、搜索框 */
+    --font-lg: 16px;   /* 卡片标题 */
+    --font-xl: 20px;   /* 页面标题 */
+    --font-2xl: 32px;  /* 统计数字 */
+
     --color-read: #3b82f6;
     --color-read-bg: #eff6ff;
     --color-write: #10b981;
@@ -105,15 +113,15 @@
     display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
   }
   .header h1 {
-    font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px;
+    font-size: var(--font-xl); font-weight: 700; display: flex; align-items: center; gap: 8px;
     white-space: nowrap;
   }
   .header h1 .badge {
-    font-size: 12px; background: var(--color-mcp-bg); color: var(--color-mcp);
+    font-size: var(--font-xs); background: var(--color-mcp-bg); color: var(--color-mcp);
     padding: 1px 8px; border-radius: 10px; font-weight: 500;
   }
   .stats {
-    font-size: 13px; color: var(--text-secondary);
+    font-size: var(--font-sm); color: var(--text-secondary);
     display: flex; gap: 12px; flex-wrap: wrap;
   }
   .stats .stat-item {
@@ -127,7 +135,7 @@
   .controls button, .theme-btn {
     background: var(--bg); color: var(--text-secondary);
     border: 1px solid var(--border); padding: 6px 12px;
-    border-radius: var(--radius-sm); cursor: pointer; font-size: 12px;
+    border-radius: var(--radius-sm); cursor: pointer; font-size: var(--font-sm);
     transition: all .15s; display: flex; align-items: center; gap: 4px;
     white-space: nowrap;
   }
@@ -143,7 +151,7 @@
   .search-box {
     background: var(--bg); border: 1px solid var(--border);
     border-radius: var(--radius-sm); padding: 6px 12px;
-    color: var(--text); font-size: 12px; width: 180px;
+    color: var(--text); font-size: var(--font-base); width: 200px;
     outline: none; transition: border-color .15s;
   }
   .search-box:focus { border-color: var(--color-read); }
@@ -162,7 +170,7 @@
     display: flex; gap: 4px; flex-wrap: wrap; padding: 0 4px; margin: 8px 0 0;
   }
   .filters .tag {
-    padding: 3px 12px; border-radius: 20px; font-size: 12px;
+    padding: 3px 12px; border-radius: 20px; font-size: var(--font-sm);
     cursor: pointer; border: 1px solid var(--border);
     background: var(--surface);
     color: var(--text-secondary);
@@ -194,19 +202,19 @@
   }
   .session-header:hover { background: var(--surface-hover); }
   .session-header .arrow {
-    transition: transform .2s; font-size: 12px; flex-shrink: 0;
+    transition: transform .2s; font-size: var(--font-xs); flex-shrink: 0;
   }
   .session-header.collapsed .arrow { transform: rotate(-90deg); }
   .session-id {
     font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
-    font-size: 12px; font-weight: 600; color: var(--text-secondary);
+    font-size: var(--font-xs); font-weight: 600; color: var(--text-secondary);
     cursor: help;
   }
   .session-time {
-    font-size: 12px; color: var(--text-muted);
+    font-size: var(--font-xs); color: var(--text-muted);
   }
   .session-stats {
-    display: flex; gap: 8px; margin-left: auto; font-size: 12px;
+    display: flex; gap: 8px; margin-left: auto; font-size: var(--font-xs);
     flex-wrap: wrap;
   }
   .session-stats span { display: flex; align-items: center; gap: 2px; }
@@ -236,7 +244,7 @@
   .entry .dot {
     position: absolute; left: 18px; top: 7px; width: 20px; height: 20px;
     border-radius: 50%; display: flex; align-items: center; justify-content: center;
-    font-size: 10px; z-index: 1;
+    font-size: 11px; z-index: 1;
     box-shadow: 0 0 0 3px var(--surface);
     transition: box-shadow .2s, transform .15s;
   }
@@ -248,26 +256,26 @@
   }
   .entry .tool-name {
     font-family: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
-    font-size: 12px; font-weight: 650; letter-spacing: -.01em;
+    font-size: var(--font-sm); font-weight: 650; letter-spacing: -.01em;
     padding: 1px 6px; border-radius: 4px; flex-shrink: 0;
   }
   .entry .tool-args {
     font-family: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
-    font-size: 12px; color: var(--text-secondary);
+    font-size: var(--font-sm); color: var(--text-secondary);
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     flex: 1; min-width: 30px;
   }
   .entry .status-badge {
-    font-size: 12px; padding: 0 5px; border-radius: 4px;
+    font-size: var(--font-xs); padding: 0 5px; border-radius: 4px;
     font-weight: 600; line-height: 18px; flex-shrink: 0;
   }
   .entry .time-tag {
-    font-size: 11px; color: var(--text-muted);
+    font-size: var(--font-xs); color: var(--text-muted);
     white-space: nowrap; flex-shrink: 0;
     font-variant-numeric: tabular-nums;
   }
   .entry .duration-tag {
-    font-size: 11px; font-weight: 600; flex-shrink: 0;
+    font-size: var(--font-xs); font-weight: 600; flex-shrink: 0;
     padding: 0 5px; border-radius: 4px; line-height: 18px;
     white-space: nowrap; font-variant-numeric: tabular-nums;
     transition: color .2s, background .2s;
@@ -280,7 +288,7 @@
     display: none; margin-top: 4px;
     padding: 8px 10px; background: var(--bg);
     border-radius: var(--radius-sm); border: 1px solid var(--border-light);
-    font-size: 12px; font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    font-size: var(--font-sm); font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
     overflow-x: auto; max-height: 400px; line-height: 1.5;
     opacity: 0; transform: translateY(-10px);
     transition: opacity 0.2s ease, transform 0.2s ease;
@@ -298,7 +306,7 @@
     box-shadow: 0 0 0 3px var(--surface), 0 0 0 1px var(--fail);
   }
   .entry .error-preview {
-    font-size: 12px; color: var(--fail);
+    font-size: var(--font-xs); color: var(--fail);
     padding: 4px 8px; margin-top: 2px;
     background: var(--fail-bg); border-radius: 4px;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -324,9 +332,9 @@
   .empty-state {
     text-align: center; padding: 40px 20px;
   }
-  .empty-state .icon { font-size: 40px; margin-bottom: 8px; }
-  .empty-state h2 { font-size: 16px; color: var(--text-secondary); font-weight: 600; }
-  .empty-state p { margin-top: 4px; font-size: 13px; color: var(--text-muted); }
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state h2 { font-size: var(--font-lg); color: var(--text-secondary); font-weight: 600; margin-bottom: 4px; }
+  .empty-state p { font-size: var(--font-sm); color: var(--text-muted); }
 
   /* ===== 自定义 Modal ===== */
   .custom-modal-overlay {
@@ -360,7 +368,7 @@
     margin-bottom: 16px;
   }
   .custom-modal-header h3 {
-    font-size: 18px;
+    font-size: var(--font-lg);
     font-weight: 600;
     display: flex;
     align-items: center;
@@ -373,7 +381,7 @@
     background: var(--bg);
     border-radius: 8px;
     cursor: pointer;
-    font-size: 18px;
+    font-size: var(--font-lg);
     color: var(--text-secondary);
     display: flex;
     align-items: center;
@@ -387,7 +395,7 @@
   .custom-modal-body {
     flex: 1;
     overflow-y: auto;
-    font-size: 14px;
+    font-size: var(--font-base);
     line-height: 1.6;
   }
   .custom-modal-body pre {
@@ -395,7 +403,7 @@
     padding: 12px;
     border-radius: 8px;
     font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
-    font-size: 12px;
+    font-size: var(--font-xs);
     white-space: pre-wrap;
     word-break: break-all;
     margin: 0;
@@ -403,7 +411,7 @@
     cursor: text;
   }
   .custom-modal-body .copy-hint {
-    font-size: 12px;
+    font-size: var(--font-xs);
     color: var(--text-muted);
     margin-top: 8px;
     text-align: right;
@@ -420,7 +428,7 @@
     border: 1px solid var(--border);
     background: var(--surface);
     color: var(--text);
-    font-size: 14px;
+    font-size: var(--font-sm);
     cursor: pointer;
     transition: all .15s;
   }
@@ -439,7 +447,7 @@
   .footer {
     margin-top: 12px; padding: 10px 16px; background: var(--surface);
     border-radius: var(--radius); box-shadow: var(--shadow);
-    font-size: 12px; color: var(--text-muted);
+    font-size: var(--font-xs); color: var(--text-muted);
     display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
     transition: background .2s, box-shadow .2s;
   }
@@ -457,11 +465,11 @@
     padding: 24px; max-width: 400px; width: 90%;
     box-shadow: 0 20px 60px rgba(0,0,0,.2);
   }
-  .modal h3 { font-size: 16px; margin-bottom: 8px; }
-  .modal p { font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; }
+  .modal h3 { font-size: var(--font-lg); margin-bottom: 8px; }
+  .modal p { font-size: var(--font-sm); color: var(--text-secondary); margin-bottom: 16px; }
   .modal .actions { display: flex; gap: 8px; justify-content: flex-end; }
   .modal .actions button {
-    padding: 7px 16px; border-radius: var(--radius-sm); font-size: 13px;
+    padding: 7px 16px; border-radius: var(--radius-sm); font-size: var(--font-sm);
     cursor: pointer; border: 1px solid var(--border); transition: all .15s;
   }
   .modal .actions .cancel { background: var(--surface); color: var(--text-secondary); }
@@ -533,28 +541,6 @@
     height: 24px;
   }
 
-  /* ===== 搜索结果计数 ===== */
-  .search-result-count {
-    font-size: 12px;
-    color: var(--text-muted);
-    padding: 0 8px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-  .search-result-count .count {
-    color: var(--primary);
-    font-weight: 600;
-  }
-
-  /* ===== 空状态优化 ===== */
-  .empty-state {
-    text-align: center; padding: 40px 20px;
-  }
-  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
-  .empty-state h2 { font-size: 16px; color: var(--text-secondary); font-weight: 600; margin-bottom: 4px; }
-  .empty-state p { font-size: 13px; color: var(--text-muted); }
-
   /* ===== 按钮点击反馈 ===== */
   .controls button {
     transition: all 0.15s ease;
@@ -606,7 +592,7 @@
     display: flex;
     align-items: center;
     gap: 16px;
-    font-size: 13px;
+    font-size: var(--font-sm);
     transition: background .2s, box-shadow .2s;
   }
   .status-bar .status-item {
@@ -635,7 +621,7 @@
     background: var(--fail-bg);
     padding: 2px 8px;
     border-radius: 4px;
-    font-size: 12px;
+    font-size: var(--font-xs);
     max-width: 300px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -655,7 +641,7 @@
     border: 1px solid var(--border);
     padding: 4px 10px;
     border-radius: var(--radius-sm);
-    font-size: 12px;
+    font-size: var(--font-xs);
     cursor: pointer;
     color: var(--text-secondary);
     transition: all .15s;
@@ -704,14 +690,14 @@
     color: var(--fail);
   }
   .error-details .error-type {
-    font-size: 11px;
+    font-size: var(--font-xs);
     padding: 2px 6px;
     background: rgba(239, 68, 68, 0.1);
     border-radius: 4px;
   }
   .error-details .error-message {
     font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
-    font-size: 12px;
+    font-size: var(--font-xs);
     line-height: 1.6;
     white-space: pre-wrap;
     word-break: break-all;
@@ -722,7 +708,7 @@
     padding: 8px;
     background: rgba(239, 68, 68, 0.05);
     border-radius: 4px;
-    font-size: 12px;
+    font-size: var(--font-xs);
     color: var(--text-secondary);
   }
   .error-details .error-hint strong {
@@ -737,6 +723,20 @@
   .entry .duration-tag.critical {
     color: var(--speed-slow);
     background: rgba(239, 68, 68, 0.12);
+  }
+
+  /* ===== 搜索结果计数 ===== */
+  .search-result-count {
+    font-size: var(--font-xs);
+    color: var(--text-muted);
+    padding: 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .search-result-count .count {
+    color: var(--primary);
+    font-weight: 600;
   }
 
   @media (max-width: 700px) {
