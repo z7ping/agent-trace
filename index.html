@@ -282,9 +282,11 @@
     border-radius: var(--radius-sm); border: 1px solid var(--border-light);
     font-size: 12px; font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
     overflow-x: auto; max-height: 400px; line-height: 1.5;
+    opacity: 0; transform: translateY(-10px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
   }
   .entry .details pre { white-space: pre-wrap; word-break: break-all; margin: 0; }
-  .entry.expanded .details { display: block; }
+  .entry.expanded .details { display: block; opacity: 1; transform: translateY(0); }
 
   /* ===== 错误状态 ===== */
   .entry.is-error {
@@ -482,6 +484,118 @@
     75% { content: '...'; }
   }
 
+  /* ===== 加载状态 ===== */
+  .loading-spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .loading-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .loading-content {
+    background: var(--surface);
+    padding: 24px 32px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    color: var(--text);
+  }
+  .loading-content .loading-spinner {
+    width: 24px;
+    height: 24px;
+  }
+
+  /* ===== 搜索结果计数 ===== */
+  .search-result-count {
+    font-size: 12px;
+    color: var(--text-muted);
+    padding: 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .search-result-count .count {
+    color: var(--primary);
+    font-weight: 600;
+  }
+
+  /* ===== 空状态优化 ===== */
+  .empty-state {
+    text-align: center; padding: 40px 20px;
+  }
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state h2 { font-size: 16px; color: var(--text-secondary); font-weight: 600; margin-bottom: 4px; }
+  .empty-state p { font-size: 13px; color: var(--text-muted); }
+
+  /* ===== 按钮点击反馈 ===== */
+  .controls button {
+    transition: all 0.15s ease;
+  }
+  .controls button:active {
+    transform: scale(0.95);
+  }
+
+  /* ===== 搜索框清除按钮 ===== */
+  .search-box-wrapper {
+    position: relative;
+    display: inline-block;
+  }
+  .search-box {
+    padding-right: 28px;
+  }
+  .search-clear {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    border: none;
+    background: var(--text-muted);
+    color: var(--surface);
+    border-radius: 50%;
+    font-size: 10px;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+  .search-clear.show {
+    display: flex;
+  }
+  .search-clear:hover {
+    background: var(--text-secondary);
+  }
+
   /* ===== 状态栏 ===== */
   .status-bar {
     background: var(--surface);
@@ -575,9 +689,11 @@
     background: var(--fail-bg);
     border-radius: var(--radius-sm);
     border: 1px solid rgba(239, 68, 68, 0.2);
+    opacity: 0; transform: translateY(-10px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
   }
   .entry.expanded .error-details {
-    display: block;
+    display: block; opacity: 1; transform: translateY(0);
   }
   .error-details .error-header {
     display: flex;
@@ -673,8 +789,12 @@
       <button onclick="loadLog()" title="刷新">🔄 刷新</button>
       <button id="autoRefreshBtn" onclick="toggleAutoRefresh()">⏸ 自动</button>
       <button id="sortBtn" onclick="toggleSort()" title="切换排序">⬇ 最新优先</button>
-      <input type="text" class="search-box" id="search"
-        placeholder="搜索 工具名 / 会话ID / 文件…" oninput="onSearchInput()">
+      <div class="search-box-wrapper">
+        <input type="text" class="search-box" id="search"
+          placeholder="搜索 工具名 / 会话ID / 文件…" oninput="onSearchInput()">
+        <button class="search-clear" id="searchClear" onclick="clearSearch()">×</button>
+      </div>
+      <span class="search-result-count" id="searchResultCount"></span>
       <button onclick="window.open('dashboard.html', '_blank')" title="打开分析仪表盘" style="background: var(--color-mcp-bg); color: var(--color-mcp); border-color: var(--color-mcp);">📊 仪表盘</button>
       <button class="theme-btn" onclick="toggleTheme()" id="themeBtn" title="切换主题">🌙</button>
     </div>
@@ -683,6 +803,14 @@
 </div>
 
 <div id="sessionContainer"></div>
+
+<!-- 加载状态 -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-content">
+    <div class="loading-spinner"></div>
+    <span>加载中...</span>
+  </div>
+</div>
 
 <div class="footer">
   <span>📁 <code>~/.claude/tooltrace/logs/</code></span>
@@ -914,8 +1042,29 @@ function toggleSort() {
 
 // ===== 搜索防抖 =====
 function onSearchInput() {
+  const searchBox = document.getElementById('search');
+  const clearBtn = document.getElementById('searchClear');
+  clearBtn.classList.toggle('show', searchBox.value.length > 0);
+
   clearTimeout(searchTimer);
   searchTimer = setTimeout(() => { incrementalMode = false; render(); }, 200);
+}
+
+function clearSearch() {
+  document.getElementById('search').value = '';
+  document.getElementById('searchClear').classList.remove('show');
+  document.getElementById('searchResultCount').innerHTML = '';
+  incrementalMode = false;
+  render();
+}
+
+// ===== 加载状态 =====
+function showLoading() {
+  document.getElementById('loadingOverlay').classList.add('show');
+}
+
+function hideLoading() {
+  document.getElementById('loadingOverlay').classList.remove('show');
 }
 
 // ===== 全部展开/折叠 =====
@@ -1103,6 +1252,14 @@ function render() {
 
   // === 全局统计 ===
   updateStats();
+
+  // === 搜索结果计数 ===
+  const searchResultCount = document.getElementById('searchResultCount');
+  if (q) {
+    searchResultCount.innerHTML = `<span class="count">${filtered.length}</span> 条结果`;
+  } else {
+    searchResultCount.innerHTML = '';
+  }
 
   // === 过滤标签 ===
   renderFilters(typeFilter, statusFilter);
@@ -1484,10 +1641,16 @@ async function loadLog() {
       if (!currentProject) return;
     }
 
+    // 显示加载状态（仅在非增量模式时）
+    if (!incrementalMode) {
+      showLoading();
+    }
+
     const logPath = `logs/${currentProject}.jsonl`;
     const resp = await fetch(logPath + '?t=' + Date.now(), { cache: 'no-store' });
     if (!resp.ok) {
       entries = [];
+      hideLoading();
       render();
       return;
     }
@@ -1510,6 +1673,8 @@ async function loadLog() {
       if (!wasEmpty) incrementalMode = false; // 手动刷新退出增量模式
       render();
     }
+
+    hideLoading();
   } catch (e) { /* 静默 */ }
 }
 
