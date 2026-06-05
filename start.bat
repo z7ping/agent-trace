@@ -10,14 +10,8 @@ echo.
 set "SCRIPT_DIR=%~dp0"
 set "PORT=8080"
 
-REM Detect available HTTP servers
+REM Detect available HTTP servers (优先 Node.js server.js)
 set "SERVER=none"
-
-where python >nul 2>nul
-if %errorlevel% equ 0 (
-    set "SERVER=python"
-    goto :found
-)
 
 if exist "%SCRIPT_DIR%server.js" (
     where node >nul 2>nul
@@ -36,6 +30,12 @@ if %errorlevel% equ 0 (
 where node >nul 2>nul
 if %errorlevel% equ 0 (
     set "SERVER=node"
+    goto :found
+)
+
+where python >nul 2>nul
+if %errorlevel% equ 0 (
+    set "SERVER=python"
     goto :found
 )
 

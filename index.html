@@ -813,7 +813,7 @@
 </div>
 
 <div class="footer">
-  <span>📁 <code>~/.claude/tooltrace/logs/</code></span>
+  <span>📁 <code>~/.claude/ai-tool-tracker/logs/</code></span>
   <span>
     <a href="#" onclick="toggleCollapseAll(event)">📂 全部展开/折叠</a>
     · <a href="#" onclick="showClearModal()">🗑 清空记录</a>
@@ -1555,7 +1555,7 @@ async function doClear() {
   showCustomModal('🗑 清空记录', `
     <div style="padding:10px">
       <p style="margin-bottom:16px">请在终端执行以下命令清空当前项目：</p>
-      <pre>echo "" > ~/.claude/tooltrace/logs/${currentProject}.jsonl
+      <pre>echo "" > ~/.claude/ai-tool-tracker/logs/${currentProject}.jsonl
 echo "" > ~/.claude/tooltrace/states/${currentProject}.json</pre>
       <div class="copy-hint">点击"复制"按钮可复制命令</div>
     </div>

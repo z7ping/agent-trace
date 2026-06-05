@@ -12,17 +12,17 @@ Write-Host "Claude Code Tooltrace - HTTP Server" -ForegroundColor Cyan
 Write-Host "====================================" -ForegroundColor DarkGray
 Write-Host ""
 
-# Detect available HTTP servers
+# Detect available HTTP servers (优先 Node.js server.js)
 $Server = "none"
 
-if (Get-Command python -ErrorAction SilentlyContinue) {
-    $Server = "python"
-} elseif (Test-Path "$ScriptDir\server.js" -and (Get-Command node -ErrorAction SilentlyContinue)) {
+if (Test-Path "$ScriptDir\server.js" -and (Get-Command node -ErrorAction SilentlyContinue)) {
     $Server = "node-server"
 } elseif (Get-Command npx -ErrorAction SilentlyContinue) {
     $Server = "npx"
 } elseif (Get-Command node -ErrorAction SilentlyContinue) {
     $Server = "node"
+} elseif (Get-Command python -ErrorAction SilentlyContinue) {
+    $Server = "python"
 } elseif (Get-Command php -ErrorAction SilentlyContinue) {
     $Server = "php"
 } elseif (Get-Command ruby -ErrorAction SilentlyContinue) {
@@ -52,7 +52,7 @@ Write-Host ""
 if ($Server -eq "python") {
     Write-Host "Using: Python HTTP Server" -ForegroundColor Green
     Write-Host "Dir: $ScriptDir" -ForegroundColor DarkGray
-    Write-Host "URL: http://localhost:$Port/viewer.html" -ForegroundColor DarkGray
+    Write-Host "URL: http://localhost:$Port/index.html" -ForegroundColor DarkGray
     Write-Host ""
     Write-Host "Press Ctrl+C to stop" -ForegroundColor DarkGray
     Write-Host "====================================" -ForegroundColor DarkGray
@@ -62,7 +62,7 @@ if ($Server -eq "python") {
 } elseif ($Server -eq "node-server") {
     Write-Host "Using: Node.js Server (zero-dependency)" -ForegroundColor Green
     Write-Host "Dir: $ScriptDir" -ForegroundColor DarkGray
-    Write-Host "URL: http://localhost:$Port/viewer.html" -ForegroundColor DarkGray
+    Write-Host "URL: http://localhost:$Port/index.html" -ForegroundColor DarkGray
     Write-Host ""
     Write-Host "Press Ctrl+C to stop" -ForegroundColor DarkGray
     Write-Host "====================================" -ForegroundColor DarkGray
@@ -72,7 +72,7 @@ if ($Server -eq "python") {
 } elseif ($Server -eq "npx") {
     Write-Host "Using: npx http-server" -ForegroundColor Green
     Write-Host "Dir: $ScriptDir" -ForegroundColor DarkGray
-    Write-Host "URL: http://localhost:$Port/viewer.html" -ForegroundColor DarkGray
+    Write-Host "URL: http://localhost:$Port/index.html" -ForegroundColor DarkGray
     Write-Host ""
     Write-Host "Press Ctrl+C to stop" -ForegroundColor DarkGray
     Write-Host "====================================" -ForegroundColor DarkGray
@@ -82,7 +82,7 @@ if ($Server -eq "python") {
 } elseif ($Server -eq "node") {
     Write-Host "Using: Node.js Server" -ForegroundColor Green
     Write-Host "Dir: $ScriptDir" -ForegroundColor DarkGray
-    Write-Host "URL: http://localhost:$Port/viewer.html" -ForegroundColor DarkGray
+    Write-Host "URL: http://localhost:$Port/index.html" -ForegroundColor DarkGray
     Write-Host ""
     Write-Host "Press Ctrl+C to stop" -ForegroundColor DarkGray
     Write-Host "====================================" -ForegroundColor DarkGray
@@ -92,7 +92,7 @@ if ($Server -eq "python") {
 } elseif ($Server -eq "php") {
     Write-Host "Using: PHP Built-in Server" -ForegroundColor Green
     Write-Host "Dir: $ScriptDir" -ForegroundColor DarkGray
-    Write-Host "URL: http://localhost:$Port/viewer.html" -ForegroundColor DarkGray
+    Write-Host "URL: http://localhost:$Port/index.html" -ForegroundColor DarkGray
     Write-Host ""
     Write-Host "Press Ctrl+C to stop" -ForegroundColor DarkGray
     Write-Host "====================================" -ForegroundColor DarkGray
@@ -102,7 +102,7 @@ if ($Server -eq "python") {
 } elseif ($Server -eq "ruby") {
     Write-Host "Using: Ruby WEBrick" -ForegroundColor Green
     Write-Host "Dir: $ScriptDir" -ForegroundColor DarkGray
-    Write-Host "URL: http://localhost:$Port/viewer.html" -ForegroundColor DarkGray
+    Write-Host "URL: http://localhost:$Port/index.html" -ForegroundColor DarkGray
     Write-Host ""
     Write-Host "Press Ctrl+C to stop" -ForegroundColor DarkGray
     Write-Host "====================================" -ForegroundColor DarkGray

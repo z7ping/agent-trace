@@ -19,17 +19,7 @@ NC='\033[0m' # No Color
 
 # 检测可用的 HTTP 服务器
 detect_server() {
-    # 1. 检测 Python
-    if command -v python &> /dev/null; then
-        echo "python"
-        return
-    fi
-    if command -v python3 &> /dev/null; then
-        echo "python3"
-        return
-    fi
-
-    # 2. 检测 Node.js (优先使用 server.js)
+    # 1. 检测 Node.js (优先使用 server.js)
     if [ -f "$SCRIPT_DIR/server.js" ] && command -v node &> /dev/null; then
         echo "node-server"
         return
@@ -40,6 +30,16 @@ detect_server() {
     fi
     if command -v node &> /dev/null; then
         echo "node"
+        return
+    fi
+
+    # 2. 检测 Python (备选)
+    if command -v python &> /dev/null; then
+        echo "python"
+        return
+    fi
+    if command -v python3 &> /dev/null; then
+        echo "python3"
         return
     fi
 
