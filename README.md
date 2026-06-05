@@ -46,7 +46,7 @@ cp -r .claude/tooltrace ~/.claude/
   "hooks": {
     "PreToolUse": [{
       "hooks": [{
-        "command": "node ~/.claude/tooltrace/hooks/prelog.js",
+        "command": "node ~/.claude/ai-tool-tracker/hooks/prelog.js",
         "type": "command",
         "timeout": 5,
         "async": false
@@ -54,7 +54,7 @@ cp -r .claude/tooltrace ~/.claude/
     }],
     "PostToolUse": [{
       "hooks": [{
-        "command": "node ~/.claude/tooltrace/hooks/log.js",
+        "command": "node ~/.claude/ai-tool-tracker/hooks/log.js",
         "type": "command",
         "timeout": 10,
         "async": false
@@ -71,7 +71,7 @@ cp -r .claude/tooltrace ~/.claude/
   "hooks": {
     "PreToolUse": [{
       "hooks": [{
-        "command": "python ~/.claude/tooltrace/hooks/prelog.py",
+        "command": "python ~/.claude/ai-tool-tracker/hooks/prelog.py",
         "type": "command",
         "timeout": 5,
         "async": false
@@ -79,7 +79,7 @@ cp -r .claude/tooltrace ~/.claude/
     }],
     "PostToolUse": [{
       "hooks": [{
-        "command": "python ~/.claude/tooltrace/hooks/log.py",
+        "command": "python ~/.claude/ai-tool-tracker/hooks/log.py",
         "type": "command",
         "timeout": 10,
         "async": false
@@ -94,7 +94,7 @@ cp -r .claude/tooltrace ~/.claude/
 ## 📁 目录结构
 
 ```
-~/.claude/tooltrace/
+~/.claude/ai-tool-tracker/
 ├── hooks/                # Hook 脚本
 │   ├── prelog.js         # Node.js 版本（推荐）
 │   ├── prelog.py         # Python 版本（备选）
@@ -212,7 +212,7 @@ python -m http.server 8080
 ## 🗑️ 卸载
 
 ```bash
-rm -rf ~/.claude/tooltrace/
+rm -rf ~/.claude/ai-tool-tracker/
 # 然后从 ~/.claude/settings.json 中删除 hooks 配置
 ```
 

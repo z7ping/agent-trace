@@ -8,7 +8,7 @@ echo 🧠 AI Tool Tracker - 安装程序
 echo ============================================
 echo.
 
-set "TOOLTRACE_DIR=%USERPROFILE%\.claude\tooltrace"
+set "TOOLTRACE_DIR=%USERPROFILE%\.claude\ai-tool-tracker"
 set "SETTINGS_FILE=%USERPROFILE%\.claude\settings.json"
 
 REM 检查 Node.js

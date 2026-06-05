@@ -5,7 +5,7 @@
 
 set -e
 
-TOOLTRACE_DIR="$HOME/.claude/tooltrace"
+TOOLTRACE_DIR="$HOME/.claude/ai-tool-tracker"
 SETTINGS_FILE="$HOME/.claude/settings.json"
 
 echo "🧠 AI Tool Tracker - 安装程序"
