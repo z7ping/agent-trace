@@ -1683,42 +1683,62 @@ function checkHookStatus() {
   const statusDot = document.getElementById('hookStatus');
   const statusText = document.getElementById('hookStatusText');
 
-  // 检查是否有最近的错误
+  // 先检查工具调用错误
   const recentErrors = entries.filter(e => e.success === false).slice(-5);
 
-  if (recentErrors.length > 0) {
-    statusDot.className = 'status-dot error';
-    statusText.textContent = '有错误';
-    statusText.style.color = 'var(--fail)';
+  // 同时检查钩子执行错误（trace_error.log）
+  fetch('trace_error.log?t=' + Date.now(), { cache: 'no-store' })
+    .then(resp => resp.ok ? resp.text() : '')
+    .catch(() => '')
+    .then(hookLog => {
+      const hasHookErrors = hookLog && hookLog.trim().length > 0;
+      const hookErrorLines = hookLog ? hookLog.trim().split('\n') : [];
+      const lastHookError = hookErrorLines.length > 0 ? hookErrorLines[hookErrorLines.length - 1] : null;
 
-    // 显示最近错误
-    const lastError = recentErrors[recentErrors.length - 1];
-    const errorEl = document.getElementById('lastError');
-    const errorTextEl = document.getElementById('lastErrorText');
+      if (hasHookErrors || recentErrors.length > 0) {
+        statusDot.className = 'status-dot error';
+        statusText.textContent = hasHookErrors ? '钩子异常' : '有错误';
+        statusText.style.color = 'var(--fail)';
 
-    if (lastError.error) {
-      errorEl.textContent = lastError.error.substring(0, 50) + (lastError.error.length > 50 ? '...' : '');
-      errorEl.style.display = 'inline';
-      errorEl.title = lastError.error;
-      errorTextEl.style.display = 'none';
-    } else {
-      errorEl.style.display = 'none';
-      errorTextEl.textContent = lastError.tool_name + ' 失败';
-      errorTextEl.style.color = 'var(--fail)';
-    }
-  } else {
-    statusDot.className = 'status-dot ok';
-    statusText.textContent = '正常';
-    statusText.style.color = 'var(--success)';
-    document.getElementById('lastError').style.display = 'none';
-    document.getElementById('lastErrorText').textContent = '无';
-    document.getElementById('lastErrorText').style.color = '';
-  }
+        const errorEl = document.getElementById('lastError');
+        const errorTextEl = document.getElementById('lastErrorText');
 
-  // 更新慢调用计数
-  const slowCount = entries.filter(e => e.duration_ms != null && e.duration_ms >= 1000).length;
-  document.getElementById('slowCount').textContent = slowCount;
-  document.getElementById('slowCount').style.color = slowCount > 0 ? 'var(--speed-mid)' : '';
+        // 优先显示钩子执行错误
+        if (hasHookErrors && lastHookError) {
+          const shortErr = lastHookError.replace(/^\[.*?\]\s*/, '').substring(0, 60);
+          errorEl.textContent = shortErr + (lastHookError.length > 60 ? '...' : '');
+          errorEl.style.display = 'inline';
+          errorEl.title = lastHookError;
+          errorEl.onclick = () => showErrorLog();
+          errorEl.style.cursor = 'pointer';
+          errorTextEl.style.display = 'none';
+        } else if (recentErrors.length > 0) {
+          const lastError = recentErrors[recentErrors.length - 1];
+          if (lastError.error) {
+            errorEl.textContent = lastError.error.substring(0, 50) + (lastError.error.length > 50 ? '...' : '');
+            errorEl.style.display = 'inline';
+            errorEl.title = lastError.error;
+            errorTextEl.style.display = 'none';
+          } else {
+            errorEl.style.display = 'none';
+            errorTextEl.textContent = lastError.tool_name + ' 失败';
+            errorTextEl.style.color = 'var(--fail)';
+          }
+        }
+      } else {
+        statusDot.className = 'status-dot ok';
+        statusText.textContent = '正常';
+        statusText.style.color = 'var(--success)';
+        document.getElementById('lastError').style.display = 'none';
+        document.getElementById('lastErrorText').textContent = '无';
+        document.getElementById('lastErrorText').style.color = '';
+      }
+
+      // 更新慢调用计数
+      const slowCount = entries.filter(e => e.duration_ms != null && e.duration_ms >= 1000).length;
+      document.getElementById('slowCount').textContent = slowCount;
+      document.getElementById('slowCount').style.color = slowCount > 0 ? 'var(--speed-mid)' : '';
+    });
 }
 
 function showErrorLog() {

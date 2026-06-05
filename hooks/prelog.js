@@ -77,6 +77,16 @@ function process(data) {
     writeState(stateFile, state);
 }
 
+function logError(e) {
+    try {
+        const logFile = path.join(BASE_DIR, 'trace_error.log');
+        const msg = `[${new Date().toISOString()}] PreToolUse prelog.js: ${e.message || e}\n`;
+        fs.appendFileSync(logFile, msg, 'utf-8');
+    } catch (_) {
+        // 写日志本身失败时静默
+    }
+}
+
 function main() {
     let input = '';
 
@@ -98,8 +108,12 @@ function main() {
                 process(data);
             }
         } catch (e) {
-            // 静默失败，不影响 Claude Code 正常工作
+            logError(e);
         }
+    });
+
+    process.stdin.on('error', (e) => {
+        logError(e);
     });
 }
 
