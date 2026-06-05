@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📊 AI Tool Tracker - 仪表盘</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #f5f6f8;
+    --surface: #ffffff;
+    --border: #e4e6eb;
+    --text: #1a1a2e;
+    --text-secondary: #6b7280;
+    --text-muted: #9ca3af;
+    --shadow: 0 1px 3px rgba(0,0,0,.06);
+    --primary: #3b82f6;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+  }
+
+  body.dark {
+    --bg: #0f1117;
+    --surface: #1a1b23;
+    --border: #2a2b35;
+    --text: #e4e6eb;
+    --text-secondary: #9ca3af;
+    --text-muted: #5c5e6e;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 24px;
+    min-height: 100vh;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+
+  .header h1 {
+    font-size: 24px;
+    font-weight: 700;
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .header-actions select,
+  .header-actions button {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .header-actions button:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+
+  .card {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+
+  .card-title {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title .icon {
+    font-size: 18px;
+  }
+
+  .stat-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .stat-label {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .stat-change {
+    font-size: 12px;
+    margin-top: 8px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: inline-block;
+  }
+
+  .stat-change.positive {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success);
+  }
+
+  .stat-change.negative {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
+  }
+
+  /* 工具使用频率 */
+  .tool-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .tool-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .tool-name {
+    width: 80px;
+    font-size: 13px;
+    font-weight: 500;
+    text-align: right;
+  }
+
+  .tool-bar-container {
+    flex: 1;
+    height: 24px;
+    background: var(--bg);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .tool-bar {
+    height: 100%;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    padding-left: 8px;
+    font-size: 12px;
+    color: white;
+    font-weight: 500;
+    transition: width 0.5s ease;
+  }
+
+  .tool-bar.read { background: #3b82f6; }
+  .tool-bar.write { background: #10b981; }
+  .tool-bar.bash { background: #f59e0b; }
+  .tool-bar.mcp { background: #8b5cf6; }
+  .tool-bar.agent { background: #f97316; }
+  .tool-bar.other { background: #6b7280; }
+
+  .tool-count {
+    width: 50px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    text-align: right;
+  }
+
+  /* 时间分布热力图 */
+  .heatmap {
+    display: grid;
+    grid-template-columns: repeat(24, 1fr);
+    gap: 4px;
+  }
+
+  .heatmap-cell {
+    aspect-ratio: 1;
+    border-radius: 4px;
+    background: var(--bg);
+    position: relative;
+  }
+
+  .heatmap-cell.level-1 { background: rgba(59, 130, 246, 0.2); }
+  .heatmap-cell.level-2 { background: rgba(59, 130, 246, 0.4); }
+  .heatmap-cell.level-3 { background: rgba(59, 130, 246, 0.6); }
+  .heatmap-cell.level-4 { background: rgba(59, 130, 246, 0.8); }
+
+  .heatmap-labels {
+    display: grid;
+    grid-template-columns: repeat(24, 1fr);
+    gap: 4px;
+    margin-top: 4px;
+  }
+
+  .heatmap-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-align: center;
+  }
+
+  /* 耗时排行 */
+  .duration-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .duration-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    background: var(--bg);
+    border-radius: 8px;
+  }
+
+  .duration-rank {
+    width: 24px;
+    height: 24px;
+    background: var(--primary);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .duration-rank.slow { background: var(--warning); }
+  .duration-rank.critical { background: var(--danger); }
+
+  .duration-info {
+    flex: 1;
+  }
+
+  .duration-tool {
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .duration-detail {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  .duration-time {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  /* 错误分布 */
+  .error-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .error-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .error-type-badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
+  }
+
+  .error-count {
+    margin-left: auto;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--danger);
+  }
+
+  /* 会话统计 */
+  .session-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .session-stat {
+    text-align: center;
+    padding: 12px;
+    background: var(--bg);
+    border-radius: 8px;
+  }
+
+  .session-stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary);
+  }
+
+  .session-stat-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-muted);
+  }
+
+  .empty-state .icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+  }
+
+  @media (max-width: 768px) {
+    .dashboard-grid {
+      grid-template-columns: 1fr;
+    }
+    .session-stats-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📊 使用分析仪表盘</h1>
+  <div class="header-actions">
+    <select id="projectSelect" onchange="loadData()">
+      <option value="">选择项目...</option>
+    </select>
+    <select id="timeRange" onchange="loadData()">
+      <option value="today">今天</option>
+      <option value="week" selected>本周</option>
+      <option value="month">本月</option>
+      <option value="all">全部</option>
+    </select>
+    <button onclick="loadData()">🔄 刷新</button>
+    <button onclick="toggleTheme()">🌙</button>
+  </div>
+</div>
+
+<div class="dashboard-grid">
+  <!-- 总览卡片 -->
+  <div class="card">
+    <div class="card-title"><span class="icon">📊</span> 总览</div>
+    <div class="stat-value" id="totalCalls">0</div>
+    <div class="stat-label">总调用次数</div>
+    <div class="stat-change positive" id="callsChange">-</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="icon">⏱️</span> 平均耗时</div>
+    <div class="stat-value" id="avgDuration">-</div>
+    <div class="stat-label">每次调用</div>
+    <div class="stat-change" id="durationChange">-</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="icon">✅</span> 成功率</div>
+    <div class="stat-value" id="successRate">-</div>
+    <div class="stat-label">调用成功率</div>
+    <div class="stat-change" id="successChange">-</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="icon">🐢</span> 慢调用</div>
+    <div class="stat-value" id="slowCalls">0</div>
+    <div class="stat-label">超过 1 秒</div>
+    <div class="stat-change" id="slowChange">-</div>
+  </div>
+</div>
+
+<div class="dashboard-grid">
+  <!-- 工具使用频率 -->
+  <div class="card">
+    <div class="card-title"><span class="icon">🔧</span> 工具使用 TOP 10</div>
+    <div class="tool-list" id="toolList">
+      <div class="empty-state">
+        <div class="icon">📭</div>
+        <div>暂无数据</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 时间分布 -->
+  <div class="card">
+    <div class="card-title"><span class="icon">🕐</span> 时间分布（24小时）</div>
+    <div class="heatmap" id="heatmap"></div>
+    <div class="heatmap-labels" id="heatmapLabels"></div>
+  </div>
+</div>
+
+<div class="dashboard-grid">
+  <!-- 慢调用排行 -->
+  <div class="card">
+    <div class="card-title"><span class="icon">🐌</span> 慢调用排行 TOP 10</div>
+    <div class="duration-list" id="durationList">
+      <div class="empty-state">
+        <div class="icon">🚀</div>
+        <div>暂无慢调用</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 错误分布 -->
+  <div class="card">
+    <div class="card-title"><span class="icon">❌</span> 错误类型分布</div>
+    <div class="error-list" id="errorList">
+      <div class="empty-state">
+        <div class="icon">✅</div>
+        <div>暂无错误</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="dashboard-grid">
+  <!-- 会话统计 -->
+  <div class="card">
+    <div class="card-title"><span class="icon">💬</span> 会话统计</div>
+    <div class="session-stats-grid" id="sessionStats">
+      <div class="session-stat">
+        <div class="session-stat-value" id="totalSessions">0</div>
+        <div class="session-stat-label">总会话数</div>
+      </div>
+      <div class="session-stat">
+        <div class="session-stat-value" id="avgCallsPerSession">0</div>
+        <div class="session-stat-label">平均调用/会话</div>
+      </div>
+      <div class="session-stat">
+        <div class="session-stat-value" id="avgSessionDuration">-</div>
+        <div class="session-stat-label">平均会话时长</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 效率洞察 -->
+  <div class="card">
+    <div class="card-title"><span class="icon">💡</span> 效率洞察</div>
+    <div id="insights" style="font-size: 14px; line-height: 1.8;">
+      <div class="empty-state">
+        <div class="icon">🔍</div>
+        <div>需要更多数据...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let allEntries = [];
+let currentProject = null;
+
+// 加载项目列表
+async function loadProjects() {
+  try {
+    const resp = await fetch('projects.json?t=' + Date.now(), { cache: 'no-store' });
+    if (!resp.ok) return;
+    const projects = await resp.json();
+
+    const select = document.getElementById('projectSelect');
+    let html = '<option value="">全部项目</option>';
+
+    for (const [key, proj] of Object.entries(projects)) {
+      html += `<option value="${key}">${proj.name}</option>`;
+    }
+
+    select.innerHTML = html;
+
+    // 默认选择最近的项目
+    const sorted = Object.entries(projects).sort((a, b) =>
+      new Date(b[1].last_seen) - new Date(a[1].last_seen)
+    );
+    if (sorted.length > 0) {
+      select.value = sorted[0][0];
+    }
+  } catch (e) {
+    console.error('Failed to load projects:', e);
+  }
+}
+
+// 加载数据
+async function loadData() {
+  const projectKey = document.getElementById('projectSelect').value;
+  const timeRange = document.getElementById('timeRange').value;
+
+  allEntries = [];
+
+  if (projectKey) {
+    // 加载指定项目
+    await loadProjectData(projectKey);
+  } else {
+    // 加载所有项目
+    const resp = await fetch('projects.json?t=' + Date.now(), { cache: 'no-store' });
+    if (resp.ok) {
+      const projects = await resp.json();
+      for (const key of Object.keys(projects)) {
+        await loadProjectData(key);
+      }
+    }
+  }
+
+  // 按时间范围过滤
+  const now = new Date();
+  let cutoff = new Date(0);
+  if (timeRange === 'today') {
+    cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  } else if (timeRange === 'week') {
+    cutoff = new Date(now - 7 * 24 * 60 * 60 * 1000);
+  } else if (timeRange === 'month') {
+    cutoff = new Date(now - 30 * 24 * 60 * 60 * 1000);
+  }
+
+  if (timeRange !== 'all') {
+    allEntries = allEntries.filter(e => new Date(e.ts) >= cutoff);
+  }
+
+  // 排序
+  allEntries.sort((a, b) => new Date(a.ts) - new Date(b.ts));
+
+  // 更新所有图表
+  updateOverview();
+  updateToolList();
+  updateHeatmap();
+  updateDurationList();
+  updateErrorList();
+  updateSessionStats();
+  updateInsights();
+}
+
+async function loadProjectData(projectKey) {
+  try {
+    const resp = await fetch(`logs/${projectKey}.jsonl?t=${Date.now()}`, { cache: 'no-store' });
+    if (!resp.ok) return;
+    const text = await resp.text();
+    const entries = text.trim().split('\n').filter(Boolean).map(line => {
+      try { return JSON.parse(line); } catch { return null; }
+    }).filter(Boolean);
+    allEntries.push(...entries);
+  } catch (e) {
+    console.error(`Failed to load project ${projectKey}:`, e);
+  }
+}
+
+// 更新总览
+function updateOverview() {
+  const total = allEntries.length;
+  const success = allEntries.filter(e => e.success !== false).length;
+  const fail = total - success;
+  const durations = allEntries.map(e => e.duration_ms).filter(d => d != null);
+  const avgDur = durations.length > 0 ? durations.reduce((a, b) => a + b, 0) / durations.length : 0;
+  const slowCount = durations.filter(d => d >= 1000).length;
+  const successRate = total > 0 ? (success / total * 100).toFixed(1) : 0;
+
+  document.getElementById('totalCalls').textContent = total;
+  document.getElementById('avgDuration').textContent = formatDuration(avgDur);
+  document.getElementById('successRate').textContent = successRate + '%';
+  document.getElementById('slowCalls').textContent = slowCount;
+
+  // 颜色标记
+  document.getElementById('durationChange').className = 'stat-change ' +
+    (avgDur > 2000 ? 'negative' : avgDur > 1000 ? '' : 'positive');
+  document.getElementById('successChange').className = 'stat-change ' +
+    (successRate < 90 ? 'negative' : successRate > 95 ? 'positive' : '');
+  document.getElementById('successChange').textContent = `${success} 成功 / ${fail} 失败`;
+
+  document.getElementById('slowChange').className = 'stat-change ' +
+    (slowCount > 10 ? 'negative' : slowCount > 0 ? '' : 'positive');
+  document.getElementById('slowChange').textContent = `${slowCount} / ${durations.length} 调用`;
+}
+
+// 更新工具列表
+function updateToolList() {
+  const toolCounts = {};
+  allEntries.forEach(e => {
+    toolCounts[e.tool_name] = (toolCounts[e.tool_name] || 0) + 1;
+  });
+
+  const sorted = Object.entries(toolCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10);
+
+  const maxCount = sorted.length > 0 ? sorted[0][1] : 1;
+
+  const toolTypes = {
+    Read: 'read', Glob: 'read', Grep: 'read', WebFetch: 'read', WebSearch: 'read',
+    Write: 'write', Edit: 'write', NotebookEdit: 'write',
+    Bash: 'bash',
+    Agent: 'agent', TaskCreate: 'agent', TaskUpdate: 'agent', TaskOutput: 'agent',
+  };
+
+  let html = '';
+  for (const [name, count] of sorted) {
+    const type = name.startsWith('mcp__') ? 'mcp' : (toolTypes[name] || 'other');
+    const width = (count / maxCount * 100).toFixed(0);
+    html += `
+      <div class="tool-item">
+        <div class="tool-name">${name}</div>
+        <div class="tool-bar-container">
+          <div class="tool-bar ${type}" style="width: ${width}%">${count}</div>
+        </div>
+        <div class="tool-count">${(count / allEntries.length * 100).toFixed(1)}%</div>
+      </div>
+    `;
+  }
+
+  document.getElementById('toolList').innerHTML = html || '<div class="empty-state">暂无数据</div>';
+}
+
+// 更新热力图
+function updateHeatmap() {
+  const hourCounts = new Array(24).fill(0);
+
+  allEntries.forEach(e => {
+    const hour = new Date(e.ts).getHours();
+    hourCounts[hour]++;
+  });
+
+  const maxCount = Math.max(...hourCounts, 1);
+
+  let cellsHtml = '';
+  let labelsHtml = '';
+
+  for (let i = 0; i < 24; i++) {
+    const level = Math.ceil(hourCounts[i] / maxCount * 4);
+    cellsHtml += `<div class="heatmap-cell ${level > 0 ? 'level-' + level : ''}" title="${i}:00 - ${hourCounts[i]} 次"></div>`;
+    labelsHtml += `<div class="heatmap-label">${i}</div>`;
+  }
+
+  document.getElementById('heatmap').innerHTML = cellsHtml;
+  document.getElementById('heatmapLabels').innerHTML = labelsHtml;
+}
+
+// 更新耗时排行
+function updateDurationList() {
+  const sorted = allEntries
+    .filter(e => e.duration_ms != null)
+    .sort((a, b) => b.duration_ms - a.duration_ms)
+    .slice(0, 10);
+
+  let html = '';
+  sorted.forEach((e, i) => {
+    const rankClass = e.duration_ms >= 3000 ? 'critical' : e.duration_ms >= 1000 ? 'slow' : '';
+    const input = e.input_summary || {};
+    const detail = input.file_path || input.command || '';
+
+    html += `
+      <div class="duration-item">
+        <div class="duration-rank ${rankClass}">${i + 1}</div>
+        <div class="duration-info">
+          <div class="duration-tool">${e.tool_name}</div>
+          <div class="duration-detail">${detail.substring(0, 50)}${detail.length > 50 ? '...' : ''}</div>
+        </div>
+        <div class="duration-time">${formatDuration(e.duration_ms)}</div>
+      </div>
+    `;
+  });
+
+  document.getElementById('durationList').innerHTML = html || '<div class="empty-state">暂无数据</div>';
+}
+
+// 更新错误分布
+function updateErrorList() {
+  const errorTypes = {};
+
+  allEntries.filter(e => e.success === false).forEach(e => {
+    let type = '其他错误';
+    const error = e.error || '';
+
+    if (error.includes('SyntaxError')) type = '语法错误';
+    else if (error.includes('ReferenceError') || error.includes('TypeError')) type = '运行时错误';
+    else if (error.includes('ENOENT') || error.includes('No such file')) type = '文件不存在';
+    else if (error.includes('Permission denied')) type = '权限错误';
+    else if (error.includes('Exit code')) type = '命令执行失败';
+    else if (error.includes('timeout') || error.includes('Timeout')) type = '超时错误';
+
+    errorTypes[type] = (errorTypes[type] || 0) + 1;
+  });
+
+  const sorted = Object.entries(errorTypes).sort((a, b) => b[1] - a[1]);
+
+  let html = '';
+  for (const [type, count] of sorted) {
+    html += `
+      <div class="error-item">
+        <span class="error-type-badge">${type}</span>
+        <span class="error-count">${count}</span>
+      </div>
+    `;
+  }
+
+  document.getElementById('errorList').innerHTML = html || '<div class="empty-state">✅ 暂无错误</div>';
+}
+
+// 更新会话统计
+function updateSessionStats() {
+  const sessions = {};
+  allEntries.forEach(e => {
+    const sid = e.session_id || 'unknown';
+    if (!sessions[sid]) sessions[sid] = [];
+    sessions[sid].push(e);
+  });
+
+  const sessionCount = Object.keys(sessions).length;
+  const avgCalls = sessionCount > 0 ? (allEntries.length / sessionCount).toFixed(1) : 0;
+
+  // 计算平均会话时长
+  let totalSessionDuration = 0;
+  for (const entries of Object.values(sessions)) {
+    if (entries.length >= 2) {
+      const first = new Date(entries[0].ts);
+      const last = new Date(entries[entries.length - 1].ts);
+      totalSessionDuration += (last - first);
+    }
+  }
+  const avgSessionDur = sessionCount > 0 ? totalSessionDuration / sessionCount : 0;
+
+  document.getElementById('totalSessions').textContent = sessionCount;
+  document.getElementById('avgCallsPerSession').textContent = avgCalls;
+  document.getElementById('avgSessionDuration').textContent = formatDuration(avgSessionDur);
+}
+
+// 更新效率洞察
+function updateInsights() {
+  const insights = [];
+
+  // 分析工具组合
+  const toolPairs = {};
+  allEntries.forEach((e, i) => {
+    if (i > 0) {
+      const prev = allEntries[i - 1];
+      const pair = `${prev.tool_name} → ${e.tool_name}`;
+      toolPairs[pair] = (toolPairs[pair] || 0) + 1;
+    }
+  });
+
+  const topPairs = Object.entries(toolPairs)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3);
+
+  if (topPairs.length > 0) {
+    insights.push(`<strong>🔄 常用工作流：</strong>${topPairs.map(([pair, count]) => `${pair} (${count}次)`).join('、')}`);
+  }
+
+  // 分析慢调用原因
+  const slowEntries = allEntries.filter(e => e.duration_ms >= 1000);
+  if (slowEntries.length > 0) {
+    const slowTools = {};
+    slowEntries.forEach(e => {
+      slowTools[e.tool_name] = (slowTools[e.tool_name] || 0) + 1;
+    });
+    const topSlow = Object.entries(slowTools).sort((a, b) => b[1] - a[1])[0];
+    insights.push(`<strong>🐌 主要性能瓶颈：</strong>${topSlow[0]} 占慢调用的 ${topSlow[1]} 次`);
+  }
+
+  // 效率建议
+  const readCount = allEntries.filter(e => e.tool_name === 'Read').length;
+  const editCount = allEntries.filter(e => e.tool_name === 'Edit').length;
+  if (readCount > editCount * 3) {
+    insights.push(`<strong>💡 建议：</strong>读取操作较多，考虑使用 Grep/Glob 批量查找`);
+  }
+
+  const bashErrors = allEntries.filter(e => e.tool_name === 'Bash' && e.success === false).length;
+  const bashTotal = allEntries.filter(e => e.tool_name === 'Bash').length;
+  if (bashTotal > 0 && bashErrors / bashTotal > 0.2) {
+    insights.push(`<strong>⚠️ 注意：</strong>Bash 命令错误率较高 (${(bashErrors/bashTotal*100).toFixed(0)}%)，建议先测试命令`);
+  }
+
+  document.getElementById('insights').innerHTML = insights.length > 0
+    ? insights.map(i => `<div style="margin-bottom: 12px;">${i}</div>`).join('')
+    : '<div class="empty-state"><div class="icon">🔍</div><div>需要更多数据...</div></div>';
+}
+
+// 工具函数
+function formatDuration(ms) {
+  if (ms == null || ms === 0) return '-';
+  if (ms < 1000) return Math.round(ms) + 'ms';
+  if (ms < 60000) return (ms / 1000).toFixed(1) + 's';
+  const m = Math.floor(ms / 60000);
+  const s = Math.round((ms % 60000) / 1000);
+  return m + 'm' + s + 's';
+}
+
+// 主题
+function toggleTheme() {
+  document.body.classList.toggle('dark');
+}
+
+// 初始化
+loadProjects().then(loadData);
+</script>
+</body>
+</html>
