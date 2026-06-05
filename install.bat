@@ -4,7 +4,7 @@ REM 用法: 双击运行或在 CMD 中执行 install.bat
 
 setlocal enabledelayedexpansion
 
-echo 🧠 Claude Code 工具调用链路追踪 - 安装程序
+echo 🧠 AI Tool Tracker - 安装程序
 echo ============================================
 echo.
 

@@ -1,6 +1,8 @@
-# 🧠 Claude Code 工具调用链路追踪
+# 🧠 AI Tool Tracker
 
 实时记录并可视化 Claude Code 的每次工具调用，按会话分组展示，方便调试和回溯。
+
+> GitHub: https://github.com/你的用户名/ai-tool-tracker
 
 ## ✨ 特性
 
@@ -186,6 +188,11 @@ rm -rf ~/.claude/tooltrace/
 ```
 
 ## 📝 更新日志
+
+### v1.3.0 (2026-06-05)
+- 项目更名为 AI Tool Tracker
+- 精简目录结构
+- 精简文档
 
 ### v1.2.0 (2026-06-05)
 - 新增 Node.js 版本 hook 脚本

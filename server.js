@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Claude Code Tooltrace - 零依赖 HTTP 服务器
+ * AI Tool Tracker - 零依赖 HTTP 服务器
  *
  * 用法: node server.js [port]
  * 默认端口: 8080
@@ -101,7 +101,7 @@ const server = http.createServer((req, res) => {
 // 启动服务器
 server.listen(PORT, () => {
     console.log('');
-    log('🧠 Claude Code Tooltrace - HTTP 服务器', 'bright');
+    log('🧠 AI Tool Tracker - HTTP 服务器', 'bright');
     log('========================================', 'dim');
     console.log('');
     log(`✅ 服务器已启动`, 'green');

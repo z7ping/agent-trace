@@ -8,7 +8,7 @@ set -e
 TOOLTRACE_DIR="$HOME/.claude/tooltrace"
 SETTINGS_FILE="$HOME/.claude/settings.json"
 
-echo "🧠 Claude Code 工具调用链路追踪 - 安装程序"
+echo "🧠 AI Tool Tracker - 安装程序"
 echo "============================================"
 echo ""
 
