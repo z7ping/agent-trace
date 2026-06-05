@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🧠 Claude Code 工具调用链路</title>
+<title>🧠 AI Tool Tracker</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -383,8 +383,182 @@
     .session-stats { display: none; }
   }
 </style>
+/* ===== 状态栏 ===== */
+  .status-bar {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 13px;
+    transition: background .2s, box-shadow .2s;
+  }
+  .status-bar .status-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .status-bar .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .status-bar .status-dot.ok { background: var(--success); }
+  .status-bar .status-dot.error { background: var(--fail); }
+  .status-bar .status-dot.warning { background: var(--speed-mid); }
+  .status-bar .status-label {
+    color: var(--text-secondary);
+  }
+  .status-bar .status-value {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .status-bar .status-error {
+    color: var(--fail);
+    background: var(--fail-bg);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .status-bar .status-error:hover {
+    white-space: normal;
+  }
+  .status-bar .status-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+  }
+  .status-bar .status-actions button {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all .15s;
+  }
+  .status-bar .status-actions button:hover {
+    background: var(--surface-hover);
+    color: var(--text);
+  }
+
+  /* ===== 慢调用高亮 ===== */
+  .entry.slow-warning {
+    border-left: 3px solid var(--speed-mid);
+    background: rgba(245, 158, 11, 0.04);
+  }
+  .entry.slow-warning:hover {
+    background: rgba(245, 158, 11, 0.08);
+  }
+  .entry.slow-critical {
+    border-left: 3px solid var(--speed-slow);
+    background: rgba(239, 68, 68, 0.04);
+  }
+  .entry.slow-critical:hover {
+    background: rgba(239, 68, 68, 0.08);
+  }
+
+  /* ===== 错误详情增强 ===== */
+  .entry .error-details {
+    display: none;
+    margin-top: 8px;
+    padding: 12px;
+    background: var(--fail-bg);
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+  }
+  .entry.expanded .error-details {
+    display: block;
+  }
+  .error-details .error-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--fail);
+  }
+  .error-details .error-type {
+    font-size: 11px;
+    padding: 2px 6px;
+    background: rgba(239, 68, 68, 0.1);
+    border-radius: 4px;
+  }
+  .error-details .error-message {
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-all;
+    color: var(--text);
+  }
+  .error-details .error-hint {
+    margin-top: 8px;
+    padding: 8px;
+    background: rgba(239, 68, 68, 0.05);
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .error-details .error-hint strong {
+    color: var(--text);
+  }
+
+  /* ===== 耗时标签颜色 ===== */
+  .entry .duration-tag.warning {
+    color: var(--speed-mid);
+    background: rgba(245, 158, 11, 0.12);
+  }
+  .entry .duration-tag.critical {
+    color: var(--speed-slow);
+    background: rgba(239, 68, 68, 0.12);
+  }
+
+  @media (max-width: 700px) {
+    body { padding: 12px; }
+    .header-top { flex-direction: column; align-items: stretch; }
+    .controls { margin-left: 0; }
+    .search-box { width: 100%; }
+    .entry .tool-args { max-width: 30vw; }
+    .session-stats { display: none; }
+    .status-bar { flex-wrap: wrap; gap: 8px; }
+    .status-bar .status-error { max-width: 200px; }
+  }
+</style>
 </head>
 <body>
+
+<!-- 状态栏 -->
+<div class="status-bar" id="statusBar">
+  <div class="status-item">
+    <span class="status-dot ok" id="hookStatus"></span>
+    <span class="status-label">Hook 状态:</span>
+    <span class="status-value" id="hookStatusText">检测中...</span>
+  </div>
+  <div class="status-item">
+    <span class="status-label">最近错误:</span>
+    <span class="status-error" id="lastError" style="display:none" title="点击查看完整错误">无</span>
+    <span id="lastErrorText">无</span>
+  </div>
+  <div class="status-item">
+    <span class="status-label">慢调用:</span>
+    <span class="status-value" id="slowCount">0</span>
+  </div>
+  <div class="status-actions">
+    <button onclick="checkHookStatus()" title="检查 Hook 状态">🔍 检查</button>
+    <button onclick="showErrorLog()" title="查看错误日志">📋 错误日志</button>
+  </div>
+</div>
 
 <div class="header">
   <div class="header-top">
@@ -662,10 +836,16 @@ function buildEntryHTML(entry, depth, expandErrors) {
   const relTime = relativeTime(entry.ts);
   const isError = entry.success === false;
 
-  // 耗时标签
+  // 耗时标签 - 增强版（添加 warning 和 critical 等级）
   const dur = entry.duration_ms;
+  let durClass = '';
+  if (dur != null) {
+    if (dur >= 3000) durClass = 'critical';
+    else if (dur >= 1000) durClass = 'warning';
+    else durClass = speedGrade(dur);
+  }
   const durHtml = dur != null
-    ? `<span class="duration-tag speed-${speedGrade(dur)}">${formatDuration(dur)}</span>`
+    ? `<span class="duration-tag ${durClass ? 'speed-' + durClass : ''} ${durClass}">${formatDuration(dur)}</span>`
     : '';
 
   // 缩进 style
@@ -673,6 +853,13 @@ function buildEntryHTML(entry, depth, expandErrors) {
 
   // 如果是树形子节点，额外标记
   const extraClass = depth > 0 ? ' tree-child' : '';
+
+  // 慢调用高亮 class
+  let slowClass = '';
+  if (dur != null) {
+    if (dur >= 3000) slowClass = ' slow-critical';
+    else if (dur >= 1000) slowClass = ' slow-warning';
+  }
 
   // 错误条目默认展开
   const expandedClass = (isError || (depth === 0 && expandErrors)) ? ' expanded' : '';
@@ -688,7 +875,7 @@ function buildEntryHTML(entry, depth, expandErrors) {
     childrenHtml += `</div>`;
   }
 
-  return `<div class="entry type-${type}${isError ? ' is-error' : ''}${extraClass}${expandedClass}" onclick="toggleExpand(this)"${indentStyle}>
+  return `<div class="entry type-${type}${isError ? ' is-error' : ''}${slowClass}${extraClass}${expandedClass}" onclick="toggleExpand(this)"${indentStyle}>
     <div class="dot">${icon.match(/[\u{1F000}-\u{1FFFF}]|[☀-➿]|[✀-➿]|[a-zA-Z0-9]/u)?.[0] || icon[0] || '?'}</div>
     <div class="title">
       <span class="tool-name">${entry.tool_name}</span>
@@ -698,9 +885,48 @@ function buildEntryHTML(entry, depth, expandErrors) {
       <span class="time-tag" title="${fullTime}">${absTime} ${relTime}</span>
     </div>
     ${isError && entry.error ? `<div class="error-preview">❌ ${entry.error.replace(/</g, '&lt;')}</div>` : ''}
+    ${isError && entry.error ? buildErrorDetails(entry.error) : ''}
     <div class="details"><pre>${JSON.stringify(entry, null, 2).replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre></div>
     ${childrenHtml}
   </div>`;
+}
+
+/** 构建错误详情 HTML */
+function buildErrorDetails(errorMsg) {
+  // 错误分类
+  let errorType = '未知错误';
+  let errorHint = '';
+
+  if (errorMsg.includes('SyntaxError')) {
+    errorType = '语法错误';
+    errorHint = '检查代码语法，可能是拼写错误或缺少括号';
+  } else if (errorMsg.includes('ReferenceError') || errorMsg.includes('TypeError')) {
+    errorType = '运行时错误';
+    errorHint = '检查变量是否已定义，类型是否正确';
+  } else if (errorMsg.includes('ENOENT') || errorMsg.includes('No such file')) {
+    errorType = '文件不存在';
+    errorHint = '检查文件路径是否正确，文件是否存在';
+  } else if (errorMsg.includes('Permission denied')) {
+    errorType = '权限错误';
+    errorHint = '检查文件权限，可能需要管理员权限';
+  } else if (errorMsg.includes('Exit code')) {
+    errorType = '命令执行失败';
+    errorHint = '检查命令语法和参数是否正确';
+  } else if (errorMsg.includes('timeout') || errorMsg.includes('Timeout')) {
+    errorType = '超时错误';
+    errorHint = '操作耗时过长，可能需要优化或增加超时时间';
+  }
+
+  return `
+    <div class="error-details">
+      <div class="error-header">
+        <span>❌ 错误详情</span>
+        <span class="error-type">${errorType}</span>
+      </div>
+      <div class="error-message">${errorMsg.replace(/</g, '&lt;')}</div>
+      ${errorHint ? `<div class="error-hint"><strong>💡 建议：</strong>${errorHint}</div>` : ''}
+    </div>
+  `;
 }
 
 // ===== 构建树形结构 =====
@@ -1163,14 +1389,83 @@ async function loadLog() {
   } catch (e) { /* 静默 */ }
 }
 
+// ===== 状态栏功能 =====
+function checkHookStatus() {
+  const statusDot = document.getElementById('hookStatus');
+  const statusText = document.getElementById('hookStatusText');
+
+  // 检查是否有最近的错误
+  const recentErrors = entries.filter(e => e.success === false).slice(-5);
+
+  if (recentErrors.length > 0) {
+    statusDot.className = 'status-dot error';
+    statusText.textContent = '有错误';
+    statusText.style.color = 'var(--fail)';
+
+    // 显示最近错误
+    const lastError = recentErrors[recentErrors.length - 1];
+    const errorEl = document.getElementById('lastError');
+    const errorTextEl = document.getElementById('lastErrorText');
+
+    if (lastError.error) {
+      errorEl.textContent = lastError.error.substring(0, 50) + (lastError.error.length > 50 ? '...' : '');
+      errorEl.style.display = 'inline';
+      errorEl.title = lastError.error;
+      errorTextEl.style.display = 'none';
+    } else {
+      errorEl.style.display = 'none';
+      errorTextEl.textContent = lastError.tool_name + ' 失败';
+      errorTextEl.style.color = 'var(--fail)';
+    }
+  } else {
+    statusDot.className = 'status-dot ok';
+    statusText.textContent = '正常';
+    statusText.style.color = 'var(--success)';
+    document.getElementById('lastError').style.display = 'none';
+    document.getElementById('lastErrorText').textContent = '无';
+    document.getElementById('lastErrorText').style.color = '';
+  }
+
+  // 更新慢调用计数
+  const slowCount = entries.filter(e => e.duration_ms != null && e.duration_ms >= 1000).length;
+  document.getElementById('slowCount').textContent = slowCount;
+  document.getElementById('slowCount').style.color = slowCount > 0 ? 'var(--speed-mid)' : '';
+}
+
+function showErrorLog() {
+  // 尝试获取错误日志
+  fetch('trace_error.log?t=' + Date.now(), { cache: 'no-store' })
+    .then(resp => {
+      if (!resp.ok) throw new Error('No error log');
+      return resp.text();
+    })
+    .then(text => {
+      if (text.trim()) {
+        alert('错误日志:\n\n' + text);
+      } else {
+        alert('没有错误日志');
+      }
+    })
+    .catch(() => {
+      alert('无法读取错误日志文件\n\n请检查: ~/.claude/tooltrace/trace_error.log');
+    });
+}
+
 // ===== 初始化 =====
 setTheme(getTheme());
 const sortDesc = getSortOrder() === 'desc';
 document.getElementById('sortBtn').textContent = sortDesc ? '⬇ 最新优先' : '⬆ 最早优先';
-loadProjects().then(() => loadLog());
+loadProjects().then(() => {
+  loadLog();
+  // 初始化状态栏
+  setTimeout(checkHookStatus, 1000);
+});
 // 页面可见时重新加载（但保持增量模式）
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden && !autoRefreshTimer) loadLog();
+  if (!document.hidden && !autoRefreshTimer) {
+    loadLog();
+    checkHookStatus();
+  }
 });
 </script>
 </body>
