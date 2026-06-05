@@ -326,6 +326,114 @@
   .empty-state h2 { font-size: 16px; color: var(--text-secondary); font-weight: 600; }
   .empty-state p { margin-top: 4px; font-size: 13px; color: var(--text-muted); }
 
+  /* ===== 自定义 Modal ===== */
+  .custom-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.5);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+  .custom-modal-overlay.show {
+    display: flex;
+  }
+  .custom-modal {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    box-shadow: 0 20px 60px rgba(0,0,0,.3);
+    display: flex;
+    flex-direction: column;
+  }
+  .custom-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .custom-modal-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .custom-modal-close {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: var(--bg);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 18px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all .15s;
+  }
+  .custom-modal-close:hover {
+    background: var(--fail-bg);
+    color: var(--fail);
+  }
+  .custom-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .custom-modal-body pre {
+    background: var(--bg);
+    padding: 12px;
+    border-radius: 8px;
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 12px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    margin: 0;
+    user-select: text;
+    cursor: text;
+  }
+  .custom-modal-body .copy-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 8px;
+    text-align: right;
+  }
+  .custom-modal-footer {
+    margin-top: 16px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  .custom-modal-footer button {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 14px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .custom-modal-footer button:hover {
+    background: var(--surface-hover);
+  }
+  .custom-modal-footer button.primary {
+    background: var(--color-read);
+    color: white;
+    border-color: var(--color-read);
+  }
+  .custom-modal-footer button.primary:hover {
+    opacity: .9;
+  }
+
   .footer {
     margin-top: 12px; padding: 10px 16px; background: var(--surface);
     border-radius: var(--radius); box-shadow: var(--shadow);
@@ -567,6 +675,7 @@
       <button id="sortBtn" onclick="toggleSort()" title="切换排序">⬇ 最新优先</button>
       <input type="text" class="search-box" id="search"
         placeholder="搜索 工具名 / 会话ID / 文件…" oninput="onSearchInput()">
+      <button onclick="window.open('dashboard.html', '_blank')" title="打开分析仪表盘" style="background: var(--color-mcp-bg); color: var(--color-mcp); border-color: var(--color-mcp);">📊 仪表盘</button>
       <button class="theme-btn" onclick="toggleTheme()" id="themeBtn" title="切换主题">🌙</button>
     </div>
   </div>
@@ -576,7 +685,7 @@
 <div id="sessionContainer"></div>
 
 <div class="footer">
-  <span>📁 <code>~/.claude/tooltrace/logs/</code> · <a href="dashboard.html" target="_blank">📊 仪表盘</a></span>
+  <span>📁 <code>~/.claude/tooltrace/logs/</code></span>
   <span>
     <a href="#" onclick="toggleCollapseAll(event)">📂 全部展开/折叠</a>
     · <a href="#" onclick="showClearModal()">🗑 清空记录</a>
@@ -595,6 +704,23 @@
     <div class="actions">
       <button class="cancel" onclick="hideClearModal()">取消</button>
       <button class="confirm" onclick="doClear()">确认清空</button>
+    </div>
+  </div>
+</div>
+
+<!-- 自定义 Modal -->
+<div class="custom-modal-overlay" id="customModal">
+  <div class="custom-modal">
+    <div class="custom-modal-header">
+      <h3 id="customModalTitle">提示</h3>
+      <button class="custom-modal-close" onclick="hideCustomModal()">×</button>
+    </div>
+    <div class="custom-modal-body" id="customModalBody">
+      内容
+    </div>
+    <div class="custom-modal-footer">
+      <button onclick="hideCustomModal()">关闭</button>
+      <button class="primary" id="customModalCopy" onclick="copyModalContent()">📋 复制</button>
     </div>
   </div>
 </div>
@@ -1269,7 +1395,14 @@ async function doClear() {
     // 或者直接提示手动操作
   } catch (e) {}
 
-  alert(`请在终端执行清空当前项目:\n\necho "" > ~/.claude/tooltrace/logs/${currentProject}.jsonl\necho "" > ~/.claude/tooltrace/states/${currentProject}.json`);
+  showCustomModal('🗑 清空记录', `
+    <div style="padding:10px">
+      <p style="margin-bottom:16px">请在终端执行以下命令清空当前项目：</p>
+      <pre>echo "" > ~/.claude/tooltrace/logs/${currentProject}.jsonl
+echo "" > ~/.claude/tooltrace/states/${currentProject}.json</pre>
+      <div class="copy-hint">点击"复制"按钮可复制命令</div>
+    </div>
+  `, true);
 
   // 重置本地状态
   entries = [];
@@ -1432,15 +1565,63 @@ function showErrorLog() {
     })
     .then(text => {
       if (text.trim()) {
-        alert('错误日志:\n\n' + text);
+        showCustomModal('📋 错误日志', `<pre>${text.replace(/</g, '&lt;')}</pre><div class="copy-hint">点击"复制"按钮可复制内容</div>`, true);
       } else {
-        alert('没有错误日志');
+        showCustomModal('📋 错误日志', '<div style="text-align:center;padding:20px;color:var(--text-muted)">✅ 没有错误日志</div>', false);
       }
     })
     .catch(() => {
-      alert('无法读取错误日志文件\n\n请检查: ~/.claude/tooltrace/trace_error.log');
+      showCustomModal('❌ 错误', '<div style="padding:20px">无法读取错误日志文件<br><br>请检查: <code>~/.claude/tooltrace/trace_error.log</code></div>', false);
     });
 }
+
+// ===== 自定义 Modal =====
+function showCustomModal(title, content, showCopy = true) {
+  document.getElementById('customModalTitle').innerHTML = title;
+  document.getElementById('customModalBody').innerHTML = content;
+  document.getElementById('customModalCopy').style.display = showCopy ? 'block' : 'none';
+  document.getElementById('customModal').classList.add('show');
+}
+
+function hideCustomModal() {
+  document.getElementById('customModal').classList.remove('show');
+}
+
+function copyModalContent() {
+  const content = document.getElementById('customModalBody').innerText;
+  navigator.clipboard.writeText(content).then(() => {
+    const btn = document.getElementById('customModalCopy');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '✅ 已复制';
+    setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+  }).catch(() => {
+    // 降级方案
+    const textarea = document.createElement('textarea');
+    textarea.value = content;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+
+    const btn = document.getElementById('customModalCopy');
+    btn.innerHTML = '✅ 已复制';
+    setTimeout(() => { btn.innerHTML = '📋 复制'; }, 2000);
+  });
+}
+
+// 点击 overlay 关闭 modal
+document.getElementById('customModal').addEventListener('click', (e) => {
+  if (e.target.id === 'customModal') {
+    hideCustomModal();
+  }
+});
+
+// ESC 键关闭 modal
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    hideCustomModal();
+  }
+});
 
 // ===== 初始化 =====
 setTheme(getTheme());
