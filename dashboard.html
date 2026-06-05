@@ -73,6 +73,53 @@
     border-color: var(--primary);
   }
 
+  .export-menu {
+    position: relative;
+    display: inline-block;
+  }
+
+  .export-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,.15);
+    z-index: 100;
+    min-width: 160px;
+  }
+
+  .export-dropdown.show {
+    display: block;
+  }
+
+  .export-dropdown button {
+    display: block;
+    width: 100%;
+    padding: 10px 16px;
+    text-align: left;
+    border: none;
+    background: none;
+    color: var(--text);
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .export-dropdown button:hover {
+    background: var(--bg);
+  }
+
+  .export-dropdown button:first-child {
+    border-radius: 8px 8px 0 0;
+  }
+
+  .export-dropdown button:last-child {
+    border-radius: 0 0 8px 8px;
+  }
+
   .dashboard-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -361,6 +408,14 @@
       <option value="all">全部</option>
     </select>
     <button onclick="loadData()">🔄 刷新</button>
+    <div class="export-menu">
+      <button onclick="toggleExportMenu()">📥 导出</button>
+      <div class="export-dropdown" id="exportDropdown">
+        <button onclick="exportJSON()">📄 导出 JSON</button>
+        <button onclick="exportCSV()">📊 导出 CSV</button>
+        <button onclick="exportMarkdown()">📝 导出 Markdown</button>
+      </div>
+    </div>
     <button onclick="toggleTheme()">🌙</button>
   </div>
 </div>
@@ -809,6 +864,187 @@ function formatDuration(ms) {
 // 主题
 function toggleTheme() {
   document.body.classList.toggle('dark');
+}
+
+// ===== 导出功能 =====
+function toggleExportMenu() {
+  const dropdown = document.getElementById('exportDropdown');
+  dropdown.classList.toggle('show');
+
+  // 点击外部关闭
+  const closeMenu = (e) => {
+    if (!e.target.closest('.export-menu')) {
+      dropdown.classList.remove('show');
+      document.removeEventListener('click', closeMenu);
+    }
+  };
+  setTimeout(() => document.addEventListener('click', closeMenu), 0);
+}
+
+function exportJSON() {
+  const data = {
+    exportTime: new Date().toISOString(),
+    totalEntries: allEntries.length,
+    entries: allEntries
+  };
+
+  downloadFile(
+    JSON.stringify(data, null, 2),
+    `tool-tracker-${formatDate(new Date())}.json`,
+    'application/json'
+  );
+  document.getElementById('exportDropdown').classList.remove('show');
+}
+
+function exportCSV() {
+  const headers = ['时间', '工具', '会话ID', '项目', '成功', '耗时(ms)', '详情'];
+  const rows = allEntries.map(e => {
+    const input = e.input_summary || {};
+    const detail = input.file_path || input.command || input.pattern || '';
+    return [
+      new Date(e.ts).toLocaleString(),
+      e.tool_name,
+      e.session_id || '',
+      e.project_name || '',
+      e.success !== false ? '是' : '否',
+      e.duration_ms || '',
+      `"${String(detail).replace(/"/g, '""')}"`
+    ].join(',');
+  });
+
+  const csv = '﻿' + headers.join(',') + '\n' + rows.join('\n');
+  downloadFile(csv, `tool-tracker-${formatDate(new Date())}.csv`, 'text/csv;charset=utf-8');
+  document.getElementById('exportDropdown').classList.remove('show');
+}
+
+function exportMarkdown() {
+  const stats = calculateStats();
+
+  let md = `# AI Tool Tracker 报告\n\n`;
+  md += `**导出时间**: ${new Date().toLocaleString()}\n\n`;
+
+  md += `## 📊 总览\n\n`;
+  md += `| 指标 | 数值 |\n|------|------|\n`;
+  md += `| 总调用次数 | ${stats.total} |\n`;
+  md += `| 成功次数 | ${stats.success} |\n`;
+  md += `| 失败次数 | ${stats.fail} |\n`;
+  md += `| 成功率 | ${stats.successRate}% |\n`;
+  md += `| 平均耗时 | ${formatDuration(stats.avgDuration)} |\n`;
+  md += `| 慢调用 (>1s) | ${stats.slowCount} |\n\n`;
+
+  md += `## 🔧 工具使用 TOP 10\n\n`;
+  md += `| 排名 | 工具 | 次数 | 占比 |\n|------|------|------|------|\n`;
+  stats.topTools.forEach((t, i) => {
+    md += `| ${i + 1} | ${t.name} | ${t.count} | ${t.percent}% |\n`;
+  });
+  md += '\n';
+
+  if (stats.topSlow.length > 0) {
+    md += `## 🐌 慢调用 TOP 10\n\n`;
+    md += `| 排名 | 工具 | 耗时 | 详情 |\n|------|------|------|------|\n`;
+    stats.topSlow.forEach((s, i) => {
+      md += `| ${i + 1} | ${s.tool} | ${formatDuration(s.duration)} | ${s.detail.substring(0, 30)}... |\n`;
+    });
+    md += '\n';
+  }
+
+  if (stats.errorTypes.length > 0) {
+    md += `## ❌ 错误类型\n\n`;
+    md += `| 类型 | 次数 |\n|------|------|\n`;
+    stats.errorTypes.forEach(e => {
+      md += `| ${e.type} | ${e.count} |\n`;
+    });
+    md += '\n';
+  }
+
+  md += `## 💡 效率洞察\n\n`;
+  stats.insights.forEach(i => {
+    md += `- ${i.replace(/<[^>]*>/g, '')}\n`;
+  });
+
+  downloadFile(md, `tool-tracker-${formatDate(new Date())}.md`, 'text/markdown;charset=utf-8');
+  document.getElementById('exportDropdown').classList.remove('show');
+}
+
+function calculateStats() {
+  const total = allEntries.length;
+  const success = allEntries.filter(e => e.success !== false).length;
+  const fail = total - success;
+  const successRate = total > 0 ? (success / total * 100).toFixed(1) : 0;
+
+  const durations = allEntries.map(e => e.duration_ms).filter(d => d != null);
+  const avgDuration = durations.length > 0 ? durations.reduce((a, b) => a + b, 0) / durations.length : 0;
+  const slowCount = durations.filter(d => d >= 1000).length;
+
+  // 工具使用统计
+  const toolCounts = {};
+  allEntries.forEach(e => {
+    toolCounts[e.tool_name] = (toolCounts[e.tool_name] || 0) + 1;
+  });
+  const topTools = Object.entries(toolCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([name, count]) => ({
+      name,
+      count,
+      percent: (count / total * 100).toFixed(1)
+    }));
+
+  // 慢调用排行
+  const topSlow = allEntries
+    .filter(e => e.duration_ms != null)
+    .sort((a, b) => b.duration_ms - a.duration_ms)
+    .slice(0, 10)
+    .map(e => ({
+      tool: e.tool_name,
+      duration: e.duration_ms,
+      detail: (e.input_summary?.file_path || e.input_summary?.command || '')
+    }));
+
+  // 错误类型
+  const errorTypeMap = {};
+  allEntries.filter(e => e.success === false).forEach(e => {
+    let type = '其他错误';
+    const error = e.error || '';
+    if (error.includes('SyntaxError')) type = '语法错误';
+    else if (error.includes('ReferenceError') || error.includes('TypeError')) type = '运行时错误';
+    else if (error.includes('ENOENT') || error.includes('No such file')) type = '文件不存在';
+    else if (error.includes('Permission denied')) type = '权限错误';
+    else if (error.includes('Exit code')) type = '命令执行失败';
+    errorTypeMap[type] = (errorTypeMap[type] || 0) + 1;
+  });
+  const errorTypes = Object.entries(errorTypeMap)
+    .sort((a, b) => b[1] - a[1])
+    .map(([type, count]) => ({ type, count }));
+
+  // 洞察
+  const insights = [];
+  const slowTools = {};
+  allEntries.filter(e => e.duration_ms >= 1000).forEach(e => {
+    slowTools[e.tool_name] = (slowTools[e.tool_name] || 0) + 1;
+  });
+  const topSlowTool = Object.entries(slowTools).sort((a, b) => b[1] - a[1])[0];
+  if (topSlowTool) {
+    insights.push(`主要性能瓶颈: ${topSlowTool[0]} 占慢调用的 ${topSlowTool[1]} 次`);
+  }
+
+  return { total, success, fail, successRate, avgDuration, slowCount, topTools, topSlow, errorTypes, insights };
+}
+
+function downloadFile(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function formatDate(date) {
+  return date.toISOString().split('T')[0];
 }
 
 // 初始化
