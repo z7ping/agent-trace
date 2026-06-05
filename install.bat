@@ -18,7 +18,7 @@ if %errorlevel% neq 0 (
     echo 请先安装 Node.js: https://nodejs.org/
     echo.
     echo 或者使用 Python 版本（需要 Python 3.6+）：
-    echo   设置 hooks command 为: python ~/.claude/tooltrace/prelog.py
+    echo   设置 hooks command 为: python ~/.claude/tooltrace/hooks/prelog.py
     pause
     exit /b 1
 )
@@ -30,6 +30,7 @@ REM 创建目录
 echo.
 echo 📁 创建目录: %TOOLTRACE_DIR%
 if not exist "%TOOLTRACE_DIR%" mkdir "%TOOLTRACE_DIR%"
+if not exist "%TOOLTRACE_DIR%\hooks" mkdir "%TOOLTRACE_DIR%\hooks"
 if not exist "%TOOLTRACE_DIR%\logs" mkdir "%TOOLTRACE_DIR%\logs"
 if not exist "%TOOLTRACE_DIR%\states" mkdir "%TOOLTRACE_DIR%\states"
 
@@ -37,31 +38,35 @@ REM 复制文件
 echo 📋 复制文件...
 set "SCRIPT_DIR=%~dp0"
 
-if exist "%SCRIPT_DIR%prelog.js" (
-    copy "%SCRIPT_DIR%prelog.js" "%TOOLTRACE_DIR%" >nul
-    copy "%SCRIPT_DIR%log.js" "%TOOLTRACE_DIR%" >nul
-    copy "%SCRIPT_DIR%viewer.html" "%TOOLTRACE_DIR%" >nul
-    copy "%SCRIPT_DIR%server.js" "%TOOLTRACE_DIR%" >nul
-    copy "%SCRIPT_DIR%start.sh" "%TOOLTRACE_DIR%" >nul
-    copy "%SCRIPT_DIR%start.bat" "%TOOLTRACE_DIR%" >nul
-    copy "%SCRIPT_DIR%start.ps1" "%TOOLTRACE_DIR%" >nul
-    copy "%SCRIPT_DIR%README.md" "%TOOLTRACE_DIR%" >nul
-) else if exist "%SCRIPT_DIR%.claude\tooltrace\prelog.js" (
-    copy "%SCRIPT_DIR%.claude\tooltrace\prelog.js" "%TOOLTRACE_DIR%" >nul
-    copy "%SCRIPT_DIR%.claude\tooltrace\log.js" "%TOOLTRACE_DIR%" >nul
-    copy "%SCRIPT_DIR%.claude\tooltrace\viewer.html" "%TOOLTRACE_DIR%" >nul
-    copy "%SCRIPT_DIR%.claude\tooltrace\server.js" "%TOOLTRACE_DIR%" >nul
-    copy "%SCRIPT_DIR%.claude\tooltrace\start.sh" "%TOOLTRACE_DIR%" >nul
-    copy "%SCRIPT_DIR%.claude\tooltrace\start.bat" "%TOOLTRACE_DIR%" >nul
-    copy "%SCRIPT_DIR%.claude\tooltrace\start.ps1" "%TOOLTRACE_DIR%" >nul
-    copy "%SCRIPT_DIR%.claude\tooltrace\README.md" "%TOOLTRACE_DIR%" >nul
+if exist "%SCRIPT_DIR%hooks\prelog.js" (
+    copy "%SCRIPT_DIR%hooks\prelog.js" "%TOOLTRACE_DIR%\hooks\" >nul
+    copy "%SCRIPT_DIR%hooks\prelog.py" "%TOOLTRACE_DIR%\hooks\" >nul
+    copy "%SCRIPT_DIR%hooks\log.js" "%TOOLTRACE_DIR%\hooks\" >nul
+    copy "%SCRIPT_DIR%hooks\log.py" "%TOOLTRACE_DIR%\hooks\" >nul
+    copy "%SCRIPT_DIR%viewer.html" "%TOOLTRACE_DIR%\" >nul
+    copy "%SCRIPT_DIR%server.js" "%TOOLTRACE_DIR%\" >nul
+    copy "%SCRIPT_DIR%start.sh" "%TOOLTRACE_DIR%\" >nul
+    copy "%SCRIPT_DIR%start.bat" "%TOOLTRACE_DIR%\" >nul
+    copy "%SCRIPT_DIR%start.ps1" "%TOOLTRACE_DIR%\" >nul
+    copy "%SCRIPT_DIR%README.md" "%TOOLTRACE_DIR%\" >nul
+) else if exist "%SCRIPT_DIR%.claude\tooltrace\hooks\prelog.js" (
+    copy "%SCRIPT_DIR%.claude\tooltrace\hooks\prelog.js" "%TOOLTRACE_DIR%\hooks\" >nul
+    copy "%SCRIPT_DIR%.claude\tooltrace\hooks\prelog.py" "%TOOLTRACE_DIR%\hooks\" >nul
+    copy "%SCRIPT_DIR%.claude\tooltrace\hooks\log.js" "%TOOLTRACE_DIR%\hooks\" >nul
+    copy "%SCRIPT_DIR%.claude\tooltrace\hooks\log.py" "%TOOLTRACE_DIR%\hooks\" >nul
+    copy "%SCRIPT_DIR%.claude\tooltrace\viewer.html" "%TOOLTRACE_DIR%\" >nul
+    copy "%SCRIPT_DIR%.claude\tooltrace\server.js" "%TOOLTRACE_DIR%\" >nul
+    copy "%SCRIPT_DIR%.claude\tooltrace\start.sh" "%TOOLTRACE_DIR%\" >nul
+    copy "%SCRIPT_DIR%.claude\tooltrace\start.bat" "%TOOLTRACE_DIR%\" >nul
+    copy "%SCRIPT_DIR%.claude\tooltrace\start.ps1" "%TOOLTRACE_DIR%\" >nul
+    copy "%SCRIPT_DIR%.claude\tooltrace\README.md" "%TOOLTRACE_DIR%\" >nul
 ) else (
     echo ⚠️  警告: 未找到源文件
 )
 
 REM 获取路径（转义反斜杠）
-set "PRELOG_PATH=%TOOLTRACE_DIR%\prelog.js"
-set "LOG_PATH=%TOOLTRACE_DIR%\log.js"
+set "PRELOG_PATH=%TOOLTRACE_DIR%\hooks\prelog.js"
+set "LOG_PATH=%TOOLTRACE_DIR%\hooks\log.js"
 set "PRELOG_PATH=!PRELOG_PATH:\=\\!"
 set "LOG_PATH=!LOG_PATH:\=\\!"
 
@@ -116,7 +121,7 @@ echo 📝 下一步：
 echo    1. 重启 Claude Code（使配置生效）
 echo    2. 启动 HTTP 服务器查看工具调用：
 echo       cd %TOOLTRACE_DIR%
-echo       %NODE_CMD% server.js
+echo       %NODE_CMD% server.js 8080
 echo    3. 打开浏览器访问: http://localhost:8080/viewer.html
 echo.
 echo 📚 文档: %TOOLTRACE_DIR%\README.md

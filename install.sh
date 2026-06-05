@@ -18,7 +18,7 @@ if ! command -v node &> /dev/null; then
     echo "请先安装 Node.js: https://nodejs.org/"
     echo ""
     echo "或者使用 Python 版本（需要 Python 3.6+）："
-    echo "  设置 hooks command 为: python ~/.claude/tooltrace/prelog.py"
+    echo "  设置 hooks command 为: python ~/.claude/tooltrace/hooks/prelog.py"
     exit 1
 fi
 
@@ -28,32 +28,45 @@ echo "✅ 找到 Node.js: $NODE_CMD"
 # 创建目录
 echo ""
 echo "📁 创建目录: $TOOLTRACE_DIR"
+mkdir -p "$TOOLTRACE_DIR/hooks"
 mkdir -p "$TOOLTRACE_DIR/logs"
 mkdir -p "$TOOLTRACE_DIR/states"
 
 # 复制文件（如果是从 git 仓库运行）
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-if [ -f "$SCRIPT_DIR/prelog.py" ]; then
+if [ -f "$SCRIPT_DIR/hooks/prelog.js" ]; then
     echo "📋 复制文件..."
-    cp "$SCRIPT_DIR/prelog.py" "$TOOLTRACE_DIR/"
-    cp "$SCRIPT_DIR/log.py" "$TOOLTRACE_DIR/"
+    cp "$SCRIPT_DIR/hooks/prelog.js" "$TOOLTRACE_DIR/hooks/"
+    cp "$SCRIPT_DIR/hooks/prelog.py" "$TOOLTRACE_DIR/hooks/"
+    cp "$SCRIPT_DIR/hooks/log.js" "$TOOLTRACE_DIR/hooks/"
+    cp "$SCRIPT_DIR/hooks/log.py" "$TOOLTRACE_DIR/hooks/"
     cp "$SCRIPT_DIR/viewer.html" "$TOOLTRACE_DIR/"
+    cp "$SCRIPT_DIR/server.js" "$TOOLTRACE_DIR/"
+    cp "$SCRIPT_DIR/start.sh" "$TOOLTRACE_DIR/"
+    cp "$SCRIPT_DIR/start.bat" "$TOOLTRACE_DIR/"
+    cp "$SCRIPT_DIR/start.ps1" "$TOOLTRACE_DIR/"
     cp "$SCRIPT_DIR/README.md" "$TOOLTRACE_DIR/"
-elif [ -f "$SCRIPT_DIR/.claude/tooltrace/prelog.py" ]; then
+elif [ -f "$SCRIPT_DIR/.claude/tooltrace/hooks/prelog.js" ]; then
     # 从项目根目录运行
     echo "📋 复制文件..."
-    cp "$SCRIPT_DIR/.claude/tooltrace/prelog.py" "$TOOLTRACE_DIR/"
-    cp "$SCRIPT_DIR/.claude/tooltrace/log.py" "$TOOLTRACE_DIR/"
+    cp "$SCRIPT_DIR/.claude/tooltrace/hooks/prelog.js" "$TOOLTRACE_DIR/hooks/"
+    cp "$SCRIPT_DIR/.claude/tooltrace/hooks/prelog.py" "$TOOLTRACE_DIR/hooks/"
+    cp "$SCRIPT_DIR/.claude/tooltrace/hooks/log.js" "$TOOLTRACE_DIR/hooks/"
+    cp "$SCRIPT_DIR/.claude/tooltrace/hooks/log.py" "$TOOLTRACE_DIR/hooks/"
     cp "$SCRIPT_DIR/.claude/tooltrace/viewer.html" "$TOOLTRACE_DIR/"
+    cp "$SCRIPT_DIR/.claude/tooltrace/server.js" "$TOOLTRACE_DIR/"
+    cp "$SCRIPT_DIR/.claude/tooltrace/start.sh" "$TOOLTRACE_DIR/"
+    cp "$SCRIPT_DIR/.claude/tooltrace/start.bat" "$TOOLTRACE_DIR/"
+    cp "$SCRIPT_DIR/.claude/tooltrace/start.ps1" "$TOOLTRACE_DIR/"
     cp "$SCRIPT_DIR/.claude/tooltrace/README.md" "$TOOLTRACE_DIR/"
 else
     echo "⚠️  警告: 未找到源文件，请确保在 tooltrace 目录或项目根目录运行此脚本"
 fi
 
 # 获取脚本的完整路径
-PRELOG_PATH="$TOOLTRACE_DIR/prelog.js"
-LOG_PATH="$TOOLTRACE_DIR/log.js"
+PRELOG_PATH="$TOOLTRACE_DIR/hooks/prelog.js"
+LOG_PATH="$TOOLTRACE_DIR/hooks/log.js"
 
 # 转换路径（Windows Git Bash 需要）
 if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]]; then
@@ -185,7 +198,7 @@ echo "📝 下一步："
 echo "   1. 重启 Claude Code（使配置生效）"
 echo "   2. 启动 HTTP 服务器查看工具调用："
 echo "      cd $TOOLTRACE_DIR"
-echo "      $PYTHON_CMD -m http.server 8080"
+echo "      $NODE_CMD server.js 8080"
 echo "   3. 打开浏览器访问: http://localhost:8080/viewer.html"
 echo ""
 echo "📚 文档: $TOOLTRACE_DIR/README.md"

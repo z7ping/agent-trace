@@ -10,7 +10,8 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-const BASE_DIR = __dirname;
+// 上级目录（tooltrace 根目录）
+const BASE_DIR = path.join(__dirname, '..');
 const STATES_DIR = path.join(BASE_DIR, 'states');
 
 // 确保目录存在
