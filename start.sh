@@ -122,7 +122,7 @@ const mimeTypes = {
 };
 
 const server = http.createServer((req, res) => {
-    let filePath = path.join(DIR, req.url === '/' ? 'viewer.html' : req.url);
+    let filePath = path.join(DIR, req.url === '/' ? 'index.html' : req.url);
     const ext = path.extname(filePath).toLowerCase();
     const contentType = mimeTypes[ext] || 'application/octet-stream';
 
@@ -210,7 +210,7 @@ echo "🚀 启动服务器..."
 echo "   命令: $START_CMD"
 echo ""
 echo "📂 服务目录: $SCRIPT_DIR"
-echo "🌐 访问地址: http://localhost:$PORT/viewer.html"
+echo "🌐 访问地址: http://localhost:$PORT/"
 echo ""
 echo "💡 提示："
 echo "   • 按 Ctrl+C 停止服务器"

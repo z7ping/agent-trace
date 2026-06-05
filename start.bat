@@ -72,7 +72,7 @@ echo.
 if "%SERVER%"=="python" (
     echo Server: Python HTTP Server
     echo Dir: %SCRIPT_DIR%
-    echo URL: http://localhost:%PORT%/viewer.html
+    echo URL: http://localhost:%PORT%/
     echo.
     echo Press Ctrl+C to stop
     echo ====================================
@@ -82,7 +82,7 @@ if "%SERVER%"=="python" (
 ) else if "%SERVER%"=="node-server" (
     echo Server: Node.js Server (zero-dependency)
     echo Dir: %SCRIPT_DIR%
-    echo URL: http://localhost:%PORT%/viewer.html
+    echo URL: http://localhost:%PORT%/
     echo.
     echo Press Ctrl+C to stop
     echo ====================================
@@ -92,7 +92,7 @@ if "%SERVER%"=="python" (
 ) else if "%SERVER%"=="npx" (
     echo Server: npx http-server
     echo Dir: %SCRIPT_DIR%
-    echo URL: http://localhost:%PORT%/viewer.html
+    echo URL: http://localhost:%PORT%/
     echo.
     echo Press Ctrl+C to stop
     echo ====================================
@@ -102,7 +102,7 @@ if "%SERVER%"=="python" (
 ) else if "%SERVER%"=="node" (
     echo Server: Node.js Server
     echo Dir: %SCRIPT_DIR%
-    echo URL: http://localhost:%PORT%/viewer.html
+    echo URL: http://localhost:%PORT%/
     echo.
     echo Press Ctrl+C to stop
     echo ====================================
@@ -112,7 +112,7 @@ if "%SERVER%"=="python" (
 ) else if "%SERVER%"=="php" (
     echo Server: PHP Built-in Server
     echo Dir: %SCRIPT_DIR%
-    echo URL: http://localhost:%PORT%/viewer.html
+    echo URL: http://localhost:%PORT%/
     echo.
     echo Press Ctrl+C to stop
     echo ====================================
@@ -122,7 +122,7 @@ if "%SERVER%"=="python" (
 ) else if "%SERVER%"=="ruby" (
     echo Server: Ruby WEBrick
     echo Dir: %SCRIPT_DIR%
-    echo URL: http://localhost:%PORT%/viewer.html
+    echo URL: http://localhost:%PORT%/
     echo.
     echo Press Ctrl+C to stop
     echo ====================================
