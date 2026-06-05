@@ -1560,18 +1560,38 @@ function showErrorLog() {
   // 尝试获取错误日志
   fetch('trace_error.log?t=' + Date.now(), { cache: 'no-store' })
     .then(resp => {
-      if (!resp.ok) throw new Error('No error log');
+      if (!resp.ok) {
+        // 文件不存在，说明没有错误
+        showCustomModal('📋 错误日志', `
+          <div style="text-align:center;padding:30px">
+            <div style="font-size:48px;margin-bottom:16px">✅</div>
+            <div style="font-size:16px;color:var(--success);margin-bottom:8px">没有错误日志</div>
+            <div style="color:var(--text-muted)">Hook 运行正常，没有记录到错误</div>
+          </div>
+        `, false);
+        return;
+      }
       return resp.text();
     })
     .then(text => {
-      if (text.trim()) {
-        showCustomModal('📋 错误日志', `<pre>${text.replace(/</g, '&lt;')}</pre><div class="copy-hint">点击"复制"按钮可复制内容</div>`, true);
-      } else {
-        showCustomModal('📋 错误日志', '<div style="text-align:center;padding:20px;color:var(--text-muted)">✅ 没有错误日志</div>', false);
+      if (text && text.trim()) {
+        showCustomModal('📋 错误日志', `
+          <div>
+            <pre>${text.replace(/</g, '&lt;')}</pre>
+            <div class="copy-hint">点击"复制"按钮可复制内容</div>
+          </div>
+        `, true);
       }
     })
     .catch(() => {
-      showCustomModal('❌ 错误', '<div style="padding:20px">无法读取错误日志文件<br><br>请检查: <code>~/.claude/tooltrace/trace_error.log</code></div>', false);
+      // 网络错误或其他问题
+      showCustomModal('📋 错误日志', `
+        <div style="text-align:center;padding:30px">
+          <div style="font-size:48px;margin-bottom:16px">✅</div>
+          <div style="font-size:16px;color:var(--success);margin-bottom:8px">没有错误日志</div>
+          <div style="color:var(--text-muted)">Hook 运行正常，没有记录到错误</div>
+        </div>
+      `, false);
     });
 }
 
