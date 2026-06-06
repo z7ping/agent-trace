@@ -282,36 +282,42 @@ function processRecord(data) {
 }
 
 function main() {
-    let input = '';
+    try {
+        const chunks = [];
+        process.stdin.on('data', (chunk) => chunks.push(chunk));
+        process.stdin.on('end', () => {
+            try {
+                const input = Buffer.concat(chunks).toString('utf-8');
+                if (!input.trim()) return;
 
-    process.stdin.setEncoding('utf-8');
+                const data = JSON.parse(input);
 
-    process.stdin.on('data', (chunk) => {
-        input += chunk;
-    });
-
-    process.stdin.on('end', () => {
-        try {
-            if (!input.trim()) return;
-
-            const data = JSON.parse(input);
-
-            if (Array.isArray(data)) {
-                data.forEach(item => processRecord(item));
-            } else {
-                processRecord(data);
+                if (Array.isArray(data)) {
+                    data.forEach(item => processRecord(item));
+                } else {
+                    processRecord(data);
+                }
+            } catch (e) {
+                // 记录错误日志
+                try {
+                    const errorLog = path.join(BASE_DIR, 'trace_error.log');
+                    const timestamp = new Date().toISOString();
+                    fs.appendFileSync(errorLog, `[${timestamp}] ${e.message}\n${e.stack}\n`, 'utf-8');
+                } catch (logError) {
+                    // 忽略日志错误
+                }
             }
-        } catch (e) {
-            // 记录错误日志
+        });
+        process.stdin.on('error', (e) => {
             try {
                 const errorLog = path.join(BASE_DIR, 'trace_error.log');
                 const timestamp = new Date().toISOString();
-                fs.appendFileSync(errorLog, `[${timestamp}] ${e.message}\n${e.stack}\n`, 'utf-8');
-            } catch (logError) {
-                // 忽略日志错误
-            }
-        }
-    });
+                fs.appendFileSync(errorLog, `[${timestamp}] stdin error: ${e.message}\n`, 'utf-8');
+            } catch (_) {}
+        });
+    } catch (e) {
+        // 静默失败
+    }
 }
 
 main();

@@ -18,7 +18,7 @@ if ! command -v node &> /dev/null; then
     echo "请先安装 Node.js: https://nodejs.org/"
     echo ""
     echo "或者使用 Python 版本（需要 Python 3.6+）："
-    echo "  设置 hooks command 为: python ~/.claude/tooltrace/hooks/prelog.py"
+    echo "  设置 hooks command 为: python $TOOLTRACE_DIR/hooks/prelog.py"
     exit 1
 fi
 
@@ -47,21 +47,8 @@ if [ -f "$SCRIPT_DIR/hooks/prelog.js" ]; then
     cp "$SCRIPT_DIR/start.bat" "$TOOLTRACE_DIR/"
     cp "$SCRIPT_DIR/start.ps1" "$TOOLTRACE_DIR/"
     cp "$SCRIPT_DIR/README.md" "$TOOLTRACE_DIR/"
-elif [ -f "$SCRIPT_DIR/.claude/tooltrace/hooks/prelog.js" ]; then
-    # 从项目根目录运行
-    echo "📋 复制文件..."
-    cp "$SCRIPT_DIR/.claude/tooltrace/hooks/prelog.js" "$TOOLTRACE_DIR/hooks/"
-    cp "$SCRIPT_DIR/.claude/tooltrace/hooks/prelog.py" "$TOOLTRACE_DIR/hooks/"
-    cp "$SCRIPT_DIR/.claude/tooltrace/hooks/log.js" "$TOOLTRACE_DIR/hooks/"
-    cp "$SCRIPT_DIR/.claude/tooltrace/hooks/log.py" "$TOOLTRACE_DIR/hooks/"
-    cp "$SCRIPT_DIR/.claude/tooltrace/index.html" "$TOOLTRACE_DIR/"
-    cp "$SCRIPT_DIR/.claude/tooltrace/server.js" "$TOOLTRACE_DIR/"
-    cp "$SCRIPT_DIR/.claude/tooltrace/start.sh" "$TOOLTRACE_DIR/"
-    cp "$SCRIPT_DIR/.claude/tooltrace/start.bat" "$TOOLTRACE_DIR/"
-    cp "$SCRIPT_DIR/.claude/tooltrace/start.ps1" "$TOOLTRACE_DIR/"
-    cp "$SCRIPT_DIR/.claude/tooltrace/README.md" "$TOOLTRACE_DIR/"
 else
-    echo "⚠️  警告: 未找到源文件，请确保在 tooltrace 目录或项目根目录运行此脚本"
+    echo "⚠️  警告: 未找到源文件，请确保在 ai-tool-tracker 目录运行此脚本"
 fi
 
 # 获取脚本的完整路径

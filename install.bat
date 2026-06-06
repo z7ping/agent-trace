@@ -18,7 +18,7 @@ if %errorlevel% neq 0 (
     echo 请先安装 Node.js: https://nodejs.org/
     echo.
     echo 或者使用 Python 版本（需要 Python 3.6+）：
-    echo   设置 hooks command 为: python ~/.claude/tooltrace/hooks/prelog.py
+    echo   设置 hooks command 为: python %TOOLTRACE_DIR%\hooks\prelog.py
     pause
     exit /b 1
 )
@@ -49,17 +49,6 @@ if exist "%SCRIPT_DIR%hooks\prelog.js" (
     copy "%SCRIPT_DIR%start.bat" "%TOOLTRACE_DIR%\" >nul
     copy "%SCRIPT_DIR%start.ps1" "%TOOLTRACE_DIR%\" >nul
     copy "%SCRIPT_DIR%README.md" "%TOOLTRACE_DIR%\" >nul
-) else if exist "%SCRIPT_DIR%.claude\tooltrace\hooks\prelog.js" (
-    copy "%SCRIPT_DIR%.claude\tooltrace\hooks\prelog.js" "%TOOLTRACE_DIR%\hooks\" >nul
-    copy "%SCRIPT_DIR%.claude\tooltrace\hooks\prelog.py" "%TOOLTRACE_DIR%\hooks\" >nul
-    copy "%SCRIPT_DIR%.claude\tooltrace\hooks\log.js" "%TOOLTRACE_DIR%\hooks\" >nul
-    copy "%SCRIPT_DIR%.claude\tooltrace\hooks\log.py" "%TOOLTRACE_DIR%\hooks\" >nul
-    copy "%SCRIPT_DIR%.claude\tooltrace\index.html" "%TOOLTRACE_DIR%\" >nul
-    copy "%SCRIPT_DIR%.claude\tooltrace\server.js" "%TOOLTRACE_DIR%\" >nul
-    copy "%SCRIPT_DIR%.claude\tooltrace\start.sh" "%TOOLTRACE_DIR%\" >nul
-    copy "%SCRIPT_DIR%.claude\tooltrace\start.bat" "%TOOLTRACE_DIR%\" >nul
-    copy "%SCRIPT_DIR%.claude\tooltrace\start.ps1" "%TOOLTRACE_DIR%\" >nul
-    copy "%SCRIPT_DIR%.claude\tooltrace\README.md" "%TOOLTRACE_DIR%\" >nul
 ) else (
     echo ⚠️  警告: 未找到源文件
 )

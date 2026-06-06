@@ -917,7 +917,9 @@ function formatAbsTime(ts) {
 }
 
 function formatFullTime(ts) {
-  return new Date(ts).toLocaleString();
+  const d = new Date(ts);
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 
 function relativeTime(ts) {
@@ -1152,7 +1154,7 @@ function buildEntryHTML(entry, depth, expandErrors) {
     </div>
     ${isError && entry.error ? `<div class="error-preview">❌ ${entry.error.replace(/</g, '&lt;')}</div>` : ''}
     ${isError && entry.error ? buildErrorDetails(entry.error) : ''}
-    <div class="details"><pre>${JSON.stringify(entry, null, 2).replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre></div>
+    <div class="details"><pre>${JSON.stringify({...entry, ts: fullTime + ' (' + relTime + ')'}, null, 2).replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre></div>
     ${childrenHtml}
   </div>`;
 }

@@ -15,7 +15,6 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { exec } = require('child_process');
 
 // 配置
 const PORT = process.argv[2] || 8080;
@@ -116,18 +115,6 @@ server.listen(PORT, () => {
     log('💡 按 Ctrl+C 停止服务器', 'dim');
     log('========================================', 'dim');
     console.log('');
-
-    // 尝试自动打开浏览器
-    const url = `http://localhost:${PORT}/`;
-    const platform = process.platform;
-
-    if (platform === 'win32') {
-        exec(`start ${url}`);
-    } else if (platform === 'darwin') {
-        exec(`open ${url}`);
-    } else {
-        exec(`xdg-open ${url}`);
-    }
 });
 
 // 优雅关闭

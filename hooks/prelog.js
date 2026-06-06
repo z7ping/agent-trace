@@ -88,33 +88,31 @@ function logError(e) {
 }
 
 function main() {
-    let input = '';
+    try {
+        const chunks = [];
+        process.stdin.on('data', (chunk) => chunks.push(chunk));
+        process.stdin.on('end', () => {
+            try {
+                const input = Buffer.concat(chunks).toString('utf-8');
+                if (!input.trim()) return;
 
-    process.stdin.setEncoding('utf-8');
+                const data = JSON.parse(input);
 
-    process.stdin.on('data', (chunk) => {
-        input += chunk;
-    });
-
-    process.stdin.on('end', () => {
-        try {
-            if (!input.trim()) return;
-
-            const data = JSON.parse(input);
-
-            if (Array.isArray(data)) {
-                data.forEach(item => process(item));
-            } else {
-                process(data);
+                if (Array.isArray(data)) {
+                    data.forEach(item => process(item));
+                } else {
+                    process(data);
+                }
+            } catch (e) {
+                logError(e);
             }
-        } catch (e) {
+        });
+        process.stdin.on('error', (e) => {
             logError(e);
-        }
-    });
-
-    process.stdin.on('error', (e) => {
+        });
+    } catch (e) {
         logError(e);
-    });
+    }
 }
 
 main();
