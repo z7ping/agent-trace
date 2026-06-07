@@ -46,7 +46,7 @@ function writeState(stateFile, state) {
     fs.writeFileSync(stateFile, JSON.stringify(state, null, 2), 'utf-8');
 }
 
-function process(data) {
+function processEntry(data) {
     if (!data || typeof data !== 'object') return;
 
     const toolName = data.tool_name;
@@ -88,6 +88,13 @@ function logError(e) {
 }
 
 function main() {
+    // ─── 自动拉起 HTTP 服务（非阻塞）─────────────────────────
+    try {
+        const guard = require('./server-guard');
+        guard.ensureServerRunning(BASE_DIR, 37215);
+    } catch (_) {}
+    // ─────────────────────────────────────────────────────────
+
     try {
         const chunks = [];
         process.stdin.on('data', (chunk) => chunks.push(chunk));
@@ -99,9 +106,9 @@ function main() {
                 const data = JSON.parse(input);
 
                 if (Array.isArray(data)) {
-                    data.forEach(item => process(item));
+                    data.forEach(item => processEntry(item));
                 } else {
-                    process(data);
+                    processEntry(data);
                 }
             } catch (e) {
                 logError(e);

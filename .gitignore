@@ -5,6 +5,7 @@ projects.json
 trace.jsonl
 trace_state.json
 trace_error.log
+.server.pid
 
 # 忽略分发目录
 dist/
@@ -14,3 +15,5 @@ dist/
 *.bak
 __pycache__/
 *.pyc
+
+.codegraph/

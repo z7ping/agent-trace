@@ -119,6 +119,15 @@ function summarizeInput(toolName, toolInput) {
         } else if (toolName === 'Glob') {
             summary.pattern = toolInput.pattern || '';
         }
+    } else if (toolName === 'Skill') {
+        summary.skill = toolInput.skill || '';
+        if (toolInput.args) {
+            const args = String(toolInput.args);
+            summary.args = args.length > 100 ? args.substring(0, 100) + '…' : args;
+        }
+    } else if (toolName === 'Agent') {
+        summary.description = toolInput.description || '';
+        summary.agent_type = toolInput.agentType || '';
     } else if (toolName.startsWith('mcp__')) {
         const parts = toolName.split('__');
         summary.mcp_server = parts.length > 2 ? parts[1] : '';
@@ -195,12 +204,13 @@ function processRecord(data) {
 
     if (response && typeof response === 'object') {
         success = response.success !== false;
-        const exitCode = response.exit_code;
+        // 兼容 snake_case 和 camelCase
+        const exitCode = response.exit_code ?? response.exitCode;
         if (exitCode !== null && exitCode !== undefined && exitCode !== 0) {
             success = false;
         }
         if (!success) {
-            errorMsg = response.stderr || response.error || extractError(response);
+            errorMsg = response.stderr || response.error || response.output || extractError(response);
             if (exitCode !== null && exitCode !== undefined && exitCode !== 0) {
                 errorMsg = `Exit code ${exitCode}` + (errorMsg ? `: ${errorMsg}` : '');
             }

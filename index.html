@@ -862,17 +862,19 @@ const TOOL_TYPES = {
   Read: 'read', Glob: 'read', Grep: 'read', WebFetch: 'read', WebSearch: 'read',
   Write: 'write', Edit: 'write', NotebookEdit: 'write',
   Bash: 'bash',
+  Skill: 'skill',
   Agent: 'agent', TaskCreate: 'agent', TaskUpdate: 'agent', TaskOutput: 'agent',
   AskUserQuestion: 'other', EnterPlanMode: 'other', ExitPlanMode: 'other',
   CronCreate: 'other', CronDelete: 'other', CronList: 'other',
   ScheduleWakeup: 'other',
 };
-const TYPE_LABELS = { read: '读文件', write: '写文件', bash: '命令', mcp: 'MCP 工具', agent: '子代理', other: '其他' };
-const TYPE_ICONS = { read: '📖', write: '✏️', bash: '💻', mcp: '🔌', agent: '🤖', other: '⚙️' };
+const TYPE_LABELS = { read: '读文件', write: '写文件', bash: '命令', skill: 'Skill', mcp: 'MCP 工具', agent: '子代理', other: '其他' };
+const TYPE_ICONS = { read: '📖', write: '✏️', bash: '💻', skill: '⚡', mcp: '🔌', agent: '🤖', other: '⚙️' };
 const TOOL_ICONS = {
   Read: '📖', Glob: '🔍', Grep: '🔎', WebFetch: '🌐', WebSearch: '🔗',
   Write: '✏️', Edit: '✂️', NotebookEdit: '📓',
   Bash: '💻',
+  Skill: '⚡',
   Agent: '🤖', TaskCreate: '📋', TaskUpdate: '🔄', TaskOutput: '📄',
   AskUserQuestion: '❓', EnterPlanMode: '📝', ExitPlanMode: '✅',
   CronCreate: '⏰', CronDelete: '🗑️', CronList: '📋', ScheduleWakeup: '⏳',

@@ -41,11 +41,13 @@ if [ -f "$SCRIPT_DIR/hooks/prelog.js" ]; then
     cp "$SCRIPT_DIR/hooks/prelog.py" "$TOOLTRACE_DIR/hooks/"
     cp "$SCRIPT_DIR/hooks/log.js" "$TOOLTRACE_DIR/hooks/"
     cp "$SCRIPT_DIR/hooks/log.py" "$TOOLTRACE_DIR/hooks/"
+    cp "$SCRIPT_DIR/hooks/server-guard.js" "$TOOLTRACE_DIR/hooks/"
     cp "$SCRIPT_DIR/index.html" "$TOOLTRACE_DIR/"
     cp "$SCRIPT_DIR/server.js" "$TOOLTRACE_DIR/"
     cp "$SCRIPT_DIR/start.sh" "$TOOLTRACE_DIR/"
     cp "$SCRIPT_DIR/start.bat" "$TOOLTRACE_DIR/"
     cp "$SCRIPT_DIR/start.ps1" "$TOOLTRACE_DIR/"
+    cp "$SCRIPT_DIR/start-server.cmd" "$TOOLTRACE_DIR/"
     cp "$SCRIPT_DIR/README.md" "$TOOLTRACE_DIR/"
 else
     echo "⚠️  警告: 未找到源文件，请确保在 ai-tool-tracker 目录运行此脚本"
@@ -181,12 +183,30 @@ echo ""
 echo "============================================"
 echo "🎉 安装完成！"
 echo ""
-echo "📝 下一步："
-echo "   1. 重启 Claude Code（使配置生效）"
-echo "   2. 启动 HTTP 服务器查看工具调用："
-echo "      cd $TOOLTRACE_DIR"
-echo "      $NODE_CMD server.js 8080"
-echo "   3. 打开浏览器访问: http://localhost:8080/"
+
+# 自动启动守护进程
+echo "🚀 启动后台服务..."
+if command -v $NODE_CMD &> /dev/null; then
+    $NODE_CMD "$TOOLTRACE_DIR/server.js" 37215 --daemon 2>/dev/null || true
+    sleep 1
+    if $NODE_CMD "$TOOLTRACE_DIR/hooks/server-guard.js" --status 2>/dev/null | grep -q "运行中"; then
+        echo "   ✅ 服务已在后台运行 → http://localhost:37215/"
+    else
+        echo "   ⚠️  服务未自动启动，请手动运行:"
+        echo "      $NODE_CMD $TOOLTRACE_DIR/server.js 37215 --open"
+    fi
+else
+    echo "   ⚠️  未找到 Node.js，请手动启动:"
+    echo "      cd $TOOLTRACE_DIR && node server.js 37215"
+fi
+
+echo ""
+echo "📝 使用说明："
+echo "   • 服务会在后台自动运行，首次使用 Claude Code 工具时自动拉起"
+echo "   • 打开浏览器查看: http://localhost:37215/"
+echo "   • 管理命令:"
+echo "     node server.js --stop    停止服务"
+echo "     node server.js --status  查看状态"
 echo ""
 echo "📚 文档: $TOOLTRACE_DIR/README.md"
 echo "============================================"

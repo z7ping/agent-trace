@@ -7,6 +7,7 @@
 ## ✨ 特性
 
 - **一键安装**：运行脚本即可完成配置
+- **零操作启动**：安装后自动在后台运行，首次使用 Claude Code 工具时自动拉起服务
 - **全局配置**：一次配置，所有项目自动生效
 - **多项目支持**：按项目分组查看，支持项目切换
 - **调用链追踪**：树形展示 Agent 调用的子工具
@@ -99,9 +100,11 @@ cp -r .claude/tooltrace ~/.claude/
 │   ├── prelog.js         # Node.js 版本（推荐）
 │   ├── prelog.py         # Python 版本（备选）
 │   ├── log.js            # Node.js 版本（推荐）
-│   └── log.py            # Python 版本（备选）
+│   ├── log.py            # Python 版本（备选）
+│   └── server-guard.js   # 服务守护模块（自动拉起）
 ├── index.html            # 可视化页面
-├── server.js             # Node.js HTTP 服务器
+├── server.js             # Node.js HTTP 服务器（支持守护进程模式）
+├── start-server.cmd      # Windows 后台启动器
 ├── start.sh              # 启动脚本（Linux/macOS）
 ├── start.bat             # 启动脚本（Windows CMD）
 ├── start.ps1             # 启动脚本（Windows PowerShell）
@@ -111,15 +114,39 @@ cp -r .claude/tooltrace ~/.claude/
 ├── package.sh            # 打包脚本
 ├── logs/                 # 运行时生成
 ├── states/               # 运行时生成
+├── .server.pid           # 运行时生成（守护进程 PID）
 └── projects.json         # 运行时生成
 ```
 
 ## 🔧 启动 HTTP 服务器
 
-### 智能启动（推荐）
+### 安装后自动运行（推荐）
+
+运行 `install.sh` 或 `install.bat` 后，服务会在后台自动启动（端口 **37215**）。首次使用 Claude Code 工具时，钩子会自动检测并拉起服务。
+
+### 手动管理
 
 ```bash
-cd ~/.claude/tooltrace
+# 查看状态
+node server.js --status
+
+# 前台运行
+node server.js 37215
+
+# 后台守护进程
+node server.js 37215 --daemon
+
+# 前台运行 + 自动打开浏览器
+node server.js 37215 --open
+
+# 停止守护进程
+node server.js --stop
+```
+
+### 智能启动脚本（前台模式）
+
+```bash
+cd ~/.claude/ai-tool-tracker
 
 # Linux / macOS
 bash start.sh
@@ -131,28 +158,17 @@ start.bat
 .\start.ps1
 ```
 
-### 手动启动
-
-```bash
-# Node.js（推荐）
-node server.js 8080
-
-# Python
-python -m http.server 8080
-```
-
 ### 访问可视化页面
 
-- **主页面**：http://localhost:8080/
-- **分析仪表盘**：http://localhost:8080/dashboard.html
+- **主页面**：http://localhost:37215/
+- **分析仪表盘**：http://localhost:37215/dashboard.html
 
 ## 🎯 使用步骤
 
-1. **安装工具**：运行安装脚本或手动配置
+1. **安装工具**：运行安装脚本或手动配置，服务自动在后台启动
 2. **重启 Claude Code**：使 hooks 配置生效
-3. **启动服务器**：运行智能启动脚本
-4. **打开浏览器**：访问 http://localhost:8080/
-5. **使用 Claude Code**：工具调用会自动记录
+3. **使用 Claude Code**：工具调用会自动记录，服务自动拉起
+4. **打开浏览器**：访问 http://localhost:37215/
 
 ## 📋 功能说明
 
@@ -203,7 +219,7 @@ python -m http.server 8080
 
 ### 页面没有数据显示？
 1. 确认 HTTP 服务器正在运行
-2. 确认浏览器访问的是 `http://localhost:8080/`
+2. 确认浏览器访问的是 `http://localhost:37215/`
 3. 确认已执行过一些 Claude Code 操作
 
 ### 需要安装 Python 吗？
@@ -217,6 +233,14 @@ rm -rf ~/.claude/ai-tool-tracker/
 ```
 
 ## 📝 更新日志
+
+### v1.7.0 (2026-06-05)
+- 新增服务守护：钩子自动拉起 HTTP 服务器，安装后零操作
+- 新增守护进程模式（`--daemon` / `--stop` / `--status`）
+- 新增 Windows 后台启动器（`start-server.cmd`）
+- 新增 `hooks/server-guard.js` 共享守护模块
+- 默认端口从 8080 改为 37215（避免端口冲突）
+- 安装脚本自动启动后台服务
 
 ### v1.6.0 (2026-06-05)
 - 新增数据导出功能（JSON/CSV/Markdown）

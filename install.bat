@@ -43,11 +43,13 @@ if exist "%SCRIPT_DIR%hooks\prelog.js" (
     copy "%SCRIPT_DIR%hooks\prelog.py" "%TOOLTRACE_DIR%\hooks\" >nul
     copy "%SCRIPT_DIR%hooks\log.js" "%TOOLTRACE_DIR%\hooks\" >nul
     copy "%SCRIPT_DIR%hooks\log.py" "%TOOLTRACE_DIR%\hooks\" >nul
+    copy "%SCRIPT_DIR%hooks\server-guard.js" "%TOOLTRACE_DIR%\hooks\" >nul
     copy "%SCRIPT_DIR%index.html" "%TOOLTRACE_DIR%\" >nul
     copy "%SCRIPT_DIR%server.js" "%TOOLTRACE_DIR%\" >nul
     copy "%SCRIPT_DIR%start.sh" "%TOOLTRACE_DIR%\" >nul
     copy "%SCRIPT_DIR%start.bat" "%TOOLTRACE_DIR%\" >nul
     copy "%SCRIPT_DIR%start.ps1" "%TOOLTRACE_DIR%\" >nul
+    copy "%SCRIPT_DIR%start-server.cmd" "%TOOLTRACE_DIR%\" >nul
     copy "%SCRIPT_DIR%README.md" "%TOOLTRACE_DIR%\" >nul
 ) else (
     echo ⚠️  警告: 未找到源文件
@@ -106,12 +108,19 @@ echo.
 echo ============================================
 echo 🎉 安装完成！
 echo.
-echo 📝 下一步：
-echo    1. 重启 Claude Code（使配置生效）
-echo    2. 启动 HTTP 服务器查看工具调用：
-echo       cd %TOOLTRACE_DIR%
-echo       %NODE_CMD% server.js 8080
-echo    3. 打开浏览器访问: http://localhost:8080/
+
+REM 自动启动守护进程
+echo 🚀 启动后台服务...
+%NODE_CMD% "%TOOLTRACE_DIR%\server.js" 37215 --daemon 2>nul
+timeout /t 2 /nobreak >nul
+
+echo.
+echo 📝 使用说明：
+echo    • 服务会在后台自动运行，首次使用 Claude Code 工具时自动拉起
+echo    • 打开浏览器查看: http://localhost:37215/
+echo    • 管理命令:
+echo      node server.js --stop    停止服务
+echo      node server.js --status  查看状态
 echo.
 echo 📚 文档: %TOOLTRACE_DIR%\README.md
 echo ============================================

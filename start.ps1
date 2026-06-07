@@ -2,7 +2,7 @@
 # 自动检测 Node.js 或 Python，启动 HTTP 服务器
 
 param(
-    [int]$Port = 8080
+    [int]$Port = 37215
 )
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path

@@ -1,7 +1,7 @@
 @echo off
 cd /d "%~dp0"
 set "PORT=%1"
-if "%PORT%"=="" set "PORT=8080"
+if "%PORT%"=="" set "PORT=37215"
 
 echo.
 echo AI Tool Tracker - HTTP Server
