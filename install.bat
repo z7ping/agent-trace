@@ -50,6 +50,7 @@ if exist "%SCRIPT_DIR%hooks\prelog.js" (
     copy "%SCRIPT_DIR%start.bat" "%TOOLTRACE_DIR%\" >nul
     copy "%SCRIPT_DIR%start.ps1" "%TOOLTRACE_DIR%\" >nul
     copy "%SCRIPT_DIR%start-server.cmd" "%TOOLTRACE_DIR%\" >nul
+    copy "%SCRIPT_DIR%start-server.vbs" "%TOOLTRACE_DIR%\" >nul
     copy "%SCRIPT_DIR%README.md" "%TOOLTRACE_DIR%\" >nul
 ) else (
     echo ⚠️  警告: 未找到源文件

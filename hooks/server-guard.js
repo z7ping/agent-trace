@@ -157,14 +157,13 @@ function ensureServerRunning(baseDir, port) {
 
         try {
             if (process.platform === 'win32') {
-                // Windows: 使用 .cmd 批处理启动独立后台进程（最可靠的方式）
-                const cmdPath = path.join(baseDir, 'start-server.cmd');
-                if (fs.existsSync(cmdPath)) {
-                    spawn('cmd.exe', ['/c', cmdPath, String(port)], {
+                // Windows: 使用 VBScript + WScript.Shell.Run 隐藏窗口启动（无黑窗口）
+                const vbsPath = path.join(baseDir, 'start-server.vbs');
+                if (fs.existsSync(vbsPath)) {
+                    spawn('wscript', [vbsPath, String(port)], {
                         detached: true,
                         stdio: 'ignore',
                         windowsHide: true,
-                        cwd: toWinPath(baseDir),
                     }).unref();
                 }
             } else {

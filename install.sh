@@ -48,6 +48,7 @@ if [ -f "$SCRIPT_DIR/hooks/prelog.js" ]; then
     cp "$SCRIPT_DIR/start.bat" "$TOOLTRACE_DIR/"
     cp "$SCRIPT_DIR/start.ps1" "$TOOLTRACE_DIR/"
     cp "$SCRIPT_DIR/start-server.cmd" "$TOOLTRACE_DIR/"
+    cp "$SCRIPT_DIR/start-server.vbs" "$TOOLTRACE_DIR/"
     cp "$SCRIPT_DIR/README.md" "$TOOLTRACE_DIR/"
 else
     echo "⚠️  警告: 未找到源文件，请确保在 ai-tool-tracker 目录运行此脚本"
