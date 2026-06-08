@@ -1,6 +1,6 @@
 #!/bin/bash
-# 打包 tooltrace 为可分发的压缩包
-# 用法: bash package.sh
+# Package ai-tool-tracker for distribution
+# Usage: bash package.sh
 
 set -e
 
@@ -9,20 +9,20 @@ PACKAGE_NAME="tooltrace-v${VERSION}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DIST_DIR="${SCRIPT_DIR}/dist"
 
-echo "📦 打包 Claude Code Tooltrace v${VERSION}"
+echo "Packaging AI Tool Tracker v${VERSION}"
 echo "=========================================="
 echo ""
 
-# 创建 dist 目录
+# Create dist directory
 mkdir -p "$DIST_DIR"
 
-# 创建临时目录
+# Create temp directory
 TEMP_DIR=$(mktemp -d)
 TEMP_PACKAGE="$TEMP_DIR/$PACKAGE_NAME"
 mkdir -p "$TEMP_PACKAGE/hooks"
 
-# 复制文件
-echo "📋 复制文件..."
+# Copy files
+echo "Copying files..."
 cp "$SCRIPT_DIR/hooks/prelog.js" "$TEMP_PACKAGE/hooks/"
 cp "$SCRIPT_DIR/hooks/prelog.py" "$TEMP_PACKAGE/hooks/"
 cp "$SCRIPT_DIR/hooks/log.js" "$TEMP_PACKAGE/hooks/"
@@ -30,6 +30,7 @@ cp "$SCRIPT_DIR/hooks/log.py" "$TEMP_PACKAGE/hooks/"
 cp "$SCRIPT_DIR/hooks/server-guard.js" "$TEMP_PACKAGE/hooks/"
 cp "$SCRIPT_DIR/index.html" "$TEMP_PACKAGE/"
 cp "$SCRIPT_DIR/server.js" "$TEMP_PACKAGE/"
+cp "$SCRIPT_DIR/install-hooks.js" "$TEMP_PACKAGE/"
 cp "$SCRIPT_DIR/start.sh" "$TEMP_PACKAGE/"
 cp "$SCRIPT_DIR/start.bat" "$TEMP_PACKAGE/"
 cp "$SCRIPT_DIR/start.ps1" "$TEMP_PACKAGE/"
@@ -41,37 +42,37 @@ cp "$SCRIPT_DIR/README.md" "$TEMP_PACKAGE/"
 cp "$SCRIPT_DIR/package.sh" "$TEMP_PACKAGE/"
 cp "$SCRIPT_DIR/.gitignore" "$TEMP_PACKAGE/"
 
-# 设置执行权限
+# Set execute permissions
 chmod +x "$TEMP_PACKAGE/install.sh"
 chmod +x "$TEMP_PACKAGE/start.sh"
 chmod +x "$TEMP_PACKAGE/package.sh"
 
-# 创建压缩包
+# Create archive
 echo ""
-echo "📦 创建压缩包..."
+echo "Creating archive..."
 cd "$TEMP_DIR"
 if command -v zip &> /dev/null; then
     zip -r "$DIST_DIR/$PACKAGE_NAME.zip" "$PACKAGE_NAME"
-    echo "✅ 已创建: $DIST_DIR/$PACKAGE_NAME.zip"
+    echo "[OK] Created: $DIST_DIR/$PACKAGE_NAME.zip"
 elif command -v tar &> /dev/null; then
     tar -czf "$DIST_DIR/$PACKAGE_NAME.tar.gz" "$PACKAGE_NAME"
-    echo "✅ 已创建: $DIST_DIR/$PACKAGE_NAME.tar.gz"
+    echo "[OK] Created: $DIST_DIR/$PACKAGE_NAME.tar.gz"
 else
-    echo "⚠️  未找到 zip 或 tar 命令"
-    echo "请手动压缩: $TEMP_PACKAGE"
+    echo "[WARN] zip/tar not found"
+    echo "Manual: $TEMP_PACKAGE"
 fi
 
-# 清理临时文件
+# Cleanup
 rm -rf "$TEMP_DIR"
 
 echo ""
 echo "=========================================="
-echo "🎉 打包完成！"
+echo "Package complete!"
 echo ""
-echo "📁 分发文件位置: $DIST_DIR/"
+echo "Output: $DIST_DIR/"
 echo ""
-echo "📝 分发方式："
-echo "   1. 上传到 GitHub Releases"
-echo "   2. 直接分享压缩包"
-echo "   3. 用户下载后运行 install.sh 或 install.bat"
+echo "Distribution:"
+echo "   1. Upload to GitHub Releases"
+echo "   2. Share the archive directly"
+echo "   3. Users run install.sh or install.bat"
 echo "=========================================="

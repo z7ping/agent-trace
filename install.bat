@@ -1,129 +1,89 @@
 @echo off
-REM Claude Code Tooltrace 一键安装脚本 (Windows)
-REM 用法: 双击运行或在 CMD 中执行 install.bat
-
+chcp 65001 >nul 2>nul
 setlocal enabledelayedexpansion
 
-echo 🧠 AI Tool Tracker - 安装程序
+echo AI Tool Tracker - Install
 echo ============================================
 echo.
 
 set "TOOLTRACE_DIR=%USERPROFILE%\.claude\ai-tool-tracker"
 set "SETTINGS_FILE=%USERPROFILE%\.claude\settings.json"
 
-REM 检查 Node.js
+REM Check Node.js
 where node >nul 2>nul
 if %errorlevel% neq 0 (
-    echo ❌ 错误: 未找到 Node.js
-    echo 请先安装 Node.js: https://nodejs.org/
-    echo.
-    echo 或者使用 Python 版本（需要 Python 3.6+）：
-    echo   设置 hooks command 为: python %TOOLTRACE_DIR%\hooks\prelog.py
+    echo [ERROR] Node.js not found
+    echo Please install Node.js: https://nodejs.org/
     pause
     exit /b 1
 )
 
 set "NODE_CMD=node"
-echo ✅ 找到 Node.js: %NODE_CMD%
+echo [OK] Node.js found
 
-REM 创建目录
+REM Create directories
 echo.
-echo 📁 创建目录: %TOOLTRACE_DIR%
+echo Creating directories...
 if not exist "%TOOLTRACE_DIR%" mkdir "%TOOLTRACE_DIR%"
 if not exist "%TOOLTRACE_DIR%\hooks" mkdir "%TOOLTRACE_DIR%\hooks"
 if not exist "%TOOLTRACE_DIR%\logs" mkdir "%TOOLTRACE_DIR%\logs"
 if not exist "%TOOLTRACE_DIR%\states" mkdir "%TOOLTRACE_DIR%\states"
 
-REM 复制文件
-echo 📋 复制文件...
+REM Copy files (skip if source == target)
+echo Copying files...
 set "SCRIPT_DIR=%~dp0"
 
-if exist "%SCRIPT_DIR%hooks\prelog.js" (
-    copy "%SCRIPT_DIR%hooks\prelog.js" "%TOOLTRACE_DIR%\hooks\" >nul
-    copy "%SCRIPT_DIR%hooks\prelog.py" "%TOOLTRACE_DIR%\hooks\" >nul
-    copy "%SCRIPT_DIR%hooks\log.js" "%TOOLTRACE_DIR%\hooks\" >nul
-    copy "%SCRIPT_DIR%hooks\log.py" "%TOOLTRACE_DIR%\hooks\" >nul
-    copy "%SCRIPT_DIR%hooks\server-guard.js" "%TOOLTRACE_DIR%\hooks\" >nul
-    copy "%SCRIPT_DIR%index.html" "%TOOLTRACE_DIR%\" >nul
-    copy "%SCRIPT_DIR%server.js" "%TOOLTRACE_DIR%\" >nul
-    copy "%SCRIPT_DIR%start.sh" "%TOOLTRACE_DIR%\" >nul
-    copy "%SCRIPT_DIR%start.bat" "%TOOLTRACE_DIR%\" >nul
-    copy "%SCRIPT_DIR%start.ps1" "%TOOLTRACE_DIR%\" >nul
-    copy "%SCRIPT_DIR%start-server.cmd" "%TOOLTRACE_DIR%\" >nul
-    copy "%SCRIPT_DIR%start-server.vbs" "%TOOLTRACE_DIR%\" >nul
-    copy "%SCRIPT_DIR%README.md" "%TOOLTRACE_DIR%\" >nul
+if "%SCRIPT_DIR%"=="%TOOLTRACE_DIR%\" (
+    echo    Source equals target, skipping copy
 ) else (
-    echo ⚠️  警告: 未找到源文件
+    if exist "%SCRIPT_DIR%hooks\prelog.js" (
+        copy "%SCRIPT_DIR%hooks\prelog.js" "%TOOLTRACE_DIR%\hooks\" >nul
+        copy "%SCRIPT_DIR%hooks\prelog.py" "%TOOLTRACE_DIR%\hooks\" >nul
+        copy "%SCRIPT_DIR%hooks\log.js" "%TOOLTRACE_DIR%\hooks\" >nul
+        copy "%SCRIPT_DIR%hooks\log.py" "%TOOLTRACE_DIR%\hooks\" >nul
+        copy "%SCRIPT_DIR%hooks\server-guard.js" "%TOOLTRACE_DIR%\hooks\" >nul
+        copy "%SCRIPT_DIR%index.html" "%TOOLTRACE_DIR%\" >nul
+        copy "%SCRIPT_DIR%server.js" "%TOOLTRACE_DIR%\" >nul
+        copy "%SCRIPT_DIR%install-hooks.js" "%TOOLTRACE_DIR%\" >nul
+        copy "%SCRIPT_DIR%start.sh" "%TOOLTRACE_DIR%\" >nul
+        copy "%SCRIPT_DIR%start.bat" "%TOOLTRACE_DIR%\" >nul
+        copy "%SCRIPT_DIR%start.ps1" "%TOOLTRACE_DIR%\" >nul
+        copy "%SCRIPT_DIR%start-server.cmd" "%TOOLTRACE_DIR%\" >nul
+        copy "%SCRIPT_DIR%start-server.vbs" "%TOOLTRACE_DIR%\" >nul
+        copy "%SCRIPT_DIR%README.md" "%TOOLTRACE_DIR%\" >nul
+    ) else (
+        echo    [WARN] Source files not found
+    )
 )
 
-REM 获取路径（转义反斜杠）
-set "PRELOG_PATH=%TOOLTRACE_DIR%\hooks\prelog.js"
-set "LOG_PATH=%TOOLTRACE_DIR%\hooks\log.js"
-set "PRELOG_PATH=!PRELOG_PATH:\=\\!"
-set "LOG_PATH=!LOG_PATH:\=\\!"
-
-REM 更新 settings.json
+REM Update settings.json via JS helper
 echo.
-echo ⚙️  更新配置: %SETTINGS_FILE%
+echo Updating settings: %SETTINGS_FILE%
+%NODE_CMD% "%TOOLTRACE_DIR%\install-hooks.js"
 
-if exist "%SETTINGS_FILE%" (
-    echo    ⚠️  检测到已存在配置文件
-    echo    请手动合并以下配置到 %SETTINGS_FILE%:
-    echo.
-    echo    {
-    echo      "hooks": {
-    echo        "PreToolUse": [
-    echo          {
-    echo            "hooks": [
-    echo              {
-    echo                "command": "%NODE_CMD% !PRELOG_PATH!",
-    echo                "type": "command",
-    echo                "timeout": 5,
-    echo                "statusMessage": "",
-    echo                "async": false
-    echo              }
-    echo            ]
-    echo          }
-    echo        ],
-    echo        "PostToolUse": [
-    echo          {
-    echo            "hooks": [
-    echo              {
-    echo                "command": "%NODE_CMD% !LOG_PATH!",
-    echo                "type": "command",
-    echo                "timeout": 10,
-    echo                "statusMessage": "",
-    echo                "async": false
-    echo              }
-    echo            ]
-    echo          }
-    echo        ]
-    echo      }
-    echo    }
-) else (
-    echo {"hooks":{"PreToolUse":[{"hooks":[{"command":"%NODE_CMD% !PRELOG_PATH!","type":"command","timeout":5,"statusMessage":"","async":false}]}],"PostToolUse":[{"hooks":[{"command":"%NODE_CMD% !LOG_PATH!","type":"command","timeout":10,"statusMessage":"","async":false}]}]}} > "%SETTINGS_FILE%"
-    echo    ✅ 已创建配置文件
+if %errorlevel% neq 0 (
+    echo    [ERROR] Failed to update settings.json
 )
 
 echo.
 echo ============================================
-echo 🎉 安装完成！
+echo Install complete!
 echo.
 
-REM 自动启动守护进程
-echo 🚀 启动后台服务...
+REM Auto-start daemon
+echo Starting background service...
 %NODE_CMD% "%TOOLTRACE_DIR%\server.js" 37215 --daemon 2>nul
 timeout /t 2 /nobreak >nul
 
 echo.
-echo 📝 使用说明：
-echo    • 服务会在后台自动运行，首次使用 Claude Code 工具时自动拉起
-echo    • 打开浏览器查看: http://localhost:37215/
-echo    • 管理命令:
-echo      node server.js --stop    停止服务
-echo      node server.js --status  查看状态
+echo Usage:
+echo    Service runs in background, auto-starts on first tool use
+echo    Open browser: http://localhost:37215/
+echo    Manage:
+echo      node server.js --stop    Stop service
+echo      node server.js --status  Check status
 echo.
-echo 📚 文档: %TOOLTRACE_DIR%\README.md
+echo Docs: %TOOLTRACE_DIR%\README.md
 echo ============================================
 echo.
 pause

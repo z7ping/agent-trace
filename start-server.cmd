@@ -1,7 +1,6 @@
 @echo off
-REM AI Tool Tracker - 后台启动器 (Windows)
-REM 用法: start-server.cmd [port]
-REM 创建完全独立的后台进程
+REM AI Tool Tracker - background starter (Windows)
+REM Usage: start-server.cmd [port]
 
 set PORT=%1
 if "%PORT%"=="" set PORT=37215
