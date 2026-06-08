@@ -101,13 +101,11 @@ cp -r .claude/tooltrace ~/.claude/
 │   ├── prelog.py         # Python 版本（备选）
 │   ├── log.js            # Node.js 版本（推荐）
 │   ├── log.py            # Python 版本（备选）
-│   └── server-guard.js   # 服务守护模块（自动拉起）
+├── install-hooks.js       # settings.json 配置写入工具
 ├── index.html            # 可视化页面
 ├── server.js             # Node.js HTTP 服务器（支持守护进程模式）
-├── start-server.cmd      # Windows 后台启动器
+├── start.bat             # 启动脚本（Windows，支持 --daemon 后台模式）
 ├── start.sh              # 启动脚本（Linux/macOS）
-├── start.bat             # 启动脚本（Windows CMD）
-├── start.ps1             # 启动脚本（Windows PowerShell）
 ├── install.sh            # 安装脚本（Linux/macOS）
 ├── install.bat           # 安装脚本（Windows）
 ├── README.md
@@ -127,35 +125,20 @@ cp -r .claude/tooltrace ~/.claude/
 ### 手动管理
 
 ```bash
-# 查看状态
-node server.js --status
-
 # 前台运行
 node server.js 37215
 
-# 后台守护进程
-node server.js 37215 --daemon
+# 查看状态
+node server.js --status
 
-# 前台运行 + 自动打开浏览器
-node server.js 37215 --open
-
-# 停止守护进程
+# 停止服务
 node server.js --stop
-```
 
-### 智能启动脚本（前台模式）
-
-```bash
-cd ~/.claude/ai-tool-tracker
-
-# Linux / macOS
-bash start.sh
-
-# Windows CMD
-start.bat
-
-# Windows PowerShell
-.\start.ps1
+# 或使用启动脚本
+start.bat              # Windows（前台）
+start.bat --daemon     # Windows（后台隐藏）
+start.bat --stop       # Windows（停止）
+bash start.sh          # Linux/macOS
 ```
 
 ### 访问可视化页面
@@ -233,6 +216,13 @@ rm -rf ~/.claude/ai-tool-tracker/
 ```
 
 ## 📝 更新日志
+
+### v1.8.0 (2026-06-08)
+- 精简脚本：删除 start-server.cmd、start-server.vbs、start.ps1
+- start.bat 支持 --daemon/--stop/--status 参数
+- 修复 install.bat 编码问题（chcp 65001）和自复制失败
+- install 脚本自动初始化空 projects.json
+- server-guard.js 改用 start.bat --daemon 启动服务
 
 ### v1.7.0 (2026-06-05)
 - 新增服务守护：钩子自动拉起 HTTP 服务器，安装后零操作

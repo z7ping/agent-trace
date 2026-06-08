@@ -47,11 +47,8 @@ else
         cp "$SCRIPT_DIR/index.html" "$TOOLTRACE_DIR/"
         cp "$SCRIPT_DIR/server.js" "$TOOLTRACE_DIR/"
         cp "$SCRIPT_DIR/install-hooks.js" "$TOOLTRACE_DIR/"
-        cp "$SCRIPT_DIR/start.sh" "$TOOLTRACE_DIR/"
         cp "$SCRIPT_DIR/start.bat" "$TOOLTRACE_DIR/"
-        cp "$SCRIPT_DIR/start.ps1" "$TOOLTRACE_DIR/"
-        cp "$SCRIPT_DIR/start-server.cmd" "$TOOLTRACE_DIR/"
-        cp "$SCRIPT_DIR/start-server.vbs" "$TOOLTRACE_DIR/"
+        cp "$SCRIPT_DIR/start.sh" "$TOOLTRACE_DIR/"
         cp "$SCRIPT_DIR/README.md" "$TOOLTRACE_DIR/"
     else
         echo "[WARN] Source files not found, skipping copy"

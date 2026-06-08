@@ -50,11 +50,8 @@ if "%SCRIPT_DIR%"=="%TOOLTRACE_DIR%\" (
         copy "%SCRIPT_DIR%index.html" "%TOOLTRACE_DIR%\" >nul
         copy "%SCRIPT_DIR%server.js" "%TOOLTRACE_DIR%\" >nul
         copy "%SCRIPT_DIR%install-hooks.js" "%TOOLTRACE_DIR%\" >nul
-        copy "%SCRIPT_DIR%start.sh" "%TOOLTRACE_DIR%\" >nul
         copy "%SCRIPT_DIR%start.bat" "%TOOLTRACE_DIR%\" >nul
-        copy "%SCRIPT_DIR%start.ps1" "%TOOLTRACE_DIR%\" >nul
-        copy "%SCRIPT_DIR%start-server.cmd" "%TOOLTRACE_DIR%\" >nul
-        copy "%SCRIPT_DIR%start-server.vbs" "%TOOLTRACE_DIR%\" >nul
+        copy "%SCRIPT_DIR%start.sh" "%TOOLTRACE_DIR%\" >nul
         copy "%SCRIPT_DIR%README.md" "%TOOLTRACE_DIR%\" >nul
     ) else (
         echo    [WARN] Source files not found
@@ -75,9 +72,9 @@ echo ============================================
 echo Install complete!
 echo.
 
-REM Auto-start daemon
+REM Auto-start daemon (hidden, no window)
 echo Starting background service...
-start "" /B wscript "%TOOLTRACE_DIR%\start-server.vbs" 37215
+"%TOOLTRACE_DIR%\start.bat" --daemon
 timeout /t 3 /nobreak >nul
 
 echo.
@@ -85,8 +82,8 @@ echo Usage:
 echo    Service runs in background, auto-starts on first tool use
 echo    Open browser: http://localhost:37215/
 echo    Manage:
-echo      node server.js --stop    Stop service
-echo      node server.js --status  Check status
+echo      start.bat --stop     Stop service
+echo      start.bat --status   Check status
 echo.
 echo Docs: %TOOLTRACE_DIR%\README.md
 echo ============================================

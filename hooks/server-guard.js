@@ -157,10 +157,10 @@ function ensureServerRunning(baseDir, port) {
 
         try {
             if (process.platform === 'win32') {
-                // Windows: 使用 VBScript + WScript.Shell.Run 隐藏窗口启动（无黑窗口）
-                const vbsPath = path.join(baseDir, 'start-server.vbs');
-                if (fs.existsSync(vbsPath)) {
-                    spawn('wscript', [vbsPath, String(port)], {
+                // Windows: 使用 start.bat --daemon 后台启动（无窗口）
+                const batPath = path.join(baseDir, 'start.bat');
+                if (fs.existsSync(batPath)) {
+                    spawn('cmd.exe', ['/c', batPath, '--daemon', String(port)], {
                         detached: true,
                         stdio: 'ignore',
                         windowsHide: true,
