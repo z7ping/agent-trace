@@ -28,6 +28,9 @@ mkdir -p "$TOOLTRACE_DIR/hooks"
 mkdir -p "$TOOLTRACE_DIR/logs"
 mkdir -p "$TOOLTRACE_DIR/states"
 
+# Initialize projects.json if missing
+[ -f "$TOOLTRACE_DIR/projects.json" ] || echo '{}' > "$TOOLTRACE_DIR/projects.json"
+
 # Copy files (skip if source == target)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 

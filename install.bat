@@ -29,6 +29,11 @@ if not exist "%TOOLTRACE_DIR%\hooks" mkdir "%TOOLTRACE_DIR%\hooks"
 if not exist "%TOOLTRACE_DIR%\logs" mkdir "%TOOLTRACE_DIR%\logs"
 if not exist "%TOOLTRACE_DIR%\states" mkdir "%TOOLTRACE_DIR%\states"
 
+REM Initialize projects.json if missing
+if not exist "%TOOLTRACE_DIR%\projects.json" (
+    echo {} > "%TOOLTRACE_DIR%\projects.json"
+)
+
 REM Copy files (skip if source == target)
 echo Copying files...
 set "SCRIPT_DIR=%~dp0"
