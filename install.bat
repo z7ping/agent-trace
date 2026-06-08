@@ -77,8 +77,8 @@ echo.
 
 REM Auto-start daemon
 echo Starting background service...
-%NODE_CMD% "%TOOLTRACE_DIR%\server.js" 37215 --daemon 2>nul
-timeout /t 2 /nobreak >nul
+start "" /B wscript "%TOOLTRACE_DIR%\start-server.vbs" 37215
+timeout /t 3 /nobreak >nul
 
 echo.
 echo Usage:
