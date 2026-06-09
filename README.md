@@ -25,7 +25,7 @@ git clone https://github.com/你的用户名/tooltrace.git
 cd tooltrace
 
 # 一键安装（所有平台）
-node cli.js install
+ai-tool-tracker install
 ```
 
 ### 方式二：npm 脚本安装
@@ -126,10 +126,10 @@ cp -r .claude/tooltrace ~/.claude/
 
 ```bash
 # 使用 CLI（推荐）
-node cli.js start             # 前台运行
-node cli.js start --daemon    # 后台守护进程
-node cli.js stop              # 停止服务
-node cli.js status            # 查看状态
+ai-tool-tracker start             # 前台运行
+ai-tool-tracker start --daemon    # 后台守护进程
+ai-tool-tracker stop              # 停止服务
+ai-tool-tracker status            # 查看状态
 
 # 或直接使用 server.js（向后兼容）
 node server.js 37215

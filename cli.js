@@ -3,12 +3,12 @@
  * AI Tool Tracker - 统一 CLI 入口
  *
  * 用法:
- *   node cli.js install              安装 hooks 到 Claude Code 配置
- *   node cli.js start [port]         前台启动服务器
- *   node cli.js start --daemon       后台守护进程模式
- *   node cli.js stop                 停止后台服务
- *   node cli.js status               查看服务状态
- *   node cli.js package              打包分发
+ *   ai-tool-tracker install              安装 hooks 到 Claude Code 配置
+ *   ai-tool-tracker start [port]         前台启动服务器
+ *   ai-tool-tracker start --daemon       后台守护进程模式
+ *   ai-tool-tracker stop                 停止后台服务
+ *   ai-tool-tracker status               查看服务状态
+ *   ai-tool-tracker package              打包分发
  *
  * 替代: install.sh, install.bat, start.sh, start.bat, package.sh
  */
@@ -183,11 +183,11 @@ async function cmdInstall() {
             log(`[OK] 服务已启动 → http://localhost:${DEFAULT_PORT}/`, 'green');
         } else {
             log('[WARN] 服务未启动，请手动运行:', 'yellow');
-            log(`  node cli.js start`, 'dim');
+            log(`  ai-tool-tracker start`, 'dim');
         }
     } catch (_) {
         log('[WARN] 自动启动失败，请手动运行:', 'yellow');
-        log(`  node cli.js start`, 'dim');
+        log(`  ai-tool-tracker start`, 'dim');
     }
 
     // 6. 完成提示
@@ -199,9 +199,9 @@ async function cmdInstall() {
     log('  服务会在首次使用 Claude Code 工具时自动拉起', 'dim');
     log('  浏览器打开: http://localhost:37215/', 'dim');
     log('  管理命令:', 'dim');
-    log('    node cli.js start    启动服务', 'dim');
-    log('    node cli.js stop     停止服务', 'dim');
-    log('    node cli.js status   查看状态', 'dim');
+    log('    ai-tool-tracker start    启动服务', 'dim');
+    log('    ai-tool-tracker stop     停止服务', 'dim');
+    log('    ai-tool-tracker status   查看状态', 'dim');
     log('  向后兼容: node server.js 仍然可用', 'dim');
     console.log('');
     log(`文档: ${INSTALL_DIR}/README.md`, 'dim');
@@ -397,7 +397,7 @@ function cmdPackage() {
     log('分发方式:', 'yellow');
     log('  1. 上传到 GitHub Releases', 'dim');
     log('  2. 直接分享归档文件', 'dim');
-    log('  3. 用户运行: node cli.js install', 'dim');
+    log('  3. 用户运行: ai-tool-tracker install', 'dim');
     log('═'.repeat(45), 'dim');
 }
 
@@ -407,7 +407,7 @@ function showHelp() {
     log('🧠 AI Tool Tracker CLI', 'bright');
     console.log('');
     log('用法:', 'yellow');
-    log('  node cli.js <command> [options]', 'cyan');
+    log('  ai-tool-tracker <command> [options]', 'cyan');
     console.log('');
     log('命令:', 'yellow');
     log('  install              安装 hooks 到 Claude Code 配置', 'dim');
@@ -422,12 +422,12 @@ function showHelp() {
     log('  --open               自动打开浏览器（仅 start）', 'dim');
     console.log('');
     log('示例:', 'yellow');
-    log('  node cli.js install           # 首次安装', 'dim');
-    log('  node cli.js start             # 前台启动', 'dim');
-    log('  node cli.js start --daemon    # 后台启动', 'dim');
-    log('  node cli.js stop              # 停止服务', 'dim');
-    log('  node cli.js status            # 查看状态', 'dim');
-    log('  node cli.js package           # 打包分发', 'dim');
+    log('  ai-tool-tracker install           # 首次安装', 'dim');
+    log('  ai-tool-tracker start             # 前台启动', 'dim');
+    log('  ai-tool-tracker start --daemon    # 后台启动', 'dim');
+    log('  ai-tool-tracker stop              # 停止服务', 'dim');
+    log('  ai-tool-tracker status            # 查看状态', 'dim');
+    log('  ai-tool-tracker package           # 打包分发', 'dim');
     console.log('');
     log('向后兼容:', 'yellow');
     log('  node server.js [port]         # 仍然可用', 'dim');
