@@ -210,10 +210,274 @@ async function main() {
         '.woff2': 'font/woff2',
     };
 
+    // ─── SQLite 数据库 ──────────────────────────────────────────
+
+    const Database = require('better-sqlite3');
+    const DB_FILE = path.join(DIR, 'tracker.db');
+    let db = null;
+
+    function getDb() {
+        if (!db && fs.existsSync(DB_FILE)) {
+            try {
+                db = new Database(DB_FILE, { readonly: true });
+            } catch (e) {
+                log(`  ⚠️ SQLite 打开失败: ${e.message}`, 'yellow');
+            }
+        }
+        return db;
+    }
+
+    // ─── API 处理函数 ──────────────────────────────────────────
+
+    function sendJson(res, data, statusCode = 200) {
+        res.writeHead(statusCode, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify(data));
+    }
+
+    function handleApiStats(req, res, params) {
+        const database = getDb();
+        if (!database) {
+            sendJson(res, { error: 'SQLite 数据库不可用' }, 503);
+            return;
+        }
+
+        try {
+            const project = params.get('project');
+            const since = params.get('since');
+
+            let whereClause = '';
+            const queryParams = [];
+
+            if (project) {
+                whereClause = 'WHERE project_key = ?';
+                queryParams.push(project);
+            }
+
+            if (since) {
+                whereClause += whereClause ? ' AND' : 'WHERE';
+                whereClause += ' ts >= ?';
+                queryParams.push(since);
+            }
+
+            // 按工具聚合
+            const byTool = database.prepare(`
+                SELECT tool_name, COUNT(*) as count, 
+                       SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END) as success_count,
+                       AVG(duration_ms) as avg_duration_ms
+                FROM tool_calls ${whereClause}
+                GROUP BY tool_name
+                ORDER BY count DESC
+            `).all(...queryParams);
+
+            // 按项目聚合
+            const byProject = database.prepare(`
+                SELECT project_key, COUNT(*) as count,
+                       MIN(ts) as first_seen, MAX(ts) as last_seen
+                FROM tool_calls ${whereClause}
+                GROUP BY project_key
+                ORDER BY count DESC
+            `).all(...queryParams);
+
+            // 总体统计
+            const totals = database.prepare(`
+                SELECT COUNT(*) as total_calls,
+                       SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END) as success_calls,
+                       COUNT(DISTINCT session_id) as session_count,
+                       COUNT(DISTINCT project_key) as project_count
+                FROM tool_calls ${whereClause}
+            `).get(...queryParams);
+
+            sendJson(res, {
+                totals,
+                byTool,
+                byProject,
+            });
+        } catch (e) {
+            sendJson(res, { error: e.message }, 500);
+        }
+    }
+
+    function handleApiTools(req, res, params) {
+        const database = getDb();
+        if (!database) {
+            sendJson(res, { error: 'SQLite 数据库不可用' }, 503);
+            return;
+        }
+
+        try {
+            const page = parseInt(params.get('page') || '1', 10);
+            const limit = Math.min(parseInt(params.get('limit') || '50', 10), 200);
+            const offset = (page - 1) * limit;
+            const project = params.get('project');
+            const tool = params.get('tool');
+            const session = params.get('session');
+
+            let whereClause = 'WHERE 1=1';
+            const queryParams = [];
+
+            if (project) {
+                whereClause += ' AND project_key = ?';
+                queryParams.push(project);
+            }
+            if (tool) {
+                whereClause += ' AND tool_name = ?';
+                queryParams.push(tool);
+            }
+            if (session) {
+                whereClause += ' AND session_id = ?';
+                queryParams.push(session);
+            }
+
+            const total = database.prepare(`
+                SELECT COUNT(*) as count FROM tool_calls ${whereClause}
+            `).get(...queryParams).count;
+
+            const items = database.prepare(`
+                SELECT * FROM tool_calls ${whereClause}
+                ORDER BY ts DESC
+                LIMIT ? OFFSET ?
+            `).all(...queryParams, limit, offset);
+
+            sendJson(res, {
+                items,
+                pagination: {
+                    page,
+                    limit,
+                    total,
+                    pages: Math.ceil(total / limit),
+                },
+            });
+        } catch (e) {
+            sendJson(res, { error: e.message }, 500);
+        }
+    }
+
+    function handleApiSessions(req, res, params) {
+        const database = getDb();
+        if (!database) {
+            sendJson(res, { error: 'SQLite 数据库不可用' }, 503);
+            return;
+        }
+
+        try {
+            const project = params.get('project');
+            const page = parseInt(params.get('page') || '1', 10);
+            const limit = Math.min(parseInt(params.get('limit') || '50', 10), 200);
+            const offset = (page - 1) * limit;
+
+            let whereClause = 'WHERE 1=1';
+            const queryParams = [];
+
+            if (project) {
+                whereClause += ' AND s.project_key = ?';
+                queryParams.push(project);
+            }
+
+            const total = database.prepare(`
+                SELECT COUNT(*) as count FROM sessions s ${whereClause}
+            `).get(...queryParams).count;
+
+            const items = database.prepare(`
+                SELECT s.*, p.name as project_name
+                FROM sessions s
+                LEFT JOIN projects p ON s.project_key = p.project_key
+                ${whereClause}
+                ORDER BY s.start_time DESC
+                LIMIT ? OFFSET ?
+            `).all(...queryParams, limit, offset);
+
+            sendJson(res, {
+                items,
+                pagination: {
+                    page,
+                    limit,
+                    total,
+                    pages: Math.ceil(total / limit),
+                },
+            });
+        } catch (e) {
+            sendJson(res, { error: e.message }, 500);
+        }
+    }
+
+    function handleApiTimeline(req, res, params) {
+        const database = getDb();
+        if (!database) {
+            sendJson(res, { error: 'SQLite 数据库不可用' }, 503);
+            return;
+        }
+
+        try {
+            const project = params.get('project');
+            const session = params.get('session');
+            const limit = Math.min(parseInt(params.get('limit') || '100', 10), 500);
+
+            let whereClause = 'WHERE 1=1';
+            const queryParams = [];
+
+            if (project) {
+                whereClause += ' AND project_key = ?';
+                queryParams.push(project);
+            }
+            if (session) {
+                whereClause += ' AND session_id = ?';
+                queryParams.push(session);
+            }
+
+            const items = database.prepare(`
+                SELECT ts, tool_name, success, duration_ms, seq, parent_seq
+                FROM tool_calls ${whereClause}
+                ORDER BY ts DESC
+                LIMIT ?
+            `).all(...queryParams, limit);
+
+            sendJson(res, { items });
+        } catch (e) {
+            sendJson(res, { error: e.message }, 500);
+        }
+    }
+
     // ─── 创建 HTTP 服务器 ──────────────────────────────────────
 
     const server = http.createServer((req, res) => {
         let urlPath = req.url.split('?')[0];
+        const urlParams = new URL(req.url, `http://localhost:${PORT}`).searchParams;
+        
+        // CORS 头
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+        if (req.method === 'OPTIONS') {
+            res.writeHead(204);
+            res.end();
+            return;
+        }
+
+        // ─── API 路由 ──────────────────────────────────────────
+        
+        if (urlPath === '/api/stats') {
+            handleApiStats(req, res, urlParams);
+            return;
+        }
+        
+        if (urlPath === '/api/tools') {
+            handleApiTools(req, res, urlParams);
+            return;
+        }
+        
+        if (urlPath === '/api/sessions') {
+            handleApiSessions(req, res, urlParams);
+            return;
+        }
+        
+        if (urlPath === '/api/timeline') {
+            handleApiTimeline(req, res, urlParams);
+            return;
+        }
+
+        // ─── 静态文件服务 ──────────────────────────────────────
+        
         if (urlPath === '/') urlPath = '/index.html';
 
         const filePath = path.join(DIR, urlPath);
