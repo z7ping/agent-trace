@@ -9,6 +9,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const Database = require('better-sqlite3');
 
 // 上级目录（tooltrace 根目录）
 const BASE_DIR = path.join(__dirname, '..');
@@ -289,6 +290,65 @@ function processRecord(data) {
     // 写入项目对应的日志文件
     const logFile = getLogFile(projectKey);
     fs.appendFileSync(logFile, JSON.stringify(record) + '\n', 'utf-8');
+
+    // 双写 SQLite（如果数据库存在）
+    const dbFile = path.join(BASE_DIR, 'tracker.db');
+    if (fs.existsSync(dbFile)) {
+        try {
+            const db = new Database(dbFile);
+            
+            // 确保项目存在
+            const upsertProject = db.prepare(`
+                INSERT OR IGNORE INTO projects (project_key, name, cwd, last_seen)
+                VALUES (?, ?, ?, ?)
+            `);
+            upsertProject.run(projectKey, projectName, cwd, new Date().toISOString());
+            
+            // 更新项目 last_seen
+            db.prepare('UPDATE projects SET last_seen = ? WHERE project_key = ?')
+                .run(new Date().toISOString(), projectKey);
+            
+            // 确保会话存在
+            if (data.session_id) {
+                const upsertSession = db.prepare(`
+                    INSERT OR IGNORE INTO sessions (session_id, project_key, start_time, tool_count)
+                    VALUES (?, ?, ?, 0)
+                `);
+                upsertSession.run(data.session_id, projectKey, new Date().toISOString());
+                
+                // 更新工具计数
+                db.prepare('UPDATE sessions SET tool_count = tool_count + 1 WHERE session_id = ?')
+                    .run(data.session_id);
+            }
+            
+            // 插入工具调用记录
+            const insertCall = db.prepare(`
+                INSERT INTO tool_calls (ts, session_id, project_key, tool_name, input_summary, success, seq, parent_seq, duration_ms, error)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `);
+            insertCall.run(
+                record.ts,
+                data.session_id || '',
+                projectKey,
+                toolName,
+                JSON.stringify(record.input_summary),
+                success ? 1 : 0,
+                callSeq || null,
+                parentSeq || null,
+                durationMs || null,
+                record.error || null
+            );
+            
+            db.close();
+        } catch (e) {
+            // SQLite 写入失败不影响 JSONL 输出
+            try {
+                const errorLog = path.join(BASE_DIR, 'trace_error.log');
+                const timestamp = new Date().toISOString();
+                fs.appendFileSync(errorLog, `[${timestamp}] SQLite error: ${e.message}\n`, 'utf-8');
+            } catch (_) {}
+        }
+    }
 }
 
 function main() {
