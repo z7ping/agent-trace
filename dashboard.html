@@ -528,6 +528,39 @@
   </div>
 </div>
 
+<div class="dashboard-grid">
+  <!-- Skills 追踪 -->
+  <div class="card" style="grid-column: span 2;">
+    <div class="card-title"><span class="icon">🎯</span> Skills 使用追踪</div>
+    <div class="skills-stats" id="skillsStats">
+      <div class="session-stats-grid" style="margin-bottom: 16px;">
+        <div class="session-stat">
+          <div class="session-stat-value" id="totalSkillSessions">0</div>
+          <div class="session-stat-label">会话总数</div>
+        </div>
+        <div class="session-stat">
+          <div class="session-stat-value" id="totalUniqueSkills">0</div>
+          <div class="session-stat-label">唯一 Skills</div>
+        </div>
+        <div class="session-stat">
+          <div class="session-stat-value" id="avgSkillsPerSession">0</div>
+          <div class="session-stat-label">平均 Skills/会话</div>
+        </div>
+      </div>
+    </div>
+    <div id="skillsSummary" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px;">
+      <div class="empty-state" style="width: 100%;">
+        <div class="icon">🎯</div>
+        <div>暂无 Skills 数据</div>
+      </div>
+    </div>
+    <div id="skillsDetail" style="margin-top: 16px; font-size: 13px; color: var(--text-secondary); display: none;">
+      <div style="margin-bottom: 8px; font-weight: 500;">最近会话 Skills：</div>
+      <div id="skillsSessionList"></div>
+    </div>
+  </div>
+</div>
+
 <script>
 let allEntries = [];
 let currentProject = null;
@@ -1035,11 +1068,107 @@ function formatDate(date) {
 
 // 初始化
 loadProjects().then(loadData);
+loadSkillsData();
 
 // 自动刷新（每 30 秒）
 setInterval(() => {
   loadData();
+  loadSkillsData();
 }, 30000);
+
+// ─── Skills 追踪功能 ─────────────────────────────────────────
+
+async function loadSkillsData() {
+  try {
+    const resp = await fetch(`${API_BASE}/skills?t=${Date.now()}`);
+    if (!resp.ok) return;
+    
+    const data = await resp.json();
+    
+    // 更新统计卡片
+    document.getElementById('totalSkillSessions').textContent = data.totalSessions;
+    document.getElementById('totalUniqueSkills').textContent = data.totalUniqueSkills;
+    
+    const avgSkills = data.totalSessions > 0 
+      ? (Object.values(data.skillsSummary).reduce((sum, s) => sum + s.count, 0) / data.totalSessions).toFixed(1)
+      : '0';
+    document.getElementById('avgSkillsPerSession').textContent = avgSkills;
+    
+    // 更新 Skills 标签展示
+    const skillsSummaryEl = document.getElementById('skillsSummary');
+    if (data.totalUniqueSkills > 0) {
+      // 按使用次数排序
+      const sortedSkills = Object.entries(data.skillsSummary)
+        .sort((a, b) => b[1].count - a[1].count);
+      
+      const maxCount = sortedSkills[0][1].count;
+      
+      skillsSummaryEl.innerHTML = sortedSkills.map(([skill, info]) => {
+        const intensity = info.count / maxCount;
+        const bgColor = `rgba(59, 130, 246, ${0.1 + intensity * 0.3})`;
+        const borderColor = `rgba(59, 130, 246, ${0.3 + intensity * 0.4})`;
+        return `
+          <div style="
+            padding: 8px 14px;
+            background: ${bgColor};
+            border: 1px solid ${borderColor};
+            border-radius: 8px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: default;
+            transition: transform 0.1s;
+          " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+            <span style="font-weight: 500;">${skill}</span>
+            <span style="
+              background: rgba(255,255,255,0.2);
+              padding: 2px 6px;
+              border-radius: 10px;
+              font-size: 11px;
+              font-weight: 600;
+            ">${info.count}</span>
+          </div>
+        `;
+      }).join('');
+    } else {
+      skillsSummaryEl.innerHTML = `
+        <div class="empty-state" style="width: 100%;">
+          <div class="icon">🎯</div>
+          <div>暂无 Skills 数据</div>
+        </div>
+      `;
+    }
+    
+    // 更新最近会话列表
+    if (data.sessions.length > 0) {
+      const skillsDetailEl = document.getElementById('skillsDetail');
+      const skillsSessionListEl = document.getElementById('skillsSessionList');
+      
+      const recentSessions = data.sessions.slice(0, 5);
+      skillsSessionListEl.innerHTML = recentSessions.map(session => {
+        const date = new Date(session.timestamp).toLocaleString();
+        const shortId = session.sessionId.substring(0, 8);
+        const skillsList = session.skills.join(', ');
+        return `
+          <div style="padding: 8px 12px; background: var(--bg); border-radius: 6px; margin-bottom: 6px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+              <span style="font-weight: 500;">📦 ${shortId}...</span>
+              <span style="font-size: 12px; color: var(--text-muted);">${date}</span>
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted); word-break: break-all;">
+              ${session.skillCount} skills: ${skillsList}
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      skillsDetailEl.style.display = 'block';
+    }
+  } catch (e) {
+    console.error('Failed to load skills data:', e);
+  }
+}
 </script>
 </body>
 </html>

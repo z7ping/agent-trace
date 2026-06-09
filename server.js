@@ -437,6 +437,110 @@ async function main() {
         }
     }
 
+    // ─── Skills API ───────────────────────────────────────────
+    // 扫描 ~/.claude/projects/ 下所有 JSONL 文件，提取 skill_listing 数据
+
+    function handleApiSkills(req, res, params) {
+        try {
+            const claudeProjectsDir = path.join(require('os').homedir(), '.claude', 'projects');
+            const sessions = [];
+            const skillsSummary = {};
+
+            // 检查目录是否存在
+            if (!fs.existsSync(claudeProjectsDir)) {
+                sendJson(res, { sessions: [], skillsSummary: {}, totalSessions: 0, totalUniqueSkills: 0 });
+                return;
+            }
+
+            // 递归扫描所有 JSONL 文件
+            const jsonlFiles = [];
+            const scanDir = (dir) => {
+                try {
+                    const entries = fs.readdirSync(dir, { withFileTypes: true });
+                    for (const entry of entries) {
+                        const fullPath = path.join(dir, entry.name);
+                        if (entry.isDirectory()) {
+                            scanDir(fullPath);
+                        } else if (entry.name.endsWith('.jsonl')) {
+                            jsonlFiles.push(fullPath);
+                        }
+                    }
+                } catch (e) {
+                    // 跳过无法读取的目录
+                }
+            };
+            scanDir(claudeProjectsDir);
+
+            // 处理每个 JSONL 文件
+            const processedSessions = new Set();
+            for (const filePath of jsonlFiles) {
+                try {
+                    const content = fs.readFileSync(filePath, 'utf-8');
+                    const lines = content.split('\n').filter(line => line.trim());
+
+                    for (const line of lines) {
+                        try {
+                            const entry = JSON.parse(line);
+
+                            // 只处理 skill_listing 类型的 attachment
+                            if (entry.type === 'attachment' && 
+                                entry.attachment && 
+                                entry.attachment.type === 'skill_listing' &&
+                                entry.attachment.names &&
+                                Array.isArray(entry.attachment.names) &&
+                                entry.sessionId) {
+
+                                // 每个 session 只处理一次（取最新的 skill listing）
+                                if (processedSessions.has(entry.sessionId)) {
+                                    continue;
+                                }
+                                processedSessions.add(entry.sessionId);
+
+                                const sessionData = {
+                                    sessionId: entry.sessionId,
+                                    cwd: entry.cwd || '',
+                                    timestamp: entry.timestamp || '',
+                                    skillCount: entry.attachment.skillCount || entry.attachment.names.length,
+                                    skills: entry.attachment.names
+                                };
+                                sessions.push(sessionData);
+
+                                // 统计每个 skill 出现的 session 数量
+                                for (const skill of entry.attachment.names) {
+                                    if (!skillsSummary[skill]) {
+                                        skillsSummary[skill] = { count: 0, sessions: [] };
+                                    }
+                                    skillsSummary[skill].count++;
+                                    skillsSummary[skill].sessions.push(entry.sessionId);
+                                }
+                            }
+                        } catch (parseErr) {
+                            // 跳过无法解析的行
+                        }
+                    }
+                } catch (readErr) {
+                    // 跳过无法读取的文件
+                }
+            }
+
+            // 按时间排序（最新的在前）
+            sessions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            // 计算统计
+            const totalSessions = sessions.length;
+            const totalUniqueSkills = Object.keys(skillsSummary).length;
+
+            sendJson(res, {
+                sessions,
+                skillsSummary,
+                totalSessions,
+                totalUniqueSkills
+            });
+        } catch (e) {
+            sendJson(res, { error: e.message }, 500);
+        }
+    }
+
     // ─── 创建 HTTP 服务器 ──────────────────────────────────────
 
     const server = http.createServer((req, res) => {
@@ -473,6 +577,11 @@ async function main() {
         
         if (urlPath === '/api/timeline') {
             handleApiTimeline(req, res, urlParams);
+            return;
+        }
+
+        if (urlPath === '/api/skills') {
+            handleApiSkills(req, res, urlParams);
             return;
         }
 
