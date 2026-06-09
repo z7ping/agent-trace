@@ -156,7 +156,19 @@ async function cmdInstall() {
         log(`[OK] ${hooks.length + rootFiles.length} 个文件已复制`, 'green');
     }
 
-    // 4. 更新 settings.json
+    // 4. 安装依赖
+    if (path.resolve(PROJECT_DIR) !== path.resolve(INSTALL_DIR)) {
+        console.log('');
+        log('安装依赖...', 'cyan');
+        try {
+            execSync('npm install --omit=dev', { cwd: INSTALL_DIR, stdio: 'ignore' });
+            log('[OK] 依赖安装完成', 'green');
+        } catch (e) {
+            log('[WARN] 依赖安装失败，请手动运行: npm install', 'yellow');
+        }
+    }
+
+    // 5. 更新 settings.json
     console.log('');
     log(`更新配置: ${SETTINGS_FILE}`, 'cyan');
     try {
@@ -167,7 +179,7 @@ async function cmdInstall() {
         log('[WARN] 更新 settings.json 失败', 'yellow');
     }
 
-    // 5. 自动启动守护进程
+    // 6. 自动启动守护进程
     console.log('');
     log('启动后台服务...', 'cyan');
     try {
@@ -191,7 +203,7 @@ async function cmdInstall() {
         log(`  ai-tool-tracker start`, 'dim');
     }
 
-    // 6. 完成提示
+    // 7. 完成提示
     console.log('');
     log('═'.repeat(45), 'dim');
     log('安装完成！', 'bright');
