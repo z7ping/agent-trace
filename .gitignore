@@ -17,3 +17,6 @@ __pycache__/
 *.pyc
 
 .codegraph/
+
+# 依赖
+node_modules/
