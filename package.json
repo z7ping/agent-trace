@@ -1,11 +1,18 @@
 {
   "name": "ai-tool-tracker",
-  "version": "1.0.0",
+  "version": "1.8.1",
   "description": "实时记录并可视化 Claude Code 的每次工具调用，按会话分组展示，方便调试和回溯。",
   "main": "install-hooks.js",
+  "bin": {
+    "ai-tool-tracker": "./cli.js"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node cli.js start",
+    "stop": "node cli.js stop",
+    "status": "node cli.js status",
+    "install-hooks": "node cli.js install",
+    "package": "node cli.js package"
   },
   "repository": {
     "type": "git",

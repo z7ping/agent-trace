@@ -17,21 +17,24 @@
 
 ## 🚀 快速安装
 
-### 方式一：一键安装（推荐）
+### 方式一：CLI 安装（推荐）
 
 ```bash
 # 克隆仓库
 git clone https://github.com/你的用户名/tooltrace.git
 cd tooltrace
 
-# Linux / macOS
-bash install.sh
-
-# Windows
-install.bat
+# 一键安装（所有平台）
+node cli.js install
 ```
 
-### 方式二：手动安装
+### 方式二：npm 脚本安装
+
+```bash
+npm run install-hooks
+```
+
+### 方式三：手动安装
 
 ```bash
 # 1. 复制文件
@@ -101,15 +104,12 @@ cp -r .claude/tooltrace ~/.claude/
 │   ├── prelog.py         # Python 版本（备选）
 │   ├── log.js            # Node.js 版本（推荐）
 │   ├── log.py            # Python 版本（备选）
+│   └── server-guard.js   # 服务守护模块
 ├── install-hooks.js       # settings.json 配置写入工具
+├── cli.js                # 统一 CLI 入口（跨平台）
 ├── index.html            # 可视化页面
 ├── server.js             # Node.js HTTP 服务器（支持守护进程模式）
-├── start.bat             # 启动脚本（Windows，支持 --daemon 后台模式）
-├── start.sh              # 启动脚本（Linux/macOS）
-├── install.sh            # 安装脚本（Linux/macOS）
-├── install.bat           # 安装脚本（Windows）
 ├── README.md
-├── package.sh            # 打包脚本
 ├── logs/                 # 运行时生成
 ├── states/               # 运行时生成
 ├── .server.pid           # 运行时生成（守护进程 PID）
@@ -125,20 +125,16 @@ cp -r .claude/tooltrace ~/.claude/
 ### 手动管理
 
 ```bash
-# 前台运行
+# 使用 CLI（推荐）
+node cli.js start             # 前台运行
+node cli.js start --daemon    # 后台守护进程
+node cli.js stop              # 停止服务
+node cli.js status            # 查看状态
+
+# 或直接使用 server.js（向后兼容）
 node server.js 37215
-
-# 查看状态
 node server.js --status
-
-# 停止服务
 node server.js --stop
-
-# 或使用启动脚本
-start.bat              # Windows（前台）
-start.bat --daemon     # Windows（后台隐藏）
-start.bat --stop       # Windows（停止）
-bash start.sh          # Linux/macOS
 ```
 
 ### 访问可视化页面
@@ -216,6 +212,14 @@ rm -rf ~/.claude/ai-tool-tracker/
 ```
 
 ## 📝 更新日志
+
+### v1.8.1 (2026-06-09)
+- 新增统一 CLI 入口 `cli.js`，替代 5 个 shell/bat 脚本
+- 新增 `bin` 入口: `ai-tool-tracker` 命令
+- 新增 npm scripts: `install-hooks`, `start`, `stop`, `status`, `package`
+- 删除 `install.sh`, `install.bat`, `start.sh`, `start.bat`, `package.sh`
+- 更新 `server-guard.js` 使用 `cli.js` 统一启动服务
+- 保持向后兼容: `node server.js` 命令仍然可用
 
 ### v1.8.0 (2026-06-08)
 - 精简脚本：删除 start-server.cmd、start-server.vbs、start.ps1

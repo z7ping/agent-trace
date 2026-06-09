@@ -10,21 +10,19 @@ AI Tool Tracker 是一个实时监控和可视化 Claude Code 工具调用的工
 
 ```bash
 # 安装钩子到 Claude Code 配置（安装后自动启动后台服务）
-bash install.sh        # Linux/macOS
-install.bat            # Windows
+node cli.js install
 
 # 手动管理服务
-start.bat                         # 前台运行（Windows）
-start.bat --daemon                # 后台隐藏运行（Windows）
-start.bat --stop                  # 停止服务（Windows）
-start.bat --status                # 查看状态（Windows）
-bash start.sh                     # 前台运行（Linux/macOS）
-node server.js 37215              # 直接启动（任意平台）
-node server.js --stop             # 停止服务（任意平台）
-node server.js --status           # 查看状态（任意平台）
+node cli.js start              # 前台运行
+node cli.js start --daemon     # 后台守护进程
+node cli.js stop               # 停止服务
+node cli.js status             # 查看状态
+node cli.js package            # 打包分发
 
-# 打包分发
-bash package.sh
+# 向后兼容（仍可使用）
+node server.js 37215           # 直接启动
+node server.js --stop          # 停止服务
+node server.js --status        # 查看状态
 ```
 
 **无构建步骤，无测试运行器。** 文件直接提供服务 -- 编辑后刷新浏览器即可。
@@ -33,7 +31,7 @@ bash package.sh
 
 安装后，**无需手动启动服务器**：
 - `hooks/prelog.js` 在每次工具调用时检测服务是否运行
-- 如果服务未运行，自动通过 `start.bat --daemon`（Windows）或 `detached spawn`（Unix）在后台启动
+- 如果服务未运行，自动通过 `node cli.js start --daemon` 在后台启动
 - 服务写入 `.server.pid` 管理生命周期
 - 服务挂掉后，下次工具调用会自动拉起
 
@@ -47,7 +45,7 @@ bash package.sh
 
 3. **HTTP 服务器** (`server.js`) -- 最小化静态文件服务器，端口 37215。支持守护进程模式（`--daemon`），通过 `.server.pid` 管理生命周期。提供 HTML 页面及运行时数据文件 (`logs/`, `states/`, `projects.json`)。
 
-4. **服务守护** (`hooks/server-guard.js` + `start.bat --daemon`) -- 钩子自动拉起服务的核心模块。通过 TCP 端口检测 + PID 文件双重验证服务状态。Windows 使用 `start.bat --daemon`（内嵌 VBScript 隐藏窗口）；Unix 使用 `detached spawn`。
+4. **服务守护** (`hooks/server-guard.js`) -- 钩子自动拉起服务的核心模块。通过 TCP 端口检测 + PID 文件双重验证服务状态。使用 `node cli.js start --daemon` 启动服务（跨平台统一方案）。
 
 5. **浏览器可视化** -- `index.html`（主查看器，树形调用链）和 `dashboard.html`（分析仪表盘，图表、热力图、导出）。两者均通过 `fetch()` 在客户端解析 JSONL。
 

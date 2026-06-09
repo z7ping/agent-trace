@@ -156,18 +156,16 @@ function ensureServerRunning(baseDir, port) {
         if (!fs.existsSync(serverPath)) return;
 
         try {
-            if (process.platform === 'win32') {
-                // Windows: 使用 start.bat --daemon 后台启动（无窗口）
-                const batPath = path.join(baseDir, 'start.bat');
-                if (fs.existsSync(batPath)) {
-                    spawn('cmd.exe', ['/c', batPath, '--daemon', String(port)], {
-                        detached: true,
-                        stdio: 'ignore',
-                        windowsHide: true,
-                    }).unref();
-                }
+            // 统一使用 cli.js 启动（跨平台）
+            const cliPath = path.join(baseDir, 'cli.js');
+            if (fs.existsSync(cliPath)) {
+                spawn('node', [cliPath, 'start', '--daemon', '--port', String(port)], {
+                    detached: true,
+                    stdio: 'ignore',
+                    windowsHide: true,
+                }).unref();
             } else {
-                // Unix: detached + unref 即可
+                // 回退: 直接使用 server.js（向后兼容）
                 const child = spawn('node', [serverPath, String(port), '--daemon'], {
                     detached: true,
                     stdio: ['ignore', 'ignore', 'ignore'],
