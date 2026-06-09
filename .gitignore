@@ -20,3 +20,6 @@ __pycache__/
 
 # 依赖
 node_modules/
+
+# 数据库文件
+tracker.db
