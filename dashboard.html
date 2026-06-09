@@ -532,68 +532,66 @@
 let allEntries = [];
 let currentProject = null;
 
-// 加载项目列表
+// API 基础路径
+const API_BASE = '/api';
+
+// 加载项目列表（使用 API）
 async function loadProjects() {
   try {
-    const resp = await fetch('projects.json?t=' + Date.now(), { cache: 'no-store' });
+    const resp = await fetch(`${API_BASE}/stats?t=${Date.now()}`);
     if (!resp.ok) return;
-    const projects = await resp.json();
+    const data = await resp.json();
 
     const select = document.getElementById('projectSelect');
     let html = '<option value="">全部项目</option>';
 
-    for (const [key, proj] of Object.entries(projects)) {
-      html += `<option value="${key}">${proj.name}</option>`;
+    for (const proj of data.byProject) {
+      html += `<option value="${proj.project_key}">${proj.project_key} (${proj.count})</option>`;
     }
 
     select.innerHTML = html;
 
     // 默认选择最近的项目
-    const sorted = Object.entries(projects).sort((a, b) =>
-      new Date(b[1].last_seen) - new Date(a[1].last_seen)
-    );
-    if (sorted.length > 0) {
-      select.value = sorted[0][0];
+    if (data.byProject.length > 0) {
+      select.value = data.byProject[0].project_key;
     }
   } catch (e) {
     console.error('Failed to load projects:', e);
   }
 }
 
-// 加载数据
+// 加载数据（使用 API）
 async function loadData() {
   const projectKey = document.getElementById('projectSelect').value;
   const timeRange = document.getElementById('timeRange').value;
 
   allEntries = [];
 
-  if (projectKey) {
-    // 加载指定项目
-    await loadProjectData(projectKey);
-  } else {
-    // 加载所有项目
-    const resp = await fetch('projects.json?t=' + Date.now(), { cache: 'no-store' });
-    if (resp.ok) {
-      const projects = await resp.json();
-      for (const key of Object.keys(projects)) {
-        await loadProjectData(key);
-      }
-    }
-  }
-
-  // 按时间范围过滤
+  // 计算时间范围
+  let since = null;
   const now = new Date();
-  let cutoff = new Date(0);
   if (timeRange === 'today') {
-    cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    since = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
   } else if (timeRange === 'week') {
-    cutoff = new Date(now - 7 * 24 * 60 * 60 * 1000);
+    since = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString();
   } else if (timeRange === 'month') {
-    cutoff = new Date(now - 30 * 24 * 60 * 60 * 1000);
+    since = new Date(now - 30 * 24 * 60 * 60 * 1000).toISOString();
   }
 
-  if (timeRange !== 'all') {
-    allEntries = allEntries.filter(e => new Date(e.ts) >= cutoff);
+  // 构建 API 参数
+  const params = new URLSearchParams();
+  if (projectKey) params.set('project', projectKey);
+  if (since) params.set('since', since);
+  params.set('limit', '1000');
+
+  try {
+    const resp = await fetch(`${API_BASE}/tools?${params}&t=${Date.now()}`);
+    if (resp.ok) {
+      const data = await resp.json();
+      allEntries = data.items || [];
+    }
+  } catch (e) {
+    console.error('Failed to load data:', e);
   }
 
   // 排序
@@ -607,20 +605,6 @@ async function loadData() {
   updateErrorList();
   updateSessionStats();
   updateInsights();
-}
-
-async function loadProjectData(projectKey) {
-  try {
-    const resp = await fetch(`logs/${projectKey}.jsonl?t=${Date.now()}`, { cache: 'no-store' });
-    if (!resp.ok) return;
-    const text = await resp.text();
-    const entries = text.trim().split('\n').filter(Boolean).map(line => {
-      try { return JSON.parse(line); } catch { return null; }
-    }).filter(Boolean);
-    allEntries.push(...entries);
-  } catch (e) {
-    console.error(`Failed to load project ${projectKey}:`, e);
-  }
 }
 
 // 更新总览
@@ -1051,6 +1035,11 @@ function formatDate(date) {
 
 // 初始化
 loadProjects().then(loadData);
+
+// 自动刷新（每 30 秒）
+setInterval(() => {
+  loadData();
+}, 30000);
 </script>
 </body>
 </html>
