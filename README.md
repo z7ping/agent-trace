@@ -13,9 +13,23 @@
 - **调用链追踪**：树形展示 Agent 调用的子工具
 - **实时监控**：自动刷新，增量加载
 - **多平台支持**：Windows、macOS、Linux 全平台兼容
-- **零依赖**：只需 Node.js，无需安装其他包
+- **依赖简单**：只需 Node.js + better-sqlite3（`npm install` 自动安装）
 
 ## 🚀 快速安装
+
+### 前置：国内网络加速（可选）
+
+如果 `npm install` 安装 `better-sqlite3` 超时或失败，配置国内镜像：
+
+```bash
+# 换淘宝 npm 源
+npm config set registry https://registry.npmmirror.com
+
+# 设置 better-sqlite3 预编译二进制镜像
+npm config set better_sqlite3_binary_host_mirror https://npmmirror.com/mirrors/better-sqlite3
+```
+
+> Windows 用户如果编译失败，还需安装构建工具：`npm install -g windows-build-tools`
 
 ### 方式一：CLI 安装（推荐）
 
@@ -207,9 +221,10 @@ node server.js --stop
 ## 🗑️ 卸载
 
 ```bash
-rm -rf ~/.claude/ai-tool-tracker/
-# 然后从 ~/.claude/settings.json 中删除 hooks 配置
+ai-tool-tracker uninstall
 ```
+
+会自动停止服务、删除配置和数据、卸载全局命令。
 
 ## 📝 更新日志
 
