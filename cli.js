@@ -9,6 +9,7 @@
  *   ai-tool-tracker stop                 停止后台服务
  *   ai-tool-tracker status               查看服务状态
  *   ai-tool-tracker package              打包分发
+ *   ai-tool-tracker uninstall            卸载并清理所有配置和数据
  *
  * 替代: install.sh, install.bat, start.sh, start.bat, package.sh
  */
@@ -310,6 +311,80 @@ function cmdStop(baseDir) {
     }
 }
 
+// ─── uninstall 命令 ──────────────────────────────────────────────
+
+async function cmdUninstall() {
+    const readline = require('readline');
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+    });
+
+    const answer = await new Promise(resolve => {
+        rl.question(`${c.yellow}确定要卸载吗？这会删除所有配置和数据 (y/N): ${c.reset}`, resolve);
+    });
+    rl.close();
+
+    if (answer.trim() !== 'y' && answer.trim() !== 'Y') {
+        log('已取消卸载', 'yellow');
+        return;
+    }
+
+    log('🧠 AI Tool Tracker - 卸载', 'bright');
+    log('═'.repeat(45), 'dim');
+    console.log('');
+
+    // 1. 停止运行中的服务
+    log('停止运行中的服务...', 'cyan');
+    try {
+        cmdStop(INSTALL_DIR);
+    } catch (_) {
+        log('[SKIP] 无需停止（未运行）', 'dim');
+    }
+
+    // 2. 从 settings.json 移除 hooks 配置
+    log(`清理配置: ${SETTINGS_FILE}`, 'cyan');
+    try {
+        if (fs.existsSync(SETTINGS_FILE)) {
+            const settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf-8'));
+            if (settings.hooks) {
+                delete settings.hooks;
+                fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+                log('[OK] hooks 配置已移除', 'green');
+            } else {
+                log('[SKIP] 未找到 hooks 配置', 'dim');
+            }
+        } else {
+            log('[SKIP] settings.json 不存在', 'dim');
+        }
+    } catch (e) {
+        log(`[WARN] 清理配置失败: ${e.message}`, 'yellow');
+    }
+
+    // 3. 删除 ~/.claude/ai-tool-tracker/ 目录
+    log(`删除目录: ${INSTALL_DIR}`, 'cyan');
+    if (fs.existsSync(INSTALL_DIR)) {
+        rimraf(INSTALL_DIR);
+        log('[OK] 目录已删除', 'green');
+    } else {
+        log('[SKIP] 目录不存在', 'dim');
+    }
+
+    // 4. npm unlink -g
+    log('执行 npm unlink -g ai-tool-tracker ...', 'cyan');
+    try {
+        execSync('npm unlink -g ai-tool-tracker', { stdio: 'ignore' });
+        log('[OK] 全局链接已移除', 'green');
+    } catch (_) {
+        log('[SKIP] 未找到全局链接', 'dim');
+    }
+
+    console.log('');
+    log('═'.repeat(45), 'dim');
+    log('卸载完成！', 'bright');
+    log('═'.repeat(45), 'dim');
+}
+
 // ─── status 命令 ─────────────────────────────────────────────────
 
 function cmdStatus(baseDir) {
@@ -415,6 +490,7 @@ function showHelp() {
     log('  stop                 停止后台服务', 'dim');
     log('  status               查看服务状态', 'dim');
     log('  package              打包分发', 'dim');
+    log('  uninstall            卸载并清理所有配置和数据', 'dim');
     log('  help                 显示此帮助', 'dim');
     console.log('');
     log('选项:', 'yellow');
@@ -453,6 +529,9 @@ function main() {
             break;
         case 'stop':
             cmdStop(PROJECT_DIR);
+            break;
+        case 'uninstall':
+            cmdUninstall();
             break;
         case 'status':
             cmdStatus(PROJECT_DIR);
