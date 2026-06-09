@@ -183,14 +183,11 @@ async function cmdInstall() {
     console.log('');
     log('启动后台服务...', 'cyan');
     try {
-        execSync(`node "${INSTALL_DIR}/server.js" ${DEFAULT_PORT} --daemon`, {
-            stdio: 'ignore',
-            detached: isWin(),
-        });
+        cmdStart(['--daemon']);
         // 等待服务启动
         await new Promise(resolve => setTimeout(resolve, 2000));
 
-        // 检查状态（在安装目录中查找 PID 文件）
+        // 检查状态
         const pid = readPid(INSTALL_DIR);
         if (pid && isProcessAlive(pid)) {
             log(`[OK] 服务已启动 → http://localhost:${DEFAULT_PORT}/`, 'green');
