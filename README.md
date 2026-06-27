@@ -4,7 +4,7 @@
 
 支持工具：Claude Code、Hermes、Codex、OpenCode、Cursor
 
-> Gitea: http://192.168.31.239:53000/ai-area/ai-tool-tracker
+> Gitea: http://192.168.31.239:53000/ai-area/agent-beat
 
 ## ✨ 特性
 
@@ -37,8 +37,8 @@ npm config set better_sqlite3_binary_host_mirror https://npmmirror.com/mirrors/b
 
 ```bash
 # 克隆仓库
-git clone http://192.168.31.239:53000/ai-area/ai-tool-tracker.git
-cd ai-tool-tracker
+git clone http://192.168.31.239:53000/ai-area/agent-beat.git
+cd agent-beat
 
 # 安装依赖
 npm install

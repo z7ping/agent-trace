@@ -1013,14 +1013,14 @@ const SESSION_COLORS = [
 /* ==========================================================
    状态持久化
    ========================================================== */
-function getSortOrder() { return localStorage.getItem('tooltrace-sort') || 'desc'; }
-function setSortOrder(v) { localStorage.setItem('tooltrace-sort', v); }
+function getSortOrder() { return localStorage.getItem('agent-beat-sort') || 'desc'; }
+function setSortOrder(v) { localStorage.setItem('agent-beat-sort', v); }
 function getCollapsedSessions() {
-  try { return JSON.parse(localStorage.getItem('tooltrace-collapsed') || '[]'); } catch { return []; }
+  try { return JSON.parse(localStorage.getItem('agent-beat-collapsed') || '[]'); } catch { return []; }
 }
-function setCollapsedSessions(arr) { localStorage.setItem('tooltrace-collapsed', JSON.stringify(arr)); }
-function getSourceFilter() { return localStorage.getItem('tooltrace-source-filter') || 'all'; }
-function setSourceFilter(v) { localStorage.setItem('tooltrace-source-filter', v); }
+function setCollapsedSessions(arr) { localStorage.setItem('agent-beat-collapsed', JSON.stringify(arr)); }
+function getSourceFilter() { return localStorage.getItem('agent-beat-source-filter') || 'all'; }
+function setSourceFilter(v) { localStorage.setItem('agent-beat-source-filter', v); }
 
 /* ==========================================================
    通用工具函数
@@ -1103,11 +1103,11 @@ function switchTab(tab) {
 /* ==========================================================
    主题
    ========================================================== */
-function getTheme() { return localStorage.getItem('tooltrace-theme') || 'light'; }
+function getTheme() { return localStorage.getItem('agent-beat-theme') || 'light'; }
 function setTheme(t) {
   document.body.classList.toggle('dark', t === 'dark');
   document.getElementById('themeBtn').textContent = t === 'dark' ? '☀️' : '🌙';
-  localStorage.setItem('tooltrace-theme', t);
+  localStorage.setItem('agent-beat-theme', t);
 }
 function toggleTheme() { setTheme(getTheme() === 'dark' ? 'light' : 'dark'); }
 
@@ -1129,7 +1129,7 @@ async function loadProjects() {
     // 调用链项目选择器
     const select = document.getElementById('projectSelect');
     const dashSelect = document.getElementById('dashProjectSelect');
-    const lastProject = localStorage.getItem('tooltrace-project');
+    const lastProject = localStorage.getItem('agent-beat-project');
     let selectedKey = null;
 
     let html = '';
@@ -1145,7 +1145,7 @@ async function loadProjects() {
 
     if (selectedKey) {
       currentProject = selectedKey;
-      localStorage.setItem('tooltrace-project', selectedKey);
+      localStorage.setItem('agent-beat-project', selectedKey);
     }
   } catch (e) {
     console.error('Failed to load projects:', e);
@@ -1157,7 +1157,7 @@ function switchProject() {
   const key = select.value;
   if (key) {
     currentProject = key;
-    localStorage.setItem('tooltrace-project', key);
+    localStorage.setItem('agent-beat-project', key);
     incrementalMode = false;
     loadLog();
   }
@@ -1721,7 +1721,7 @@ async function doClear() {
     <div style="padding:10px">
       <p style="margin-bottom:16px">请在终端执行以下命令清空当前项目：</p>
       <pre>echo "" > ~/.claude/agent-beat/logs/${currentProject}.jsonl
-echo "" > ~/.claude/tooltrace/states/${currentProject}.json</pre>
+echo "" > ~/.claude/agent-beat/states/${currentProject}.json</pre>
       <div class="copy-hint">点击"复制"按钮可复制命令</div>
     </div>
   `, true);
