@@ -299,5 +299,5 @@ MIT License
 - [ ] 推送到npm registry，支持 `npm install -g agent-beat`
 - [ ] 添加CHANGELOG
 - [ ] 添加LICENSE
-- [ ] 完善Cursor适配器
+- [x] 完善Cursor适配器
 - [ ] 实现OpenClaw适配器
