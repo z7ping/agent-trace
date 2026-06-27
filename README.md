@@ -248,14 +248,14 @@ rm -rf ~/.claude/agent-beat
 
 ## 📝 版本历史
 
-### v1.8.1 (2026-06-09)
+### v1.8.1 (2026-06-27)
 - 新增多工具适配器架构
 - 新增 Claude Code / Hermes / Codex / OpenCode / Cursor 适配器
 - 项目更名为 Agent Beat
 - 合并 index.html 和 dashboard.html 为单页面 Tab 切换
 - 新增工具筛选器
 
-### v1.8.0 (2026-06-08)
+### v1.8.0 (2026-06-26)
 - 新增统一 CLI 入口 `cli.js`
 - 精简脚本
 
