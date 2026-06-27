@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * AI Tool Tracker - 零依赖 HTTP 服务器
+ * Agent Beat - 零依赖 HTTP 服务器
  *
  * 用法:
  *   node server.js [port]              # 前台运行
@@ -631,7 +631,7 @@ async function main() {
 
         if (!isDaemon) {
             console.log('');
-            log('🧠 AI Tool Tracker - HTTP 服务器', 'bright');
+            log('🧠 Agent Beat - HTTP 服务器', 'bright');
             log('========================================', 'dim');
             console.log('');
             log(`✅ 服务器已启动`, 'green');

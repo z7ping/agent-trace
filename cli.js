@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * AI Tool Tracker - 统一 CLI 入口
+ * Agent Beat - 统一 CLI 入口
  *
  * 用法:
  *   agent-beat install              安装 hooks 到 Claude Code 配置
@@ -107,7 +107,7 @@ function isProcessAlive(pid) {
 // ─── install 命令 ────────────────────────────────────────────────
 
 async function cmdInstall() {
-    log('🧠 AI Tool Tracker - 安装', 'bright');
+    log('🧠 Agent Beat - 安装', 'bright');
     log('═'.repeat(45), 'dim');
     console.log('');
 
@@ -267,7 +267,7 @@ function cmdStart(argv) {
     } else {
         // 前台模式
         console.log('');
-        log('🧠 AI Tool Tracker - HTTP 服务器', 'bright');
+        log('🧠 Agent Beat - HTTP 服务器', 'bright');
         log('═'.repeat(40), 'dim');
         console.log('');
         log(`✅ 端口: ${port}`, 'green');
@@ -339,7 +339,7 @@ async function cmdUninstall() {
         return;
     }
 
-    log('🧠 AI Tool Tracker - 卸载', 'bright');
+    log('🧠 Agent Beat - 卸载', 'bright');
     log('═'.repeat(45), 'dim');
     console.log('');
 
@@ -415,7 +415,7 @@ function cmdPackage() {
     const pkgName = `tooltrace-v${VERSION}`;
     const distDir = path.join(PROJECT_DIR, 'dist');
 
-    log(`📦 打包 AI Tool Tracker v${VERSION}`, 'bright');
+    log(`📦 打包 Agent Beat v${VERSION}`, 'bright');
     log('═'.repeat(45), 'dim');
     console.log('');
 
@@ -488,7 +488,7 @@ function cmdPackage() {
 // ─── help 命令 ───────────────────────────────────────────────────
 
 function showHelp() {
-    log('🧠 AI Tool Tracker CLI', 'bright');
+    log('🧠 Agent Beat CLI', 'bright');
     console.log('');
     log('用法:', 'yellow');
     log('  agent-beat <command> [options]', 'cyan');

@@ -8,7 +8,7 @@
 
 ## 1. 目标
 
-将AI Tool Tracker从仅支持Claude Code，扩展为支持多工具的统一追踪系统。
+将Agent Beat从仅支持Claude Code，扩展为支持多工具的统一追踪系统。
 
 支持的工具：
 - ✅ Claude Code（实时钩子）
