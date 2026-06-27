@@ -6,6 +6,7 @@
 
 const ClaudeCodeAdapter = require('./claude-code');
 const HermesAdapter = require('./hermes');
+const CodexAdapter = require('./codex');
 
 // ─── 适配器注册 ──────────────────────────────────────────
 
@@ -14,9 +15,9 @@ const adapters = new Map();
 // 注册内置适配器
 adapters.set('claude-code', new ClaudeCodeAdapter());
 adapters.set('hermes', new HermesAdapter());
+adapters.set('codex', new CodexAdapter());
 
 // 未来适配器在这里注册：
-// adapters.set('codex', new CodexAdapter());
 // adapters.set('opencode', new OpenCodeAdapter());
 // adapters.set('cursor', new CursorAdapter());
 
@@ -74,4 +75,5 @@ module.exports = {
     BaseAdapter: require('./base'),
     ClaudeCodeAdapter,
     HermesAdapter,
+    CodexAdapter,
 };
