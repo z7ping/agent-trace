@@ -35,8 +35,8 @@ npm config set better_sqlite3_binary_host_mirror https://npmmirror.com/mirrors/b
 
 ```bash
 # 克隆仓库
-git clone https://github.com/你的用户名/tooltrace.git
-cd tooltrace
+git clone https://github.com/你的用户名/agent-beat.git
+cd agent-beat
 
 # 一键安装（所有平台）
 agent-beat install
@@ -52,7 +52,7 @@ npm run install-hooks
 
 ```bash
 # 1. 复制文件
-cp -r .claude/tooltrace ~/.claude/
+cp -r .claude/agent-beat ~/.claude/
 
 # 2. 编辑 ~/.claude/settings.json，添加 hooks 配置
 ```
@@ -107,7 +107,7 @@ cp -r .claude/tooltrace ~/.claude/
 }
 ```
 
-> **Windows 用户**：使用完整路径，如 `C:/Users/你的用户名/.claude/tooltrace/hooks/prelog.js`
+> **Windows 用户**：使用完整路径，如 `C:/Users/你的用户名/.claude/agent-beat/hooks/prelog.js`
 
 ## 📁 目录结构
 
