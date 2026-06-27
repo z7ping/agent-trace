@@ -177,6 +177,15 @@ body {
   color: var(--text);
 }
 
+/* 工具来源筛选下拉框 */
+.source-filter {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 5px 10px;
+  color: var(--text); font-size: var(--font-xs); min-width: 120px;
+  outline: none; transition: border-color .15s; cursor: pointer;
+}
+.source-filter:focus { border-color: var(--color-read); }
+
 /* Tab 内容面板 */
 .tab-content { display: none; }
 .tab-content.active { display: block; }
@@ -694,6 +703,14 @@ body {
   <button class="tab-btn active" data-tab="callchain" onclick="switchTab('callchain')">🔗 调用链</button>
   <button class="tab-btn" data-tab="dashboard" onclick="switchTab('dashboard')">📊 仪表盘</button>
   <div class="tab-nav-right">
+    <select class="source-filter" id="sourceFilter" onchange="onSourceFilterChange()" title="按工具来源筛选">
+      <option value="all">全部工具</option>
+      <option value="claude-code">Claude Code</option>
+      <option value="hermes">Hermes</option>
+      <option value="codex">Codex</option>
+      <option value="opencode">OpenCode</option>
+      <option value="cursor">Cursor</option>
+    </select>
     <button class="theme-btn" onclick="toggleTheme()" id="themeBtn" title="切换主题">🌙</button>
   </div>
 </div>
@@ -1002,6 +1019,8 @@ function getCollapsedSessions() {
   try { return JSON.parse(localStorage.getItem('tooltrace-collapsed') || '[]'); } catch { return []; }
 }
 function setCollapsedSessions(arr) { localStorage.setItem('tooltrace-collapsed', JSON.stringify(arr)); }
+function getSourceFilter() { return localStorage.getItem('tooltrace-source-filter') || 'all'; }
+function setSourceFilter(v) { localStorage.setItem('tooltrace-source-filter', v); }
 
 /* ==========================================================
    通用工具函数
@@ -1184,7 +1203,12 @@ async function loadLog() {
    ========================================================== */
 function appendEntries(newEntries) {
   if (newEntries.length === 0) return;
-  const unseen = newEntries.filter(e => !renderedSeqs.has(e.seq));
+  const sourceFilter = getSourceFilter();
+  const unseen = newEntries.filter(e => {
+    if (renderedSeqs.has(e.seq)) return false;
+    if (sourceFilter !== 'all' && getEntrySource(e) !== sourceFilter) return false;
+    return true;
+  });
   if (unseen.length === 0) return;
   const container = document.getElementById('sessionContainer');
   if (!container.querySelector('.session-group')) { render(); return; }
@@ -1255,6 +1279,53 @@ function clearSearch() {
   document.getElementById('searchResultCount').innerHTML = '';
   incrementalMode = false;
   render();
+}
+
+function onSourceFilterChange() {
+  const val = document.getElementById('sourceFilter').value;
+  setSourceFilter(val);
+  incrementalMode = false;
+  render();
+}
+
+function getEntrySource(entry) {
+  return entry.source || 'claude-code';
+}
+
+const SOURCE_LABELS = {
+  'claude-code': 'Claude Code',
+  'hermes': 'Hermes',
+  'codex': 'Codex',
+  'opencode': 'OpenCode',
+  'cursor': 'Cursor',
+};
+
+function updateSourceFilterDropdown() {
+  const select = document.getElementById('sourceFilter');
+  const sourceCounts = {};
+  entries.forEach(e => {
+    const src = getEntrySource(e);
+    sourceCounts[src] = (sourceCounts[src] || 0) + 1;
+  });
+
+  // 构建下拉选项：全部 + 各来源（按数量降序）
+  const sorted = Object.entries(sourceCounts).sort((a, b) => b[1] - a[1]);
+  let html = `<option value="all">全部工具 (${entries.length})</option>`;
+  for (const [src, count] of sorted) {
+    const label = SOURCE_LABELS[src] || src;
+    html += `<option value="${src}">${label} (${count})</option>`;
+  }
+  // 补充未使用但已知的来源
+  for (const [key, label] of Object.entries(SOURCE_LABELS)) {
+    if (!(key in sourceCounts)) {
+      html += `<option value="${key}">${label}</option>`;
+    }
+  }
+  select.innerHTML = html;
+
+  // 恢复上次选择
+  const saved = getSourceFilter();
+  select.value = saved;
 }
 
 /* ==========================================================
@@ -1401,10 +1472,13 @@ function render() {
   let statusFilter = 'all';
   if (activeFilter.includes('|')) { const parts = activeFilter.split('|'); typeFilter = parts[0]; statusFilter = parts[1]; }
 
+  const sourceFilter = getSourceFilter();
+
   const filtered = entries.filter(e => {
     if (typeFilter !== 'all' && getType(e.tool_name) !== typeFilter) return false;
     if (statusFilter === 'ok' && e.success === false) return false;
     if (statusFilter === 'fail' && e.success !== false) return false;
+    if (sourceFilter !== 'all' && getEntrySource(e) !== sourceFilter) return false;
     if (!q) return true;
     if (e.tool_name.toLowerCase().includes(q)) return true;
     if (e.session_id && e.session_id.toLowerCase().includes(q)) return true;
@@ -1414,6 +1488,7 @@ function render() {
   });
 
   updateStats();
+  updateSourceFilterDropdown();
 
   const searchResultCount = document.getElementById('searchResultCount');
   searchResultCount.innerHTML = q ? `<span class="count">${filtered.length}</span> 条结果` : '';
@@ -1436,10 +1511,11 @@ function render() {
   });
 
   if (filtered.length === 0) {
+    const hasFilter = q || typeFilter !== 'all' || statusFilter !== 'all' || sourceFilter !== 'all';
     container.innerHTML = `<div class="empty-state" style="background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:40px 20px">
-      <div class="icon">${q || typeFilter !== 'all' || statusFilter !== 'all' ? '🔍' : '⚡'}</div>
-      <h2>${q || typeFilter !== 'all' || statusFilter !== 'all' ? '没有匹配的调用' : '等待工具调用…'}</h2>
-      ${q || typeFilter !== 'all' || statusFilter !== 'all' ? '<p>试试其他搜索词或取消筛选</p>' : '<p>hook 生效后会自动记录</p>'}
+      <div class="icon">${hasFilter ? '🔍' : '⚡'}</div>
+      <h2>${hasFilter ? '没有匹配的调用' : '等待工具调用…'}</h2>
+      ${hasFilter ? '<p>试试其他搜索词或取消筛选</p>' : '<p>hook 生效后会自动记录</p>'}
     </div>`;
     return;
   }

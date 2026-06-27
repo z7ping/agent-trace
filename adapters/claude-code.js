@@ -202,6 +202,7 @@ class ClaudeCodeAdapter extends BaseAdapter {
             project_key: projectKey,
             project_name: projectName,
             tool_name: toolName,
+            source: this.name,
             input_summary: this.summarizeInput(toolName, data.tool_input || {}),
             success: success,
         };
