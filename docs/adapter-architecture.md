@@ -278,47 +278,7 @@ GET /api/tools
 
 ---
 
-## 8. 调研报告
+## 8. 相关文档
 
-### 8.1 工具数据源调研
-
-| 工具 | 数据源 | 数据格式 | 采集方式 |
-|------|--------|----------|----------|
-| **Claude Code** | hooks stdin JSON | PreToolUse/PostToolUse | 实时钩子 |
-| **Hermes** | `~/.hermes/state.db` | SQLite messages表 | 定时轮询 |
-| **Codex** | hooks stdin JSON | PreToolUse/PostToolUse | 实时钩子 |
-| **OpenCode** | `~/.local/share/opencode/opencode.db` | SQLite part表 | 定时轮询 |
-
-### 8.2 Token消耗数据
-
-| 工具 | 数据源 | 可采集的Token数据 |
-|------|--------|-------------------|
-| **Claude Code** | sessions/*.jsonl | input/output/cache tokens |
-| **Hermes** | state.db messages表 | token_count字段 |
-| **Codex** | threads表 | tokens_used字段 |
-| **OpenCode** | message表 data字段 | tokens对象 |
-
-### 8.3 竞品分析
-
-| 项目 | 功能 | 优点 | 缺点 |
-|------|------|------|------|
-| **dotai** | 配置统一 | 定义一次生成多工具配置 | 只做单向同步，无统计 |
-| **agentalign** | MCP同步 | 双向同步+事务回滚 | 只管MCP，不管skill |
-| **mem-bridge** | 记忆聚合 | 统一搜索历史决策 | 只管记忆，不管配置 |
-
-### 8.4 Agent Beat的定位
-
-**差异化优势**：
-1. **统一追踪** — 一套代码适配所有工具
-2. **实时监控** — 钩子+轮询双模式
-3. **可视化** — 调用链+仪表盘
-4. **可扩展** — 适配器模式，易于添加新工具
-
----
-
-## 9. 已解决问题
-
-1. **Hermes的数据源** → 使用state.db（SQLite只读）
-2. **Codex的hooks机制** → 与Claude Code类似的PreToolUse/PostToolUse
-3. **实时性要求** → 钩子实时，轮询5秒间隔
-4. **数据保留策略** → JSONL文件，按项目隔离
+- 调研报告：[research-report.md](./research-report.md)
+- 实现细节：见各适配器文件（adapters/*.js）
