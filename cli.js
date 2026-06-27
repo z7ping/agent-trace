@@ -412,7 +412,7 @@ function cmdStatus(baseDir) {
 // ─── package 命令 ────────────────────────────────────────────────
 
 function cmdPackage() {
-    const pkgName = `tooltrace-v${VERSION}`;
+    const pkgName = `agent-beat-v${VERSION}`;
     const distDir = path.join(PROJECT_DIR, 'dist');
 
     log(`📦 打包 Agent Beat v${VERSION}`, 'bright');
@@ -423,7 +423,7 @@ function cmdPackage() {
     mkdirp(distDir);
 
     // 创建临时目录
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'tooltrace-'));
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-beat-'));
     const pkgDir = path.join(tmpDir, pkgName);
     mkdirp(path.join(pkgDir, 'hooks'));
 

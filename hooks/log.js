@@ -12,7 +12,7 @@ const path = require('path');
 const fs = require('fs');
 const { getDefaultAdapter } = require('../adapters');
 
-// 上级目录（tooltrace 根目录）
+// 上级目录（agent-beat 根目录）
 const BASE_DIR = path.join(__dirname, '..');
 
 const adapter = getDefaultAdapter();
