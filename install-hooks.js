@@ -8,7 +8,7 @@ const path = require('path');
 const os = require('os');
 
 const settingsFile = path.join(os.homedir(), '.claude', 'settings.json');
-const toolTrackerDir = path.join(os.homedir(), '.claude', 'ai-tool-tracker');
+const toolTrackerDir = path.join(os.homedir(), '.claude', 'agent-beat');
 const prelogPath = path.join(toolTrackerDir, 'hooks', 'prelog.js').replace(/\\/g, '/');
 const logPath = path.join(toolTrackerDir, 'hooks', 'log.js').replace(/\\/g, '/');
 

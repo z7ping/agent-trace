@@ -3,13 +3,13 @@
  * AI Tool Tracker - 统一 CLI 入口
  *
  * 用法:
- *   ai-tool-tracker install              安装 hooks 到 Claude Code 配置
- *   ai-tool-tracker start [port]         前台启动服务器
- *   ai-tool-tracker start --daemon       后台守护进程模式
- *   ai-tool-tracker stop                 停止后台服务
- *   ai-tool-tracker status               查看服务状态
- *   ai-tool-tracker package              打包分发
- *   ai-tool-tracker uninstall            卸载并清理所有配置和数据
+ *   agent-beat install              安装 hooks 到 Claude Code 配置
+ *   agent-beat start [port]         前台启动服务器
+ *   agent-beat start --daemon       后台守护进程模式
+ *   agent-beat stop                 停止后台服务
+ *   agent-beat status               查看服务状态
+ *   agent-beat package              打包分发
+ *   agent-beat uninstall            卸载并清理所有配置和数据
  *
  * 替代: install.sh, install.bat, start.sh, start.bat, package.sh
  */
@@ -22,7 +22,7 @@ const { spawn, execSync } = require('child_process');
 // ─── 配置 ────────────────────────────────────────────────────────
 
 const PROJECT_DIR = __dirname;
-const INSTALL_DIR = path.join(os.homedir(), '.claude', 'ai-tool-tracker');
+const INSTALL_DIR = path.join(os.homedir(), '.claude', 'agent-beat');
 const SETTINGS_FILE = path.join(os.homedir(), '.claude', 'settings.json');
 const DEFAULT_PORT = 37215;
 const VERSION = '1.8.1';
@@ -193,11 +193,11 @@ async function cmdInstall() {
             log(`[OK] 服务已启动 → http://localhost:${DEFAULT_PORT}/`, 'green');
         } else {
             log('[WARN] 服务未启动，请手动运行:', 'yellow');
-            log(`  ai-tool-tracker start`, 'dim');
+            log(`  agent-beat start`, 'dim');
         }
     } catch (_) {
         log('[WARN] 自动启动失败，请手动运行:', 'yellow');
-        log(`  ai-tool-tracker start`, 'dim');
+        log(`  agent-beat start`, 'dim');
     }
 
     // 7. 完成提示
@@ -209,9 +209,9 @@ async function cmdInstall() {
     log('  服务会在首次使用 Claude Code 工具时自动拉起', 'dim');
     log('  浏览器打开: http://localhost:37215/', 'dim');
     log('  管理命令:', 'dim');
-    log('    ai-tool-tracker start    启动服务', 'dim');
-    log('    ai-tool-tracker stop     停止服务', 'dim');
-    log('    ai-tool-tracker status   查看状态', 'dim');
+    log('    agent-beat start    启动服务', 'dim');
+    log('    agent-beat stop     停止服务', 'dim');
+    log('    agent-beat status   查看状态', 'dim');
     log('  向后兼容: node server.js 仍然可用', 'dim');
     console.log('');
     log(`文档: ${INSTALL_DIR}/README.md`, 'dim');
@@ -247,7 +247,7 @@ function cmdStart(argv) {
                 `objShell.CurrentDirectory = "${PROJECT_DIR}"`,
                 `objShell.Run "cmd.exe /c start /b node server.js ${port} --daemon", 0, False`,
             ].join('\r\n');
-            const vbsPath = path.join(os.tmpdir(), 'ai-tool-tracker-daemon.vbs');
+            const vbsPath = path.join(os.tmpdir(), 'agent-beat-daemon.vbs');
             fs.writeFileSync(vbsPath, vbsContent, 'utf-8');
             try {
                 execSync(`wscript "${vbsPath}"`, { stdio: 'ignore' });
@@ -370,7 +370,7 @@ async function cmdUninstall() {
         log(`[WARN] 清理配置失败: ${e.message}`, 'yellow');
     }
 
-    // 3. 删除 ~/.claude/ai-tool-tracker/ 目录
+    // 3. 删除 ~/.claude/agent-beat/ 目录
     log(`删除目录: ${INSTALL_DIR}`, 'cyan');
     if (fs.existsSync(INSTALL_DIR)) {
         rimraf(INSTALL_DIR);
@@ -380,9 +380,9 @@ async function cmdUninstall() {
     }
 
     // 4. npm unlink -g
-    log('执行 npm unlink -g ai-tool-tracker ...', 'cyan');
+    log('执行 npm unlink -g agent-beat ...', 'cyan');
     try {
-        execSync('npm unlink -g ai-tool-tracker', { stdio: 'ignore' });
+        execSync('npm unlink -g agent-beat', { stdio: 'ignore' });
         log('[OK] 全局链接已移除', 'green');
     } catch (_) {
         log('[SKIP] 未找到全局链接', 'dim');
@@ -481,7 +481,7 @@ function cmdPackage() {
     log('分发方式:', 'yellow');
     log('  1. 上传到 GitHub Releases', 'dim');
     log('  2. 直接分享归档文件', 'dim');
-    log('  3. 用户运行: ai-tool-tracker install', 'dim');
+    log('  3. 用户运行: agent-beat install', 'dim');
     log('═'.repeat(45), 'dim');
 }
 
@@ -491,7 +491,7 @@ function showHelp() {
     log('🧠 AI Tool Tracker CLI', 'bright');
     console.log('');
     log('用法:', 'yellow');
-    log('  ai-tool-tracker <command> [options]', 'cyan');
+    log('  agent-beat <command> [options]', 'cyan');
     console.log('');
     log('命令:', 'yellow');
     log('  install              安装 hooks 到 Claude Code 配置', 'dim');
@@ -507,12 +507,12 @@ function showHelp() {
     log('  --open               自动打开浏览器（仅 start）', 'dim');
     console.log('');
     log('示例:', 'yellow');
-    log('  ai-tool-tracker install           # 首次安装', 'dim');
-    log('  ai-tool-tracker start             # 前台启动', 'dim');
-    log('  ai-tool-tracker start --daemon    # 后台启动', 'dim');
-    log('  ai-tool-tracker stop              # 停止服务', 'dim');
-    log('  ai-tool-tracker status            # 查看状态', 'dim');
-    log('  ai-tool-tracker package           # 打包分发', 'dim');
+    log('  agent-beat install           # 首次安装', 'dim');
+    log('  agent-beat start             # 前台启动', 'dim');
+    log('  agent-beat start --daemon    # 后台启动', 'dim');
+    log('  agent-beat stop              # 停止服务', 'dim');
+    log('  agent-beat status            # 查看状态', 'dim');
+    log('  agent-beat package           # 打包分发', 'dim');
     console.log('');
     log('向后兼容:', 'yellow');
     log('  node server.js [port]         # 仍然可用', 'dim');

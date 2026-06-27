@@ -1,8 +1,8 @@
-# 🧠 AI Tool Tracker
+# 🧠 Agent Beat
 
 实时记录并可视化 Claude Code 的每次工具调用，按会话分组展示，方便调试和回溯。
 
-> GitHub: https://github.com/你的用户名/ai-tool-tracker
+> GitHub: https://github.com/你的用户名/agent-beat
 
 ## ✨ 特性
 
@@ -39,7 +39,7 @@ git clone https://github.com/你的用户名/tooltrace.git
 cd tooltrace
 
 # 一键安装（所有平台）
-ai-tool-tracker install
+agent-beat install
 ```
 
 ### 方式二：npm 脚本安装
@@ -64,7 +64,7 @@ cp -r .claude/tooltrace ~/.claude/
   "hooks": {
     "PreToolUse": [{
       "hooks": [{
-        "command": "node ~/.claude/ai-tool-tracker/hooks/prelog.js",
+        "command": "node ~/.claude/agent-beat/hooks/prelog.js",
         "type": "command",
         "timeout": 5,
         "async": false
@@ -72,7 +72,7 @@ cp -r .claude/tooltrace ~/.claude/
     }],
     "PostToolUse": [{
       "hooks": [{
-        "command": "node ~/.claude/ai-tool-tracker/hooks/log.js",
+        "command": "node ~/.claude/agent-beat/hooks/log.js",
         "type": "command",
         "timeout": 10,
         "async": false
@@ -89,7 +89,7 @@ cp -r .claude/tooltrace ~/.claude/
   "hooks": {
     "PreToolUse": [{
       "hooks": [{
-        "command": "python ~/.claude/ai-tool-tracker/hooks/prelog.py",
+        "command": "python ~/.claude/agent-beat/hooks/prelog.py",
         "type": "command",
         "timeout": 5,
         "async": false
@@ -97,7 +97,7 @@ cp -r .claude/tooltrace ~/.claude/
     }],
     "PostToolUse": [{
       "hooks": [{
-        "command": "python ~/.claude/ai-tool-tracker/hooks/log.py",
+        "command": "python ~/.claude/agent-beat/hooks/log.py",
         "type": "command",
         "timeout": 10,
         "async": false
@@ -112,7 +112,7 @@ cp -r .claude/tooltrace ~/.claude/
 ## 📁 目录结构
 
 ```
-~/.claude/ai-tool-tracker/
+~/.claude/agent-beat/
 ├── hooks/                # Hook 脚本
 │   ├── prelog.js         # Node.js 版本（推荐）
 │   ├── prelog.py         # Python 版本（备选）
@@ -140,10 +140,10 @@ cp -r .claude/tooltrace ~/.claude/
 
 ```bash
 # 使用 CLI（推荐）
-ai-tool-tracker start             # 前台运行
-ai-tool-tracker start --daemon    # 后台守护进程
-ai-tool-tracker stop              # 停止服务
-ai-tool-tracker status            # 查看状态
+agent-beat start             # 前台运行
+agent-beat start --daemon    # 后台守护进程
+agent-beat stop              # 停止服务
+agent-beat status            # 查看状态
 
 # 或直接使用 server.js（向后兼容）
 node server.js 37215
@@ -221,7 +221,7 @@ node server.js --stop
 ## 🗑️ 卸载
 
 ```bash
-ai-tool-tracker uninstall
+agent-beat uninstall
 ```
 
 会自动停止服务、删除配置和数据、卸载全局命令。
@@ -230,7 +230,7 @@ ai-tool-tracker uninstall
 
 ### v1.8.1 (2026-06-09)
 - 新增统一 CLI 入口 `cli.js`，替代 5 个 shell/bat 脚本
-- 新增 `bin` 入口: `ai-tool-tracker` 命令
+- 新增 `bin` 入口: `agent-beat` 命令
 - 新增 npm scripts: `install-hooks`, `start`, `stop`, `status`, `package`
 - 删除 `install.sh`, `install.bat`, `start.sh`, `start.bat`, `package.sh`
 - 更新 `server-guard.js` 使用 `cli.js` 统一启动服务
@@ -272,7 +272,7 @@ ai-tool-tracker uninstall
 - 错误日志查看功能
 
 ### v1.3.0 (2026-06-05)
-- 项目更名为 AI Tool Tracker
+- 项目更名为 Agent Beat
 - 精简目录结构
 - 精简文档
 
