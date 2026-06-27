@@ -699,7 +699,7 @@ body {
 
 <!-- ===== Tab 导航 ===== -->
 <div class="tab-nav">
-  <div class="tab-title">🧠 AI Tool Tracker</div>
+  <div class="tab-title">🧠 Agent Beat</div>
   <button class="tab-btn active" data-tab="callchain" onclick="switchTab('callchain')">🔗 调用链</button>
   <button class="tab-btn" data-tab="dashboard" onclick="switchTab('dashboard')">📊 仪表盘</button>
   <div class="tab-nav-right">
@@ -1911,6 +1911,12 @@ async function loadDashboardData() {
     dashEntries = dashEntries.filter(e => new Date(e.ts) >= new Date(since));
   }
 
+  // 工具来源筛选
+  const dashSourceFilter = document.getElementById('sourceFilter').value;
+  if (dashSourceFilter !== 'all') {
+    dashEntries = dashEntries.filter(e => (e.source || 'claude-code') === dashSourceFilter);
+  }
+
   // 排序
   dashEntries.sort((a, b) => new Date(a.ts) - new Date(b.ts));
 
@@ -2165,7 +2171,7 @@ function exportMarkdown() {
   dashEntries.forEach(e => { toolCounts[e.tool_name] = (toolCounts[e.tool_name] || 0) + 1; });
   const topTools = Object.entries(toolCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
 
-  let md = `# AI Tool Tracker 报告\n\n**导出时间**: ${new Date().toLocaleString()}\n\n`;
+  let md = `# Agent Beat 报告\n\n**导出时间**: ${new Date().toLocaleString()}\n\n`;
   md += `## 📊 总览\n\n| 指标 | 数值 |\n|------|------|\n`;
   md += `| 总调用次数 | ${total} |\n| 成功次数 | ${success} |\n| 失败次数 | ${fail} |\n`;
   md += `| 成功率 | ${successRate}% |\n| 平均耗时 | ${formatDuration(avgDuration)} |\n| 慢调用 (>1s) | ${slowCount} |\n\n`;
