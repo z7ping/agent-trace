@@ -48,13 +48,12 @@ npx agent-beat install
 npm run install-hooks
 ```
 
-### 方式三：手动安装
+### 方式三：全局安装（推送到npm后可用）
 
 ```bash
-# 1. 复制文件
-cp -r .claude/agent-beat ~/.claude/
-
-# 2. 编辑 ~/.claude/settings.json，添加 hooks 配置
+# 全局安装后可直接使用 agent-beat 命令
+npm install -g agent-beat
+agent-beat install
 ```
 
 **Node.js 版本（推荐）：**
@@ -292,3 +291,12 @@ agent-beat uninstall
 ## 📄 许可证
 
 MIT License
+
+---
+
+## TODO
+
+- [ ] 推送到npm registry，支持 `npm install -g agent-beat`
+- [ ] 添加CHANGELOG
+- [ ] 添加LICENSE
+- [ ] 完善Cursor适配器
