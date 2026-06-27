@@ -3,83 +3,24 @@
  * PreToolUse hook: 记录工具调用开始时间和调用栈
  * 与 log.js (PostToolUse) 配合计算耗时和父子调用关系
  *
- * 支持多项目：状态文件按项目分组存储在 ~/.claude/tooltrace/states/ 目录下
+ * 委托给适配器处理具体逻辑，本文件负责：
+ * 1. 自动拉起 HTTP 服务
+ * 2. 读取 stdin
+ * 3. 分发给默认适配器的 pre() 方法
  */
 
-const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto');
+const { getDefaultAdapter } = require('../adapters');
 
 // 上级目录（tooltrace 根目录）
 const BASE_DIR = path.join(__dirname, '..');
-const STATES_DIR = path.join(BASE_DIR, 'states');
 
-// 确保目录存在
-if (!fs.existsSync(STATES_DIR)) {
-    fs.mkdirSync(STATES_DIR, { recursive: true });
-}
-
-function getProjectKey(cwd) {
-    if (!cwd) cwd = process.cwd();
-    return crypto.createHash('md5').update(cwd).digest('hex').substring(0, 12);
-}
-
-function getStateFile(projectKey) {
-    return path.join(STATES_DIR, `${projectKey}.json`);
-}
-
-function readState(stateFile) {
-    if (fs.existsSync(stateFile)) {
-        try {
-            const content = fs.readFileSync(stateFile, 'utf-8').trim();
-            if (content) {
-                return JSON.parse(content);
-            }
-        } catch (e) {
-            // 忽略错误
-        }
-    }
-    return { seq: 0, stack: [] };
-}
-
-function writeState(stateFile, state) {
-    fs.writeFileSync(stateFile, JSON.stringify(state, null, 2), 'utf-8');
-}
-
-function processEntry(data) {
-    if (!data || typeof data !== 'object') return;
-
-    const toolName = data.tool_name;
-    if (!toolName) return;
-
-    // 从数据中获取 cwd
-    const cwd = data.cwd || data.working_directory || process.cwd();
-    const projectKey = getProjectKey(cwd);
-    const stateFile = getStateFile(projectKey);
-
-    // 读取当前状态
-    const state = readState(stateFile);
-    state.seq += 1;
-    const seq = state.seq;
-
-    // 记录父调用（栈顶元素的 seq）
-    const parentSeq = state.stack.length > 0 ? state.stack[state.stack.length - 1].seq : null;
-
-    const entry = {
-        seq: seq,
-        tool_name: toolName,
-        ts_start: new Date().toISOString(),
-        parent_seq: parentSeq,
-        cwd: cwd
-    };
-    state.stack.push(entry);
-
-    writeState(stateFile, state);
-}
+const adapter = getDefaultAdapter();
 
 function logError(e) {
     try {
-        const logFile = path.join(BASE_DIR, 'trace_error.log');
+        const fs = require('fs');
+        const logFile = require('path').join(BASE_DIR, 'trace_error.log');
         const msg = `[${new Date().toISOString()}] PreToolUse prelog.js: ${e.message || e}\n`;
         fs.appendFileSync(logFile, msg, 'utf-8');
     } catch (_) {
@@ -106,9 +47,9 @@ function main() {
                 const data = JSON.parse(input);
 
                 if (Array.isArray(data)) {
-                    data.forEach(item => processEntry(item));
+                    data.forEach(item => adapter.pre(item));
                 } else {
-                    processEntry(data);
+                    adapter.pre(data);
                 }
             } catch (e) {
                 logError(e);
