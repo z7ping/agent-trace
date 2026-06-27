@@ -24,8 +24,8 @@ const { spawn, execSync } = require('child_process');
 const PROJECT_DIR = __dirname;
 const INSTALL_DIR = path.join(os.homedir(), '.claude', 'agent-beat');
 const SETTINGS_FILE = path.join(os.homedir(), '.claude', 'settings.json');
-const DEFAULT_PORT = 37215;
-const VERSION = '1.8.1';
+const { DEFAULT_PORT } = require('./config');
+const VERSION = require('./package.json').version;
 
 // ─── 彩色输出 ────────────────────────────────────────────────────
 
@@ -146,7 +146,7 @@ async function cmdInstall() {
 
         // 根目录文件
         const rootFiles = [
-            'index.html', 'dashboard.html', 'server.js', 'install-hooks.js',
+            'index.html', 'server.js', 'install-hooks.js',
             'cli.js', 'schema.sql', 'README.md'
         ];
         rootFiles.forEach(f => {
@@ -207,7 +207,7 @@ async function cmdInstall() {
     console.log('');
     log('使用方式:', 'yellow');
     log('  服务会在首次使用 Claude Code 工具时自动拉起', 'dim');
-    log('  浏览器打开: http://localhost:37215/', 'dim');
+    log(`  浏览器打开: http://localhost:${DEFAULT_PORT}/`, 'dim');
     log('  管理命令:', 'dim');
     log('    agent-beat start    启动服务', 'dim');
     log('    agent-beat stop     停止服务', 'dim');
@@ -434,7 +434,7 @@ function cmdPackage() {
     hookFiles.forEach(f => copyFile(path.join(PROJECT_DIR, 'hooks', f), path.join(pkgDir, 'hooks', f)));
 
     const rootFiles = [
-        'index.html', 'dashboard.html', 'server.js', 'install-hooks.js',
+        'index.html', 'server.js', 'install-hooks.js',
         'cli.js', 'schema.sql', 'README.md', '.gitignore'
     ];
     rootFiles.forEach(f => copyFile(path.join(PROJECT_DIR, f), path.join(pkgDir, f)));

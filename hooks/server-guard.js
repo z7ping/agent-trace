@@ -11,7 +11,7 @@ const path = require('path');
 const net = require('net');
 const { spawn, exec } = require('child_process');
 
-const DEFAULT_PORT = 37215;
+const { DEFAULT_PORT } = require('../config');
 
 /**
  * 将路径转为 Windows 绝对路径（处理 Git Bash /c/... 格式）

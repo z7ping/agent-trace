@@ -129,19 +129,6 @@ class OpenCodeAdapter extends BaseAdapter {
             errorMsg = `Status: ${status}`;
         }
 
-        // 输出中的错误模式匹配
-        if (success && typeof output === 'string') {
-            const errorPatterns = [
-                'Traceback', 'Error:', 'ERROR:', 'FATAL:',
-                'Permission denied', 'command not found',
-                'No such file', 'SyntaxError:', 'FileNotFoundError:',
-            ];
-            if (errorPatterns.some(p => output.includes(p))) {
-                success = false;
-                errorMsg = output.substring(0, 300);
-            }
-        }
-
         return { success, error: errorMsg };
     }
 

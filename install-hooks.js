@@ -21,26 +21,41 @@ try {
     settings = {};
 }
 
-settings.hooks = {
-    PreToolUse: [{
-        hooks: [{
-            command: `node ${prelogPath}`,
-            type: 'command',
-            timeout: 5,
-            statusMessage: '',
-            async: false
-        }]
-    }],
-    PostToolUse: [{
-        hooks: [{
-            command: `node ${logPath}`,
-            type: 'command',
-            timeout: 10,
-            statusMessage: '',
-            async: false
-        }]
+// 合并 hooks：移除旧的 agent-beat hooks，再添加新的
+if (!settings.hooks) settings.hooks = {};
+
+const agentBeatMarker = 'agent-beat';
+
+function removeAgentBeatHooks(hookArray) {
+    if (!Array.isArray(hookArray)) return [];
+    return hookArray.filter(entry => {
+        if (!entry || !entry.hooks) return true;
+        return !entry.hooks.some(h => h.command && h.command.includes(agentBeatMarker));
+    });
+}
+
+settings.hooks.PreToolUse = removeAgentBeatHooks(settings.hooks.PreToolUse);
+settings.hooks.PostToolUse = removeAgentBeatHooks(settings.hooks.PostToolUse);
+
+settings.hooks.PreToolUse.push({
+    hooks: [{
+        command: `node ${prelogPath}`,
+        type: 'command',
+        timeout: 5,
+        statusMessage: '',
+        async: false
     }]
-};
+});
+
+settings.hooks.PostToolUse.push({
+    hooks: [{
+        command: `node ${logPath}`,
+        type: 'command',
+        timeout: 10,
+        statusMessage: '',
+        async: false
+    }]
+});
 
 fs.writeFileSync(settingsFile, JSON.stringify(settings, null, 2));
 console.log('   [OK] Settings updated');

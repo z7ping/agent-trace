@@ -11,44 +11,13 @@ const BaseAdapter = require('./base');
 const BASE_DIR = path.join(__dirname, '..');
 
 class ClaudeCodeAdapter extends BaseAdapter {
-    get name() {
-        return 'claude-code';
+    constructor() {
+        super();
+        this._db = null;
     }
 
-    // ─── PreToolUse ────────────────────────────────────────
-
-    /**
-     * 处理 PreToolUse 事件：记录工具调用开始时间和调用栈
-     * @param {Object} data - 从 stdin 读取的 JSON 数据
-     */
-    async pre(data) {
-        if (!data || typeof data !== 'object') return;
-
-        const toolName = data.tool_name;
-        if (!toolName) return;
-
-        const cwd = data.cwd || data.working_directory || process.cwd();
-        const projectKey = this.getProjectKey(cwd);
-        const stateFile = this.getStateFile(projectKey);
-
-        // 读取当前状态
-        const state = this.readState(stateFile);
-        state.seq += 1;
-        const seq = state.seq;
-
-        // 记录父调用（栈顶元素的 seq）
-        const parentSeq = state.stack.length > 0 ? state.stack[state.stack.length - 1].seq : null;
-
-        const entry = {
-            seq: seq,
-            tool_name: toolName,
-            ts_start: new Date().toISOString(),
-            parent_seq: parentSeq,
-            cwd: cwd
-        };
-        state.stack.push(entry);
-
-        this.writeState(stateFile, state);
+    get name() {
+        return 'claude-code';
     }
 
     // ─── PostToolUse ───────────────────────────────────────
@@ -106,46 +75,6 @@ class ClaudeCodeAdapter extends BaseAdapter {
     }
 
     /**
-     * 判断工具调用是否成功
-     * @param {*} response
-     * @returns {{ success: boolean, error: string|null }}
-     */
-    judgeSuccess(response) {
-        let success = true;
-        let errorMsg = null;
-
-        if (response && typeof response === 'object') {
-            success = response.success !== false;
-            const exitCode = response.exit_code ?? response.exitCode;
-            if (exitCode !== null && exitCode !== undefined && exitCode !== 0) {
-                success = false;
-            }
-            if (!success) {
-                errorMsg = response.stderr || response.error || response.output || this.extractError(response);
-                if (exitCode !== null && exitCode !== undefined && exitCode !== 0) {
-                    errorMsg = `Exit code ${exitCode}` + (errorMsg ? `: ${errorMsg}` : '');
-                }
-            }
-        } else if (typeof response === 'string') {
-            const respText = response.trim();
-            if (respText) {
-                const errorPatterns = [
-                    'Traceback (most recent call last)',
-                    'Error:', 'ERROR:', 'FATAL:',
-                    'SyntaxError:', 'FileNotFoundError:', 'Permission denied',
-                    'No such file or directory', 'command not found', 'fatal:',
-                ];
-                if (errorPatterns.some(p => respText.includes(p))) {
-                    success = false;
-                    errorMsg = respText.substring(0, 300);
-                }
-            }
-        }
-
-        return { success, error: errorMsg };
-    }
-
-    /**
      * 处理 PostToolUse 事件：记录工具调用日志
      * @param {Object} data - 从 stdin 读取的 JSON 数据
      */
@@ -175,7 +104,7 @@ class ClaudeCodeAdapter extends BaseAdapter {
         if (toolName) {
             const stateFile = this.getStateFile(projectKey);
             const state = this.readState(stateFile);
-            const preEntry = this.popFromStack(state, toolName);
+            const preEntry = this.popFromStack(state);
 
             if (preEntry) {
                 callSeq = preEntry.seq;
@@ -229,44 +158,51 @@ class ClaudeCodeAdapter extends BaseAdapter {
     }
 
     /**
-     * 双写 SQLite 数据库
+     * 双写 SQLite 数据库（单例连接 + try/finally）
      * @private
      */
     _writeToSqlite(data, record, projectKey, projectName, cwd, toolName, callSeq, parentSeq, durationMs, success) {
         const dbFile = path.join(BASE_DIR, 'tracker.db');
         if (!fs.existsSync(dbFile)) return;
 
+        let Database;
         try {
-            let Database;
+            Database = require('better-sqlite3');
+        } catch (_) {
+            return; // better-sqlite3 未安装则跳过
+        }
+
+        // 单例连接
+        if (!this._db) {
             try {
-                Database = require('better-sqlite3');
+                this._db = new Database(dbFile);
             } catch (_) {
-                return; // better-sqlite3 未安装则跳过
+                return;
             }
+        }
 
-            const db = new Database(dbFile);
-
-            const upsertProject = db.prepare(`
+        try {
+            const upsertProject = this._db.prepare(`
                 INSERT OR IGNORE INTO projects (project_key, name, cwd, last_seen)
                 VALUES (?, ?, ?, ?)
             `);
             upsertProject.run(projectKey, projectName, cwd, new Date().toISOString());
 
-            db.prepare('UPDATE projects SET last_seen = ? WHERE project_key = ?')
+            this._db.prepare('UPDATE projects SET last_seen = ? WHERE project_key = ?')
                 .run(new Date().toISOString(), projectKey);
 
             if (data.session_id) {
-                const upsertSession = db.prepare(`
+                const upsertSession = this._db.prepare(`
                     INSERT OR IGNORE INTO sessions (session_id, project_key, start_time, tool_count)
                     VALUES (?, ?, ?, 0)
                 `);
                 upsertSession.run(data.session_id, projectKey, new Date().toISOString());
 
-                db.prepare('UPDATE sessions SET tool_count = tool_count + 1 WHERE session_id = ?')
+                this._db.prepare('UPDATE sessions SET tool_count = tool_count + 1 WHERE session_id = ?')
                     .run(data.session_id);
             }
 
-            const insertCall = db.prepare(`
+            const insertCall = this._db.prepare(`
                 INSERT INTO tool_calls (ts, session_id, project_key, tool_name, input_summary, success, seq, parent_seq, duration_ms, error)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `);
@@ -282,67 +218,15 @@ class ClaudeCodeAdapter extends BaseAdapter {
                 durationMs || null,
                 record.error || null
             );
-
-            db.close();
         } catch (e) {
             try {
                 const errorLog = path.join(BASE_DIR, 'trace_error.log');
                 const timestamp = new Date().toISOString();
                 fs.appendFileSync(errorLog, `[${timestamp}] SQLite error: ${e.message}\n`, 'utf-8');
             } catch (_) {}
+        } finally {
+            // 连接保持复用，不关闭
         }
-    }
-
-    // ─── getRecords ────────────────────────────────────────
-
-    /**
-     * 获取工具调用记录
-     * @param {Object} filter - 过滤条件
-     * @param {string} filter.project_key
-     * @param {string} filter.session_id
-     * @param {number} filter.limit
-     * @returns {Array}
-     */
-    async getRecords(filter = {}) {
-        const { project_key, session_id, limit = 100 } = filter;
-        const records = [];
-
-        if (project_key) {
-            const logFile = this.getLogFile(project_key);
-            if (fs.existsSync(logFile)) {
-                const lines = fs.readFileSync(logFile, 'utf-8').trim().split('\n').filter(Boolean);
-                for (const line of lines) {
-                    try {
-                        const record = JSON.parse(line);
-                        if (session_id && record.session_id !== session_id) continue;
-                        records.push(record);
-                    } catch (e) {
-                        // 跳过无效行
-                    }
-                }
-            }
-        } else {
-            // 遍历所有项目
-            const logsDir = path.join(BASE_DIR, 'logs');
-            if (fs.existsSync(logsDir)) {
-                const files = fs.readdirSync(logsDir).filter(f => f.endsWith('.jsonl'));
-                for (const file of files) {
-                    const logFile = path.join(logsDir, file);
-                    const lines = fs.readFileSync(logFile, 'utf-8').trim().split('\n').filter(Boolean);
-                    for (const line of lines) {
-                        try {
-                            const record = JSON.parse(line);
-                            if (session_id && record.session_id !== session_id) continue;
-                            records.push(record);
-                        } catch (e) {
-                            // 跳过无效行
-                        }
-                    }
-                }
-            }
-        }
-
-        return records.slice(-limit);
     }
 }
 

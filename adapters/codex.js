@@ -17,40 +17,9 @@ class CodexAdapter extends BaseAdapter {
         return 'codex';
     }
 
-    // ─── PreToolUse ────────────────────────────────────────
-
-    /**
-     * 处理 PreToolUse 事件：记录工具调用开始时间和调用栈
-     * @param {Object} data - 从 stdin 读取的 JSON 数据
-     */
+    // pre() 继承自 base.js，覆盖 tool_name 字段名
     async pre(data) {
-        if (!data || typeof data !== 'object') return;
-
-        const toolName = data.tool_name || data.name || data.tool;
-        if (!toolName) return;
-
-        const cwd = data.cwd || data.working_directory || data.workdir || process.cwd();
-        const projectKey = this.getProjectKey(cwd);
-        const stateFile = this.getStateFile(projectKey);
-
-        // 读取当前状态
-        const state = this.readState(stateFile);
-        state.seq += 1;
-        const seq = state.seq;
-
-        // 记录父调用（栈顶元素的 seq）
-        const parentSeq = state.stack.length > 0 ? state.stack[state.stack.length - 1].seq : null;
-
-        const entry = {
-            seq: seq,
-            tool_name: toolName,
-            ts_start: new Date().toISOString(),
-            parent_seq: parentSeq,
-            cwd: cwd
-        };
-        state.stack.push(entry);
-
-        this.writeState(stateFile, state);
+        return super.pre(data, { toolNameField: 'tool_name', cwdFields: ['cwd', 'working_directory', 'workdir'] });
     }
 
     // ─── PostToolUse ───────────────────────────────────────
@@ -121,20 +90,6 @@ class CodexAdapter extends BaseAdapter {
                     errorMsg = `Exit code ${exitCode}` + (errorMsg ? `: ${errorMsg}` : '');
                 }
             }
-        } else if (typeof response === 'string') {
-            const respText = response.trim();
-            if (respText) {
-                const errorPatterns = [
-                    'Traceback (most recent call last)',
-                    'Error:', 'ERROR:', 'FATAL:',
-                    'SyntaxError:', 'FileNotFoundError:', 'Permission denied',
-                    'No such file or directory', 'command not found', 'fatal:',
-                ];
-                if (errorPatterns.some(p => respText.includes(p))) {
-                    success = false;
-                    errorMsg = respText.substring(0, 300);
-                }
-            }
         }
 
         return { success, error: errorMsg };
@@ -170,7 +125,7 @@ class CodexAdapter extends BaseAdapter {
         if (toolName) {
             const stateFile = this.getStateFile(projectKey);
             const state = this.readState(stateFile);
-            const preEntry = this.popFromStack(state, toolName);
+            const preEntry = this.popFromStack(state);
 
             if (preEntry) {
                 callSeq = preEntry.seq;

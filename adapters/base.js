@@ -206,18 +206,122 @@ class BaseAdapter {
     }
 
     /**
-     * 从调用栈中弹出匹配的条目
+     * 从调用栈中弹出栈顶条目（LIFO 严格后进先出）
      * @param {Object} state
-     * @param {string} toolName
      * @returns {Object|null}
      */
-    popFromStack(state, toolName) {
-        for (let i = state.stack.length - 1; i >= 0; i--) {
-            if (state.stack[i].tool_name === toolName) {
-                return state.stack.splice(i, 1)[0];
+    popFromStack(state) {
+        if (state.stack.length === 0) return null;
+        return state.stack.pop();
+    }
+
+    /**
+     * 处理 PreToolUse 事件（通用实现）
+     * @param {Object} data - 从 stdin 读取的 JSON 数据
+     * @param {Object} [opts] - 可选覆盖 { toolNameField, cwdFields }
+     */
+    async pre(data, opts = {}) {
+        if (!data || typeof data !== 'object') return;
+
+        const toolNameField = opts.toolNameField || 'tool_name';
+        const toolName = data[toolNameField];
+        if (!toolName) return;
+
+        const cwdFields = opts.cwdFields || ['cwd', 'working_directory'];
+        let cwd;
+        for (const f of cwdFields) {
+            if (data[f]) { cwd = data[f]; break; }
+        }
+        cwd = cwd || process.cwd();
+
+        const projectKey = this.getProjectKey(cwd);
+        const stateFile = this.getStateFile(projectKey);
+
+        const state = this.readState(stateFile);
+        state.seq += 1;
+        const seq = state.seq;
+
+        const parentSeq = state.stack.length > 0 ? state.stack[state.stack.length - 1].seq : null;
+
+        const entry = {
+            seq: seq,
+            tool_name: toolName,
+            ts_start: new Date().toISOString(),
+            parent_seq: parentSeq,
+            cwd: cwd
+        };
+        state.stack.push(entry);
+
+        this.writeState(stateFile, state);
+    }
+
+    /**
+     * 判断工具调用是否成功（通用实现：仅使用 exit_code）
+     * @param {*} response
+     * @returns {{ success: boolean, error: string|null }}
+     */
+    judgeSuccess(response) {
+        let success = true;
+        let errorMsg = null;
+
+        if (response && typeof response === 'object') {
+            success = response.success !== false;
+            const exitCode = response.exit_code ?? response.exitCode;
+            if (exitCode !== null && exitCode !== undefined && exitCode !== 0) {
+                success = false;
+            }
+            if (!success) {
+                errorMsg = response.stderr || response.error || response.output || this.extractError(response);
+                if (exitCode !== null && exitCode !== undefined && exitCode !== 0) {
+                    errorMsg = `Exit code ${exitCode}` + (errorMsg ? `: ${errorMsg}` : '');
+                }
             }
         }
-        return null;
+
+        return { success, error: errorMsg };
+    }
+
+    /**
+     * 获取工具调用记录（从 JSONL 文件读取）
+     * @param {Object} filter - 过滤条件
+     * @param {string} filter.project_key
+     * @param {string} filter.session_id
+     * @param {number} filter.limit
+     * @param {string} [filter.source] - 仅读取指定 source 的记录（用于有 source 字段的适配器）
+     * @returns {Array}
+     */
+    async getRecords(filter = {}) {
+        const { project_key, session_id, limit = 100, source } = filter;
+        const records = [];
+        const logsDir = path.join(BASE_DIR, 'logs');
+
+        const processLine = (line) => {
+            try {
+                const record = JSON.parse(line);
+                if (source && record.source !== source) return;
+                if (session_id && record.session_id !== session_id) return;
+                records.push(record);
+            } catch (_) {}
+        };
+
+        if (project_key) {
+            const logFile = this.getLogFile(project_key);
+            if (fs.existsSync(logFile)) {
+                const lines = fs.readFileSync(logFile, 'utf-8').trim().split('\n').filter(Boolean);
+                lines.forEach(processLine);
+            }
+        } else {
+            if (fs.existsSync(logsDir)) {
+                const files = fs.readdirSync(logsDir).filter(f => f.endsWith('.jsonl'));
+                for (const file of files) {
+                    const logFile = path.join(logsDir, file);
+                    const lines = fs.readFileSync(logFile, 'utf-8').trim().split('\n').filter(Boolean);
+                    lines.forEach(processLine);
+                }
+            }
+        }
+
+        return records.slice(-limit);
     }
 
     /**

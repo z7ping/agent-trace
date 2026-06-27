@@ -65,11 +65,11 @@ class HermesAdapter extends BaseAdapter {
         `);
 
         this._prepared.findAssistantByToolCallId = db.prepare(`
-            SELECT id, timestamp, tool_calls
-            FROM messages
-            WHERE role = 'assistant' AND tool_calls IS NOT NULL
-            AND tool_calls LIKE ?
-            ORDER BY id DESC
+            SELECT m.id, m.timestamp, m.tool_calls
+            FROM messages m, json_each(m.tool_calls) j
+            WHERE m.role = 'assistant' AND m.tool_calls IS NOT NULL
+            AND json_extract(j.value, '$.id') = ?
+            ORDER BY m.id DESC
             LIMIT 1
         `);
     }

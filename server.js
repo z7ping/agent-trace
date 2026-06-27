@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Agent Beat - 零依赖 HTTP 服务器
+ * Agent Beat - HTTP 服务器
  *
  * 用法:
  *   node server.js [port]              # 前台运行
@@ -9,10 +9,10 @@
  *   node server.js --stop              # 停止守护进程
  *   node server.js --status            # 查看运行状态
  *
- * 默认端口: 37215
+ * 默认端口: 37215（定义在 config.js）
  *
  * 特点:
- * - 零依赖，只需 Node.js
+ * - 可选依赖 better-sqlite3（用于仪表盘 API）
  * - 守护进程模式：后台运行，PID 文件管理
  * - 自动打开浏览器
  * - 支持 CORS（跨域）
@@ -37,7 +37,7 @@ const shouldStop = flags.includes('--stop');
 const shouldStatus = flags.includes('--status');
 
 // 端口：第一个非 flag 参数，或环境变量，或默认 37215
-const PORT = parseInt(positional[0], 10) || parseInt(process.env.TRACKER_PORT, 10) || 37215;
+const PORT = parseInt(positional[0], 10) || parseInt(process.env.TRACKER_PORT, 10) || require('./config').DEFAULT_PORT;
 const DIR = __dirname;
 const PID_FILE = path.join(DIR, '.server.pid');
 
@@ -440,7 +440,16 @@ async function main() {
     // ─── Skills API ───────────────────────────────────────────
     // 扫描 ~/.claude/projects/ 下所有 JSONL 文件，提取 skill_listing 数据
 
+    let skillsCache = null;
+    let skillsCacheTime = 0;
+    const SKILLS_CACHE_TTL = 30000; // 30 秒缓存
+
     function handleApiSkills(req, res, params) {
+        // 命中缓存则直接返回
+        if (skillsCache && (Date.now() - skillsCacheTime) < SKILLS_CACHE_TTL) {
+            sendJson(res, skillsCache);
+            return;
+        }
         try {
             const claudeProjectsDir = path.join(require('os').homedir(), '.claude', 'projects');
             const sessions = [];
@@ -530,12 +539,15 @@ async function main() {
             const totalSessions = sessions.length;
             const totalUniqueSkills = Object.keys(skillsSummary).length;
 
-            sendJson(res, {
+            const result = {
                 sessions,
                 skillsSummary,
                 totalSessions,
                 totalUniqueSkills
-            });
+            };
+            skillsCache = result;
+            skillsCacheTime = Date.now();
+            sendJson(res, result);
         } catch (e) {
             sendJson(res, { error: e.message }, 500);
         }
@@ -589,12 +601,12 @@ async function main() {
         
         if (urlPath === '/') urlPath = '/index.html';
 
-        const filePath = path.join(DIR, urlPath);
+        const filePath = path.resolve(path.join(DIR, urlPath));
         const ext = path.extname(filePath).toLowerCase();
         const contentType = mimeTypes[ext] || 'application/octet-stream';
 
-        // 安全检查：防止目录遍历
-        if (!filePath.startsWith(DIR)) {
+        // 安全检查：防止目录遍历（使用 path.resolve 解析后比对）
+        if (!filePath.startsWith(path.resolve(DIR))) {
             res.writeHead(403);
             res.end('Forbidden');
             return;

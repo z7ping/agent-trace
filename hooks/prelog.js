@@ -32,7 +32,7 @@ function main() {
     // ─── 自动拉起 HTTP 服务（非阻塞）─────────────────────────
     try {
         const guard = require('./server-guard');
-        guard.ensureServerRunning(BASE_DIR, 37215);
+        guard.ensureServerRunning(BASE_DIR);
     } catch (_) {}
     // ─────────────────────────────────────────────────────────
 
