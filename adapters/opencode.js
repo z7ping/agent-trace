@@ -224,6 +224,7 @@ class OpenCodeAdapter extends BaseAdapter {
 
                     const logFile = this.getLogFile(projectKey);
                     fs.appendFileSync(logFile, JSON.stringify(record) + '\n', 'utf-8');
+                    this._writeToSqlite(record);
                 }
             }
 
@@ -235,6 +236,25 @@ class OpenCodeAdapter extends BaseAdapter {
         } catch (e) {
             this.logError(e, 'opencode:poll');
         }
+    }
+
+    _writeToSqlite(record) {
+        const dbFile = require('path').join(require('./base').BASE_DIR || require('path').join(__dirname, '..'), 'tracker.db');
+        if (!require('fs').existsSync(dbFile)) return;
+        let Database;
+        try { Database = require('better-sqlite3'); } catch (_) { return; }
+        if (!this._db_sqlite) {
+            try { this._db_sqlite = new Database(dbFile); } catch (_) { return; }
+        }
+        try {
+            this._db_sqlite.prepare('INSERT OR IGNORE INTO projects (project_key, name, cwd, last_seen) VALUES (?, ?, ?, ?)').run(record.project_key, record.project_name, '', record.ts);
+            this._db_sqlite.prepare('UPDATE projects SET last_seen = ? WHERE project_key = ?').run(record.ts, record.project_key);
+            if (record.session_id) {
+                this._db_sqlite.prepare('INSERT OR IGNORE INTO sessions (session_id, project_key, start_time, tool_count) VALUES (?, ?, ?, 0)').run(record.session_id, record.project_key, record.ts);
+                this._db_sqlite.prepare('UPDATE sessions SET tool_count = tool_count + 1 WHERE session_id = ?').run(record.session_id);
+            }
+            this._db_sqlite.prepare('INSERT INTO tool_calls (ts, session_id, project_key, tool_name, input_summary, success, seq, parent_seq, duration_ms, error) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').run(record.ts, record.session_id || '', record.project_key, record.tool_name, JSON.stringify(record.input_summary), record.success ? 1 : 0, record.seq || null, record.parent_seq || null, record.duration_ms || null, record.error || null);
+        } catch (e) { try { require('fs').appendFileSync(require('path').join(require('./base').BASE_DIR || require('path').join(__dirname, '..'), 'trace_error.log'), '[' + new Date().toISOString() + '] SQLite error: ' + e.message + '\n'); } catch (_) {} }
     }
 
     // ─── 启动/停止轮询 ──────────────────────────────────────

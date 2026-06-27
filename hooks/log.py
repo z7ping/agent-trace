@@ -282,6 +282,7 @@ def process_record(data, depth=0):
         "project_key": project_key,
         "project_name": project_name,
         "tool_name": tool_name,
+        "source": "claude-code",
         "input_summary": summarize_input(tool_name, data.get("tool_input", {})),
         "success": success,
     }

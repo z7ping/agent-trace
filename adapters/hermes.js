@@ -159,26 +159,20 @@ class HermesAdapter extends BaseAdapter {
         try {
             const content = JSON.parse(contentJson);
             exitCode = content.exit_code ?? null;
+            if (content.success === false) {
+                success = false;
+                errorMsg = content.error || 'Tool reported failure';
+            }
             if (exitCode !== null && exitCode !== 0) {
                 success = false;
-                errorMsg = `Exit code ${exitCode}`;
+                errorMsg = `Exit code ${exitCode}` + (errorMsg ? ': ' + errorMsg : '');
             }
-            if (content.error) {
+            if (!success && content.error) {
                 success = false;
                 errorMsg = (errorMsg ? errorMsg + ': ' : '') + String(content.error).substring(0, 300);
             }
         } catch (_) {
-            // 非 JSON 格式，检查是否包含错误模式
-            if (typeof contentJson === 'string') {
-                const errorPatterns = [
-                    'Traceback', 'Error:', 'ERROR:', 'FATAL:',
-                    'Permission denied', 'command not found',
-                ];
-                if (errorPatterns.some(p => contentJson.includes(p))) {
-                    success = false;
-                    errorMsg = contentJson.substring(0, 300);
-                }
-            }
+            // 非 JSON 格式，无法判断
         }
 
         return { success, error: errorMsg, exitCode };
