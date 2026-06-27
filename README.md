@@ -1,19 +1,21 @@
 # 🧠 Agent Beat
 
-实时记录并可视化 Claude Code 的每次工具调用，按会话分组展示，方便调试和回溯。
+实时记录并可视化 AI 编码工具的每次工具调用，按会话分组展示，方便调试和回溯。
 
-> GitHub: https://github.com/你的用户名/agent-beat
+支持工具：Claude Code、Hermes、Codex、OpenCode、Cursor
+
+> Gitea: http://192.168.31.239:53000/ai-area/ai-tool-tracker
 
 ## ✨ 特性
 
+- **多工具支持**：一套系统追踪 6 种 AI 编码工具
 - **一键安装**：运行脚本即可完成配置
-- **零操作启动**：安装后自动在后台运行，首次使用 Claude Code 工具时自动拉起服务
-- **全局配置**：一次配置，所有项目自动生效
-- **多项目支持**：按项目分组查看，支持项目切换
+- **零操作启动**：安装后自动在后台运行，首次使用工具时自动拉起服务
 - **调用链追踪**：树形展示 Agent 调用的子工具
 - **实时监控**：自动刷新，增量加载
-- **多平台支持**：Windows、macOS、Linux 全平台兼容
-- **依赖简单**：只需 Node.js + better-sqlite3（`npm install` 自动安装）
+- **分析仪表盘**：使用统计、性能分析、错误分析
+- **工具筛选**：按工具类型筛选数据
+- **依赖简单**：只需 Node.js + better-sqlite3
 
 ## 🚀 快速安装
 
@@ -31,24 +33,28 @@ npm config set better_sqlite3_binary_host_mirror https://npmmirror.com/mirrors/b
 
 > Windows 用户如果编译失败，还需安装构建工具：`npm install -g windows-build-tools`
 
-### 方式一：CLI 安装（推荐）
+### 方式一：直接运行（推荐）
 
 ```bash
 # 克隆仓库
-git clone https://github.com/你的用户名/agent-beat.git
-cd agent-beat
+git clone http://192.168.31.239:53000/ai-area/ai-tool-tracker.git
+cd ai-tool-tracker
 
-# 一键安装（所有平台）
-npx agent-beat install
+# 安装依赖
+npm install
+
+# 启动服务
+node server.js
 ```
 
 ### 方式二：npm 脚本安装
 
 ```bash
+npm install
 npm run install-hooks
 ```
 
-### 方式三：全局安装（推送到npm后可用）
+### 方式三：全局安装（推送到 npm 后可用）
 
 ```bash
 # 全局安装后可直接使用 agent-beat 命令
@@ -56,7 +62,86 @@ npm install -g agent-beat
 agent-beat install
 ```
 
-**Node.js 版本（推荐）：**
+## 📁 目录结构
+
+```
+agent-beat/
+├── adapters/             # 多工具适配器
+│   ├── base.js           # 适配器基类
+│   ├── claude-code.js    # Claude Code 适配器
+│   ├── hermes.js         # Hermes 适配器
+│   ├── codex.js          # Codex 适配器
+│   ├── opencode.js       # OpenCode 适配器
+│   ├── cursor.js         # Cursor 适配器
+│   ├── openclaw.js       # OpenClaw 适配器（骨架）
+│   └── index.js          # 适配器注册表
+├── hooks/                # Hook 脚本
+│   ├── prelog.js         # PreToolUse 钩子
+│   ├── log.js            # PostToolUse 钩子
+│   ├── prelog.py         # Python 版本（备选）
+│   ├── log.py            # Python 版本（备选）
+│   └── server-guard.js   # 服务守护模块
+├── docs/                 # 文档
+│   └── adapter-architecture.md  # 架构设计文档
+├── cli.js                # 统一 CLI 入口
+├── install-hooks.js      # settings.json 配置写入工具
+├── index.html            # 可视化页面（单页面 Tab 切换）
+├── server.js             # HTTP 服务器
+├── package.json
+├── README.md
+└── CLAUDE.md
+```
+
+## 🔧 启动 HTTP 服务器
+
+### 安装后自动运行（推荐）
+
+首次使用工具时，钩子会自动检测并拉起服务（端口 **37215**）。
+
+### 手动管理
+
+```bash
+# 使用 CLI
+node cli.js start             # 前台运行
+node cli.js start --daemon    # 后台守护进程
+node cli.js stop              # 停止服务
+node cli.js status            # 查看状态
+
+# 或直接使用 server.js
+node server.js 37215
+node server.js --status
+node server.js --stop
+```
+
+### 访问可视化页面
+
+- **主页**：http://localhost:37215/
+- Tab 切换：调用链 / 仪表盘
+
+## 🎯 使用步骤
+
+1. **安装工具**：克隆仓库，运行 `npm install`
+2. **启动服务**：运行 `node server.js`
+3. **配置钩子**：在对应工具的配置文件中添加 hooks（见下方）
+4. **使用工具**：工具调用会自动记录
+5. **打开浏览器**：访问 http://localhost:37215/
+
+## 📋 多工具适配器
+
+### 支持的工具
+
+| 工具 | 数据源 | 方式 | 状态 |
+|------|--------|------|------|
+| Claude Code | hooks stdin | 实时钩子 | ✅ |
+| Hermes | ~/.hermes/state.db | 定时轮询 | ✅ |
+| Codex | hooks stdin | 实时钩子 | ✅ |
+| OpenCode | ~/.local/share/opencode/opencode.db | 定时轮询 | ✅ |
+| Cursor | hooks stdin | 实时钩子 | ✅ |
+| OpenClaw | 待确认 | 待实现 | ⏳ |
+
+### Claude Code 钩子配置
+
+在 `~/.claude/settings.json` 中添加：
 
 ```json
 {
@@ -65,102 +150,41 @@ agent-beat install
       "hooks": [{
         "command": "node ~/.claude/agent-beat/hooks/prelog.js",
         "type": "command",
-        "timeout": 5,
-        "async": false
+        "timeout": 5
       }]
     }],
     "PostToolUse": [{
       "hooks": [{
         "command": "node ~/.claude/agent-beat/hooks/log.js",
         "type": "command",
-        "timeout": 10,
-        "async": false
+        "timeout": 10
       }]
     }]
   }
 }
 ```
 
-**Python 版本（备选）：**
+### Cursor 钩子配置
+
+在 `~/.cursor/hooks.json` 中添加：
 
 ```json
 {
+  "version": 1,
   "hooks": {
-    "PreToolUse": [{
-      "hooks": [{
-        "command": "python ~/.claude/agent-beat/hooks/prelog.py",
-        "type": "command",
-        "timeout": 5,
-        "async": false
-      }]
+    "preToolUse": [{
+      "command": "node /path/to/agent-beat/hooks/prelog.js"
     }],
-    "PostToolUse": [{
-      "hooks": [{
-        "command": "python ~/.claude/agent-beat/hooks/log.py",
-        "type": "command",
-        "timeout": 10,
-        "async": false
-      }]
+    "postToolUse": [{
+      "command": "node /path/to/agent-beat/hooks/log.js"
     }]
   }
 }
 ```
 
-> **Windows 用户**：使用完整路径，如 `C:/Users/你的用户名/.claude/agent-beat/hooks/prelog.js`
+### Hermes / OpenCode
 
-## 📁 目录结构
-
-```
-~/.claude/agent-beat/
-├── hooks/                # Hook 脚本
-│   ├── prelog.js         # Node.js 版本（推荐）
-│   ├── prelog.py         # Python 版本（备选）
-│   ├── log.js            # Node.js 版本（推荐）
-│   ├── log.py            # Python 版本（备选）
-│   └── server-guard.js   # 服务守护模块
-├── install-hooks.js       # settings.json 配置写入工具
-├── cli.js                # 统一 CLI 入口（跨平台）
-├── index.html            # 可视化页面
-├── server.js             # Node.js HTTP 服务器（支持守护进程模式）
-├── README.md
-├── logs/                 # 运行时生成
-├── states/               # 运行时生成
-├── .server.pid           # 运行时生成（守护进程 PID）
-└── projects.json         # 运行时生成
-```
-
-## 🔧 启动 HTTP 服务器
-
-### 安装后自动运行（推荐）
-
-运行 `install.sh` 或 `install.bat` 后，服务会在后台自动启动（端口 **37215**）。首次使用 Claude Code 工具时，钩子会自动检测并拉起服务。
-
-### 手动管理
-
-```bash
-# 使用 CLI（推荐）
-agent-beat start             # 前台运行
-agent-beat start --daemon    # 后台守护进程
-agent-beat stop              # 停止服务
-agent-beat status            # 查看状态
-
-# 或直接使用 server.js（向后兼容）
-node server.js 37215
-node server.js --status
-node server.js --stop
-```
-
-### 访问可视化页面
-
-- **主页面**：http://localhost:37215/
-- **分析仪表盘**：http://localhost:37215/dashboard.html
-
-## 🎯 使用步骤
-
-1. **安装工具**：运行安装脚本或手动配置，服务自动在后台启动
-2. **重启 Claude Code**：使 hooks 配置生效
-3. **使用 Claude Code**：工具调用会自动记录，服务自动拉起
-4. **打开浏览器**：访问 http://localhost:37215/
+无需配置钩子，定时轮询数据库（每 5 秒）。
 
 ## 📋 功能说明
 
@@ -174,119 +198,80 @@ node server.js --stop
 | 🌙 **暗色主题** | 点击月亮图标切换 |
 | 🌲 **调用链追踪** | 树形展示子工具调用 |
 | ⏱ **耗时统计** | 显示每个调用的耗时 |
-| 📁 **项目切换** | 顶部下拉框切换项目 |
+| 🔧 **工具筛选** | 按工具类型筛选数据 |
 
-### Phase 1 新增功能
-
-| 功能 | 说明 |
-|:---|:---|
-| 📊 **状态栏** | 实时显示 Hook 状态、最近错误、慢调用数量 |
-| 🐢 **慢调用高亮** | >1s 黄色警告，>3s 红色严重 |
-| ❌ **错误详情** | 展开显示完整错误、错误分类、修复建议 |
-| 🔍 **错误日志** | 一键查看 hook 执行错误日志 |
-
-### Phase 2 新增功能
+### 分析仪表盘
 
 | 功能 | 说明 |
 |:---|:---|
-| 📊 **分析仪表盘** | 使用分析、性能分析、错误分析 |
-| 🔧 **工具使用 TOP 10** | 按频率排序，带进度条 |
+| 📊 **使用统计** | 总调用次数、平均耗时 |
+| 🔧 **工具使用 TOP 10** | 按频率排序 |
 | 🕐 **时间分布热力图** | 24 小时使用分布 |
 | 🐌 **慢调用排行** | TOP 10 最慢的调用 |
-| 💡 **效率洞察** | 智能分析工作流和优化建议 |
-
-### Phase 3 新增功能
-
-| 功能 | 说明 |
-|:---|:---|
+| 💡 **效率洞察** | 智能分析工作流 |
 | 📥 **数据导出** | 支持导出为 JSON/CSV/Markdown |
-| 📋 **导出报告** | 生成完整的分析报告 |
 
 ## ❓ 常见问题
 
 ### 没有记录任何调用？
-1. 确认已重启 Claude Code
-2. 检查 `~/.claude/settings.json` 中的 hooks 配置
-3. 查看 `trace_error.log` 是否有错误
+
+1. 确认已重启对应工具
+2. 检查 hooks 配置是否正确
+3. 查看服务是否运行：`curl http://localhost:37215/`
 
 ### 页面没有数据显示？
+
 1. 确认 HTTP 服务器正在运行
 2. 确认浏览器访问的是 `http://localhost:37215/`
-3. 确认已执行过一些 Claude Code 操作
+3. 确认已执行过一些工具操作
 
-### 需要安装 Python 吗？
-不需要！推荐使用 Node.js 版本，只需安装 Node.js 即可。
+### better-sqlite3 安装失败？
+
+配置国内镜像（见上方"国内网络加速"），或使用方式一直接运行。
+
+### 端口 37215 被占用？
+
+```bash
+# 指定其他端口
+node server.js 38000
+```
 
 ## 🗑️ 卸载
 
 ```bash
-agent-beat uninstall
+# 停止服务
+pkill -f "node server.js"
+
+# 删除项目目录
+rm -rf ~/.claude/agent-beat
 ```
 
-会自动停止服务、删除配置和数据、卸载全局命令。
-
-## 📝 更新日志
+## 📝 版本历史
 
 ### v1.8.1 (2026-06-09)
-- 新增统一 CLI 入口 `cli.js`，替代 5 个 shell/bat 脚本
-- 新增 `bin` 入口: `agent-beat` 命令
-- 新增 npm scripts: `install-hooks`, `start`, `stop`, `status`, `package`
-- 删除 `install.sh`, `install.bat`, `start.sh`, `start.bat`, `package.sh`
-- 更新 `server-guard.js` 使用 `cli.js` 统一启动服务
-- 保持向后兼容: `node server.js` 命令仍然可用
+- 新增多工具适配器架构
+- 新增 Claude Code / Hermes / Codex / OpenCode / Cursor 适配器
+- 项目更名为 Agent Beat
+- 合并 index.html 和 dashboard.html 为单页面 Tab 切换
+- 新增工具筛选器
 
 ### v1.8.0 (2026-06-08)
-- 精简脚本：删除 start-server.cmd、start-server.vbs、start.ps1
-- start.bat 支持 --daemon/--stop/--status 参数
-- 修复 install.bat 编码问题（chcp 65001）和自复制失败
-- install 脚本自动初始化空 projects.json
-- server-guard.js 改用 start.bat --daemon 启动服务
+- 新增统一 CLI 入口 `cli.js`
+- 精简脚本
 
 ### v1.7.0 (2026-06-05)
-- 新增服务守护：钩子自动拉起 HTTP 服务器，安装后零操作
-- 新增守护进程模式（`--daemon` / `--stop` / `--status`）
-- 新增 Windows 后台启动器（`start-server.cmd`）
-- 新增 `hooks/server-guard.js` 共享守护模块
-- 默认端口从 8080 改为 37215（避免端口冲突）
-- 安装脚本自动启动后台服务
+- 新增服务守护：钩子自动拉起 HTTP 服务器
+- 新增守护进程模式
+- 默认端口从 8080 改为 37215
 
 ### v1.6.0 (2026-06-05)
 - 新增数据导出功能（JSON/CSV/Markdown）
-- 导出完整分析报告
-- 优化错误日志显示
 
 ### v1.5.0 (2026-06-05)
-- 新增分析仪表盘（使用分析、性能分析、错误分析）
-- 工具使用频率 TOP 10
-- 时间分布热力图
-- 慢调用排行
-- 错误类型分布
-- 会话统计
-- 效率洞察建议
+- 新增分析仪表盘
 
 ### v1.4.0 (2026-06-05)
-- 新增状态栏（Hook 状态、错误、慢调用）
-- 慢调用高亮（>1s 黄色，>3s 红色）
-- 错误详情增强（分类、建议）
-- 错误日志查看功能
-
-### v1.3.0 (2026-06-05)
-- 项目更名为 Agent Beat
-- 精简目录结构
-- 精简文档
-
-### v1.2.0 (2026-06-05)
-- 新增 Node.js 版本 hook 脚本
-- 优化目录结构
-- 精简文档
-
-### v1.1.0 (2026-06-05)
-- 新增 Node.js HTTP 服务器
-- 新增智能启动脚本
-- 新增一键安装脚本
-
-### v1.0.0 (2026-06-05)
-- 初始版本发布
+- 新增状态栏、慢调用高亮、错误详情
 
 ## 📄 许可证
 
@@ -296,8 +281,7 @@ MIT License
 
 ## TODO
 
-- [ ] 推送到npm registry，支持 `npm install -g agent-beat`
-- [ ] 添加CHANGELOG
-- [ ] 添加LICENSE
-- [x] 完善Cursor适配器
-- [ ] 实现OpenClaw适配器
+- [ ] 推送到 npm registry
+- [ ] 添加 LICENSE 文件
+- [ ] 实现 OpenClaw 适配器
+- [ ] systemd 开机自启服务
