@@ -16,6 +16,7 @@
 - ✅ Codex（实时钩子）
 - ✅ OpenCode（定时轮询opencode.db）
 - ⏳ Cursor（待实现）
+- ⏳ OpenClaw（待实现）
 
 ---
 

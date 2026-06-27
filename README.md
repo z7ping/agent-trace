@@ -300,3 +300,4 @@ MIT License
 - [ ] 添加CHANGELOG
 - [ ] 添加LICENSE
 - [ ] 完善Cursor适配器
+- [ ] 实现OpenClaw适配器

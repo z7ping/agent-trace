@@ -42,6 +42,7 @@ node server.js --status        # 查看状态
 - Hermes（定时轮询state.db）
 - Codex（实时钩子）
 - OpenCode（定时轮询opencode.db）
+- OpenClaw（待实现）
 
 
 ## 架构

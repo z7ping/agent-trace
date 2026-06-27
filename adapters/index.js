@@ -8,6 +8,7 @@ const ClaudeCodeAdapter = require('./claude-code');
 const HermesAdapter = require('./hermes');
 const CodexAdapter = require('./codex');
 const OpenCodeAdapter = require('./opencode');
+const OpenClawAdapter = require('./openclaw');
 
 // ─── 适配器注册 ──────────────────────────────────────────
 
@@ -18,6 +19,7 @@ adapters.set('claude-code', new ClaudeCodeAdapter());
 adapters.set('hermes', new HermesAdapter());
 adapters.set('codex', new CodexAdapter());
 adapters.set('opencode', new OpenCodeAdapter());
+adapters.set('openclaw', new OpenClawAdapter());
 
 // 未来适配器在这里注册：
 // adapters.set('cursor', new CursorAdapter());
@@ -78,4 +80,5 @@ module.exports = {
     HermesAdapter,
     CodexAdapter,
     OpenCodeAdapter,
+    OpenClawAdapter,
 };
