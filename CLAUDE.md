@@ -4,7 +4,7 @@
 
 ## 项目概述
 
-Agent Beat 是一个实时监控和可视化 Claude Code 工具调用的工具。通过钩入 Claude Code 的 PreToolUse 和 PostToolUse 生命周期事件，记录每次工具调用，并在浏览器仪表盘中展示。**零 npm 依赖** -- 仅使用 Node.js 内置模块。
+Agent Beat 是一个实时监控和可视化 Claude Code 工具调用的工具。通过钩入 Claude Code 的 PreToolUse 和 PostToolUse 生命周期事件，记录每次工具调用，并在浏览器仪表盘中展示。**唯一依赖：better-sqlite3（原生SQLite模块）。
 
 ## 常用命令
 
@@ -34,6 +34,15 @@ node server.js --status        # 查看状态
 - 如果服务未运行，自动通过 `agent-beat start --daemon` 在后台启动
 - 服务写入 `.server.pid` 管理生命周期
 - 服务挂掉后，下次工具调用会自动拉起
+
+## 多工具支持
+
+支持追踪以下AI编码工具：
+- Claude Code（实时钩子）
+- Hermes（定时轮询state.db）
+- Codex（实时钩子）
+- OpenCode（定时轮询opencode.db）
+
 
 ## 架构
 
