@@ -31,15 +31,15 @@ npm config set better_sqlite3_binary_host_mirror https://npmmirror.com/mirrors/b
 
 > Windows 用户如果编译失败，还需安装构建工具：`npm install -g windows-build-tools`
 
-### 方式一：CLI 安装（推荐）
+### 方式一：直接运行（推荐）
 
 ```bash
 # 克隆仓库
 git clone https://github.com/你的用户名/agent-beat.git
 cd agent-beat
 
-# 一键安装（所有平台）
-agent-beat install
+# 在项目目录下直接运行
+node cli.js install
 ```
 
 ### 方式二：npm 脚本安装
