@@ -280,5 +280,4 @@ GET /api/tools
 
 ## 8. 相关文档
 
-- 调研报告：[research-report.md](./research-report.md)
 - 实现细节：见各适配器文件（adapters/*.js）
