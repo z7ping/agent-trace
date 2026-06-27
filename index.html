@@ -5,826 +5,924 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🧠 AI Tool Tracker</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+/* ===== 通用重置 ===== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
-  /* ===== 主题变量 ===== */
-  :root {
-    --bg: #f5f6f8;
-    --surface: #ffffff;
-    --surface-hover: #f0f2f5;
-    --border: #e4e6eb;
-    --border-light: #eef0f3;
-    --text: #1a1a2e;
-    --text-secondary: #6b7280;
-    --text-muted: #9ca3af;
-    --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
-    --shadow-hover: 0 4px 12px rgba(0,0,0,.08);
-    --radius: 10px;
-    --radius-sm: 6px;
-    --timeline-line: #e4e6eb;
-    --tree-line: #d4d6dd;
+/* ===== 主题变量 ===== */
+:root {
+  --bg: #f5f6f8;
+  --surface: #ffffff;
+  --surface-hover: #f0f2f5;
+  --border: #e4e6eb;
+  --border-light: #eef0f3;
+  --text: #1a1a2e;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+  --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-hover: 0 4px 12px rgba(0,0,0,.08);
+  --radius: 10px;
+  --radius-sm: 6px;
+  --timeline-line: #e4e6eb;
+  --tree-line: #d4d6dd;
 
-    /* 字体大小规范 */
-    --font-xs: 12px;   /* 辅助文字、时间 */
-    --font-sm: 13px;   /* 按钮、工具名、标签 */
-    --font-base: 14px; /* 正文、搜索框 */
-    --font-lg: 16px;   /* 卡片标题 */
-    --font-xl: 20px;   /* 页面标题 */
-    --font-2xl: 32px;  /* 统计数字 */
+  /* 字体大小规范 */
+  --font-xs: 12px;
+  --font-sm: 13px;
+  --font-base: 14px;
+  --font-lg: 16px;
+  --font-xl: 20px;
+  --font-2xl: 32px;
 
-    --color-read: #3b82f6;
-    --color-read-bg: #eff6ff;
-    --color-write: #10b981;
-    --color-write-bg: #ecfdf5;
-    --color-bash: #f59e0b;
-    --color-bash-bg: #fffbeb;
-    --color-mcp: #8b5cf6;
-    --color-mcp-bg: #f5f3ff;
-    --color-agent: #f97316;
-    --color-agent-bg: #fff7ed;
-    --color-other: #6b7280;
-    --color-other-bg: #f3f4f6;
+  --color-read: #3b82f6;
+  --color-read-bg: #eff6ff;
+  --color-write: #10b981;
+  --color-write-bg: #ecfdf5;
+  --color-bash: #f59e0b;
+  --color-bash-bg: #fffbeb;
+  --color-mcp: #8b5cf6;
+  --color-mcp-bg: #f5f3ff;
+  --color-agent: #f97316;
+  --color-agent-bg: #fff7ed;
+  --color-other: #6b7280;
+  --color-other-bg: #f3f4f6;
 
-    --success: #10b981;
-    --success-bg: #ecfdf5;
-    --fail: #ef4444;
-    --fail-bg: #fef2f2;
+  --success: #10b981;
+  --success-bg: #ecfdf5;
+  --fail: #ef4444;
+  --fail-bg: #fef2f2;
 
-    --speed-fast: #10b981;
-    --speed-mid: #f59e0b;
-    --speed-slow: #ef4444;
-  }
+  --speed-fast: #10b981;
+  --speed-mid: #f59e0b;
+  --speed-slow: #ef4444;
+}
 
-  body.dark {
-    --bg: #0f1117;
-    --surface: #1a1b23;
-    --surface-hover: #22232d;
-    --border: #2a2b35;
-    --border-light: #1f2029;
-    --text: #e4e6eb;
-    --text-secondary: #9ca3af;
-    --text-muted: #5c5e6e;
-    --shadow: 0 1px 3px rgba(0,0,0,.2), 0 1px 2px rgba(0,0,0,.3);
-    --shadow-hover: 0 4px 12px rgba(0,0,0,.4);
-    --timeline-line: #2a2b35;
-    --tree-line: #33344a;
+body.dark {
+  --bg: #0f1117;
+  --surface: #1a1b23;
+  --surface-hover: #22232d;
+  --border: #2a2b35;
+  --border-light: #1f2029;
+  --text: #e4e6eb;
+  --text-secondary: #9ca3af;
+  --text-muted: #5c5e6e;
+  --shadow: 0 1px 3px rgba(0,0,0,.2), 0 1px 2px rgba(0,0,0,.3);
+  --shadow-hover: 0 4px 12px rgba(0,0,0,.4);
+  --timeline-line: #2a2b35;
+  --tree-line: #33344a;
 
-    --color-read: #60a5fa;
-    --color-read-bg: #172554;
-    --color-write: #34d399;
-    --color-write-bg: #064e3b;
-    --color-bash: #fbbf24;
-    --color-bash-bg: #451a03;
-    --color-mcp: #a78bfa;
-    --color-mcp-bg: #2e1065;
-    --color-agent: #fb923c;
-    --color-agent-bg: #431407;
-    --color-other: #9ca3af;
-    --color-other-bg: #1f2029;
+  --color-read: #60a5fa;
+  --color-read-bg: #172554;
+  --color-write: #34d399;
+  --color-write-bg: #064e3b;
+  --color-bash: #fbbf24;
+  --color-bash-bg: #451a03;
+  --color-mcp: #a78bfa;
+  --color-mcp-bg: #2e1065;
+  --color-agent: #fb923c;
+  --color-agent-bg: #431407;
+  --color-other: #9ca3af;
+  --color-other-bg: #1f2029;
 
-    --success: #34d399;
-    --success-bg: #064e3b;
-    --fail: #f87171;
-    --fail-bg: #450a0a;
+  --success: #34d399;
+  --success-bg: #064e3b;
+  --fail: #f87171;
+  --fail-bg: #450a0a;
 
-    --speed-fast: #34d399;
-    --speed-mid: #fbbf24;
-    --speed-slow: #f87171;
-  }
+  --speed-fast: #34d399;
+  --speed-mid: #fbbf24;
+  --speed-slow: #f87171;
+}
 
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    padding: 24px;
-    min-height: 100vh;
-    transition: background .2s, color .2s;
-  }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  padding: 24px;
+  min-height: 100vh;
+  transition: background .2s, color .2s;
+}
 
-  .header {
-    background: var(--surface);
-    border-radius: var(--radius);
-    padding: 16px 20px;
-    box-shadow: var(--shadow);
-    margin-bottom: 16px;
-    transition: background .2s, box-shadow .2s;
-  }
-  .header-top {
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-  }
-  .header h1 {
-    font-size: var(--font-xl); font-weight: 700; display: flex; align-items: center; gap: 8px;
-    white-space: nowrap;
-  }
-  .header h1 .badge {
-    font-size: var(--font-xs); background: var(--color-mcp-bg); color: var(--color-mcp);
-    padding: 1px 8px; border-radius: 10px; font-weight: 500;
-  }
-  .stats {
-    font-size: var(--font-sm); color: var(--text-secondary);
-    display: flex; gap: 12px; flex-wrap: wrap;
-  }
-  .stats .stat-item {
-    display: flex; align-items: center; gap: 4px;
-  }
-  .stats strong { color: var(--text); font-weight: 700; }
+/* ===== Tab 导航 ===== */
+.tab-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 4px;
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+  transition: background .2s, box-shadow .2s;
+  flex-wrap: wrap;
+}
 
-  .controls {
-    margin-left: auto; display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
-  }
-  .controls button, .theme-btn {
-    background: var(--bg); color: var(--text-secondary);
-    border: 1px solid var(--border); padding: 6px 12px;
-    border-radius: var(--radius-sm); cursor: pointer; font-size: var(--font-sm);
-    transition: all .15s; display: flex; align-items: center; gap: 4px;
-    white-space: nowrap;
-  }
-  .controls button:hover, .theme-btn:hover {
-    background: var(--surface-hover); color: var(--text);
-    border-color: var(--text-muted);
-  }
-  .controls button.active {
-    background: var(--color-read-bg); color: var(--color-read);
-    border-color: var(--color-read);
-  }
+.tab-title {
+  font-size: var(--font-lg);
+  font-weight: 700;
+  padding: 6px 12px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
 
-  .search-box {
-    background: var(--bg); border: 1px solid var(--border);
-    border-radius: var(--radius-sm); padding: 6px 12px;
-    color: var(--text); font-size: var(--font-base); width: 200px;
-    outline: none; transition: border-color .15s;
-  }
-  .search-box:focus { border-color: var(--color-read); }
-  .search-box::placeholder { color: var(--text-muted); }
+.tab-btn {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid transparent;
+  padding: 6px 16px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: var(--font-sm);
+  font-weight: 500;
+  transition: all .15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
 
-  .project-select {
-    background: var(--bg); border: 1px solid var(--border);
-    border-radius: var(--radius-sm); padding: 6px 12px;
-    color: var(--text); font-size: 12px; min-width: 150px;
-    outline: none; transition: border-color .15s;
-    cursor: pointer;
-  }
-  .project-select:focus { border-color: var(--color-read); }
+.tab-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
 
-  .filters {
-    display: flex; gap: 4px; flex-wrap: wrap; padding: 0 4px; margin: 8px 0 0;
-  }
-  .filters .tag {
-    padding: 3px 12px; border-radius: 20px; font-size: var(--font-sm);
-    cursor: pointer; border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--text-secondary);
-    transition: all .15s; user-select: none;
-    box-shadow: var(--shadow);
-  }
-  .filters .tag:hover { transform: translateY(-1px); box-shadow: var(--shadow-hover); }
-  .filters .tag.active {
-    color: #fff; border-color: transparent;
-    font-weight: 600;
-  }
+.tab-btn.active {
+  background: var(--color-read-bg);
+  color: var(--color-read);
+  border-color: var(--color-read);
+  font-weight: 600;
+}
 
-  /* ===== 会话分组 ===== */
-  .session-group {
-    background: var(--surface);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    margin-bottom: 12px;
-    overflow: hidden;
-    transition: background .2s, box-shadow .2s;
-  }
-  .session-header {
-    display: flex; align-items: center; gap: 10px;
-    padding: 10px 16px;
-    cursor: pointer;
-    border-bottom: 1px solid var(--border-light);
-    transition: background .12s;
-    user-select: none;
-  }
-  .session-header:hover { background: var(--surface-hover); }
-  .session-header .arrow {
-    transition: transform .2s; font-size: var(--font-xs); flex-shrink: 0;
-  }
-  .session-header.collapsed .arrow { transform: rotate(-90deg); }
-  .session-id {
-    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
-    font-size: var(--font-xs); font-weight: 600; color: var(--text-secondary);
-    cursor: help;
-  }
-  .session-time {
-    font-size: var(--font-xs); color: var(--text-muted);
-  }
-  .session-stats {
-    display: flex; gap: 8px; margin-left: auto; font-size: var(--font-xs);
-    flex-wrap: wrap;
-  }
-  .session-stats span { display: flex; align-items: center; gap: 2px; }
-  .session-body {
-    position: relative; padding: 4px 0;
-  }
-  .session-body.hidden { display: none; }
+.tab-nav-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
 
-  .timeline { position: relative; padding: 0 4px; }
+.theme-btn {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: var(--font-sm);
+  transition: all .15s;
+}
 
-  /* ===== 树形缩进 ===== */
-  .tree-child-area {
-    position: relative;
-    margin-left: 20px;
-    padding-left: 12px;
-    border-left: 2px solid var(--tree-line);
-  }
+.theme-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
 
-  .entry {
-    position: relative; padding: 4px 8px 4px 44px;
-    cursor: pointer; border-radius: var(--radius-sm);
-    transition: background .12s;
-    margin: 1px 0;
-    min-height: 32px;
-  }
-  .entry:hover { background: var(--surface-hover); }
-  .entry .dot {
-    position: absolute; left: 18px; top: 7px; width: 20px; height: 20px;
-    border-radius: 50%; display: flex; align-items: center; justify-content: center;
-    font-size: 11px; z-index: 1;
-    box-shadow: 0 0 0 3px var(--surface);
-    transition: box-shadow .2s, transform .15s;
-  }
-  .entry:hover .dot { transform: scale(1.1); }
-  .entry.expanded .dot { box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px rgba(59,130,246,.15); }
+/* Tab 内容面板 */
+.tab-content { display: none; }
+.tab-content.active { display: block; }
 
-  .entry .title {
-    display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; min-height: 26px;
-  }
-  .entry .tool-name {
-    font-family: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
-    font-size: var(--font-sm); font-weight: 650; letter-spacing: -.01em;
-    padding: 1px 6px; border-radius: 4px; flex-shrink: 0;
-  }
-  .entry .tool-args {
-    font-family: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
-    font-size: var(--font-sm); color: var(--text-secondary);
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    flex: 1; min-width: 30px;
-  }
-  .entry .status-badge {
-    font-size: var(--font-xs); padding: 0 5px; border-radius: 4px;
-    font-weight: 600; line-height: 18px; flex-shrink: 0;
-  }
-  .entry .time-tag {
-    font-size: var(--font-xs); color: var(--text-muted);
-    white-space: nowrap; flex-shrink: 0;
-    font-variant-numeric: tabular-nums;
-  }
-  .entry .duration-tag {
-    font-size: var(--font-xs); font-weight: 600; flex-shrink: 0;
-    padding: 0 5px; border-radius: 4px; line-height: 18px;
-    white-space: nowrap; font-variant-numeric: tabular-nums;
-    transition: color .2s, background .2s;
-  }
-  .entry .duration-tag.speed-fast { color: var(--speed-fast); background: color-mix(in srgb, var(--speed-fast) 12%, transparent); }
-  .entry .duration-tag.speed-mid { color: var(--speed-mid); background: color-mix(in srgb, var(--speed-mid) 12%, transparent); }
-  .entry .duration-tag.speed-slow { color: var(--speed-slow); background: color-mix(in srgb, var(--speed-slow) 12%, transparent); }
+/* ===== 状态栏 ===== */
+.status-bar {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: var(--font-sm);
+  transition: background .2s, box-shadow .2s;
+}
+.status-bar .status-item { display: flex; align-items: center; gap: 6px; }
+.status-bar .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.status-bar .status-dot.ok { background: var(--success); }
+.status-bar .status-dot.error { background: var(--fail); }
+.status-bar .status-dot.warning { background: var(--speed-mid); }
+.status-bar .status-label { color: var(--text-secondary); }
+.status-bar .status-value { color: var(--text); font-weight: 600; }
+.status-bar .status-error {
+  color: var(--fail);
+  background: var(--fail-bg);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: var(--font-xs);
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.status-bar .status-error:hover { white-space: normal; }
+.status-bar .status-actions { margin-left: auto; display: flex; gap: 8px; }
+.status-bar .status-actions button {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-xs);
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all .15s;
+}
+.status-bar .status-actions button:hover { background: var(--surface-hover); color: var(--text); }
 
-  .entry .details {
-    display: none; margin-top: 4px;
-    padding: 8px 10px; background: var(--bg);
-    border-radius: var(--radius-sm); border: 1px solid var(--border-light);
-    font-size: var(--font-sm); font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
-    overflow-x: auto; max-height: 400px; line-height: 1.5;
-    opacity: 0; transform: translateY(-10px);
-    transition: opacity 0.2s ease, transform 0.2s ease;
-  }
-  .entry .details pre { white-space: pre-wrap; word-break: break-all; margin: 0; }
-  .entry.expanded .details { display: block; opacity: 1; transform: translateY(0); }
+/* ===== 调用链 - 头部/控件 ===== */
+.header {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+  transition: background .2s, box-shadow .2s;
+}
+.header-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.header h1 {
+  font-size: var(--font-xl); font-weight: 700; display: flex; align-items: center; gap: 8px;
+  white-space: nowrap;
+}
+.header h1 .badge {
+  font-size: var(--font-xs); background: var(--color-mcp-bg); color: var(--color-mcp);
+  padding: 1px 8px; border-radius: 10px; font-weight: 500;
+}
+.stats { font-size: var(--font-sm); color: var(--text-secondary); display: flex; gap: 12px; flex-wrap: wrap; }
+.stats .stat-item { display: flex; align-items: center; gap: 4px; }
+.stats strong { color: var(--text); font-weight: 700; }
+.controls { margin-left: auto; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.controls button, .theme-btn {
+  background: var(--bg); color: var(--text-secondary);
+  border: 1px solid var(--border); padding: 6px 12px;
+  border-radius: var(--radius-sm); cursor: pointer; font-size: var(--font-sm);
+  transition: all .15s; display: flex; align-items: center; gap: 4px; white-space: nowrap;
+}
+.controls button:hover, .theme-btn:hover { background: var(--surface-hover); color: var(--text); border-color: var(--text-muted); }
+.controls button.active { background: var(--color-read-bg); color: var(--color-read); border-color: var(--color-read); }
+.controls button:active { transform: scale(0.95); }
 
-  /* ===== 错误状态 ===== */
-  .entry.is-error {
-    background: rgba(239, 68, 68, 0.04);
-    border-left: 3px solid var(--fail);
-  }
-  .entry.is-error:hover { background: rgba(239, 68, 68, 0.08); }
-  .entry.is-error .dot {
-    box-shadow: 0 0 0 3px var(--surface), 0 0 0 1px var(--fail);
-  }
-  .entry .error-preview {
-    font-size: var(--font-xs); color: var(--fail);
-    padding: 4px 8px; margin-top: 2px;
-    background: var(--fail-bg); border-radius: 4px;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
-  }
+.search-box {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 6px 12px;
+  color: var(--text); font-size: var(--font-base); width: 200px;
+  outline: none; transition: border-color .15s;
+}
+.search-box:focus { border-color: var(--color-read); }
+.search-box::placeholder { color: var(--text-muted); }
 
-  /* ===== 工具类型配色 ===== */
-  .type-read .dot { background: var(--color-read-bg); color: var(--color-read); }
-  .type-read .tool-name { background: var(--color-read-bg); color: var(--color-read); }
-  .type-write .dot { background: var(--color-write-bg); color: var(--color-write); }
-  .type-write .tool-name { background: var(--color-write-bg); color: var(--color-write); }
-  .type-bash .dot { background: var(--color-bash-bg); color: var(--color-bash); }
-  .type-bash .tool-name { background: var(--color-bash-bg); color: var(--color-bash); }
-  .type-mcp .dot { background: var(--color-mcp-bg); color: var(--color-mcp); }
-  .type-mcp .tool-name { background: var(--color-mcp-bg); color: var(--color-mcp); }
-  .type-agent .dot { background: var(--color-agent-bg); color: var(--color-agent); }
-  .type-agent .tool-name { background: var(--color-agent-bg); color: var(--color-agent); }
-  .type-other .dot { background: var(--color-other-bg); color: var(--color-other); }
-  .type-other .tool-name { background: var(--color-other-bg); color: var(--color-other); }
-  .entry .status-badge.ok { background: var(--success-bg); color: var(--success); }
-  .entry .status-badge.fail { background: var(--fail-bg); color: var(--fail); }
+.project-select {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 6px 12px;
+  color: var(--text); font-size: 12px; min-width: 150px;
+  outline: none; transition: border-color .15s; cursor: pointer;
+}
+.project-select:focus { border-color: var(--color-read); }
 
-  .empty-state {
-    text-align: center; padding: 40px 20px;
-  }
-  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
-  .empty-state h2 { font-size: var(--font-lg); color: var(--text-secondary); font-weight: 600; margin-bottom: 4px; }
-  .empty-state p { font-size: var(--font-sm); color: var(--text-muted); }
+/* 搜索框清除按钮 */
+.search-box-wrapper { position: relative; display: inline-block; }
+.search-box { padding-right: 28px; }
+.search-clear {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  width: 16px; height: 16px; border: none;
+  background: var(--text-muted); color: var(--surface); border-radius: 50%;
+  font-size: 10px; cursor: pointer; display: none;
+  align-items: center; justify-content: center; line-height: 1;
+}
+.search-clear.show { display: flex; }
+.search-clear:hover { background: var(--text-secondary); }
+.search-result-count {
+  font-size: var(--font-xs); color: var(--text-muted); padding: 0 8px;
+  display: flex; align-items: center; gap: 4px;
+}
+.search-result-count .count { color: var(--color-read); font-weight: 600; }
 
-  /* ===== 自定义 Modal ===== */
-  .custom-modal-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,.5);
-    backdrop-filter: blur(4px);
-    z-index: 1000;
-    align-items: center;
-    justify-content: center;
-  }
-  .custom-modal-overlay.show {
-    display: flex;
-  }
-  .custom-modal {
-    background: var(--surface);
-    border-radius: 12px;
-    padding: 24px;
-    max-width: 600px;
-    width: 90%;
-    max-height: 80vh;
-    box-shadow: 0 20px 60px rgba(0,0,0,.3);
-    display: flex;
-    flex-direction: column;
-  }
-  .custom-modal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 16px;
-  }
-  .custom-modal-header h3 {
-    font-size: var(--font-lg);
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .custom-modal-close {
-    width: 32px;
-    height: 32px;
-    border: none;
-    background: var(--bg);
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: var(--font-lg);
-    color: var(--text-secondary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all .15s;
-  }
-  .custom-modal-close:hover {
-    background: var(--fail-bg);
-    color: var(--fail);
-  }
-  .custom-modal-body {
-    flex: 1;
-    overflow-y: auto;
-    font-size: var(--font-base);
-    line-height: 1.6;
-  }
-  .custom-modal-body pre {
-    background: var(--bg);
-    padding: 12px;
-    border-radius: 8px;
-    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
-    font-size: var(--font-xs);
-    white-space: pre-wrap;
-    word-break: break-all;
-    margin: 0;
-    user-select: text;
-    cursor: text;
-  }
-  .custom-modal-body .copy-hint {
-    font-size: var(--font-xs);
-    color: var(--text-muted);
-    margin-top: 8px;
-    text-align: right;
-  }
-  .custom-modal-footer {
-    margin-top: 16px;
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-  }
-  .custom-modal-footer button {
-    padding: 8px 16px;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--text);
-    font-size: var(--font-sm);
-    cursor: pointer;
-    transition: all .15s;
-  }
-  .custom-modal-footer button:hover {
-    background: var(--surface-hover);
-  }
-  .custom-modal-footer button.primary {
-    background: var(--color-read);
-    color: white;
-    border-color: var(--color-read);
-  }
-  .custom-modal-footer button.primary:hover {
-    opacity: .9;
-  }
+.filters { display: flex; gap: 4px; flex-wrap: wrap; padding: 0 4px; margin: 8px 0 0; }
+.filters .tag {
+  padding: 3px 12px; border-radius: 20px; font-size: var(--font-sm);
+  cursor: pointer; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text-secondary);
+  transition: all .15s; user-select: none; box-shadow: var(--shadow);
+}
+.filters .tag:hover { transform: translateY(-1px); box-shadow: var(--shadow-hover); }
+.filters .tag.active { color: #fff; border-color: transparent; font-weight: 600; }
 
-  .footer {
-    margin-top: 12px; padding: 10px 16px; background: var(--surface);
-    border-radius: var(--radius); box-shadow: var(--shadow);
-    font-size: var(--font-xs); color: var(--text-muted);
-    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
-    transition: background .2s, box-shadow .2s;
-  }
-  .footer a { color: var(--color-read); text-decoration: none; cursor: pointer; }
-  .footer a:hover { text-decoration: underline; }
+/* ===== 会话分组 ===== */
+.session-group {
+  background: var(--surface); border-radius: var(--radius);
+  box-shadow: var(--shadow); margin-bottom: 12px; overflow: hidden;
+  transition: background .2s, box-shadow .2s;
+}
+.session-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px; cursor: pointer;
+  border-bottom: 1px solid var(--border-light);
+  transition: background .12s; user-select: none;
+}
+.session-header:hover { background: var(--surface-hover); }
+.session-header .arrow { transition: transform .2s; font-size: var(--font-xs); flex-shrink: 0; }
+.session-header.collapsed .arrow { transform: rotate(-90deg); }
+.session-id {
+  font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+  font-size: var(--font-xs); font-weight: 600; color: var(--text-secondary); cursor: help;
+}
+.session-time { font-size: var(--font-xs); color: var(--text-muted); }
+.session-stats { display: flex; gap: 8px; margin-left: auto; font-size: var(--font-xs); flex-wrap: wrap; }
+.session-stats span { display: flex; align-items: center; gap: 2px; }
+.session-body { position: relative; padding: 4px 0; }
+.session-body.hidden { display: none; }
+.badge-duration-avg { font-size: 11px; color: var(--text-muted); font-weight: 400; }
 
-  .modal-overlay {
-    display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,.4); backdrop-filter: blur(2px);
-    z-index: 100; align-items: center; justify-content: center;
-  }
-  .modal-overlay.show { display: flex; }
-  .modal {
-    background: var(--surface); border-radius: var(--radius);
-    padding: 24px; max-width: 400px; width: 90%;
-    box-shadow: 0 20px 60px rgba(0,0,0,.2);
-  }
-  .modal h3 { font-size: var(--font-lg); margin-bottom: 8px; }
-  .modal p { font-size: var(--font-sm); color: var(--text-secondary); margin-bottom: 16px; }
-  .modal .actions { display: flex; gap: 8px; justify-content: flex-end; }
-  .modal .actions button {
-    padding: 7px 16px; border-radius: var(--radius-sm); font-size: var(--font-sm);
-    cursor: pointer; border: 1px solid var(--border); transition: all .15s;
-  }
-  .modal .actions .cancel { background: var(--surface); color: var(--text-secondary); }
-  .modal .actions .cancel:hover { background: var(--surface-hover); }
-  .modal .actions .confirm { background: var(--fail); color: #fff; border-color: var(--fail); }
-  .modal .actions .confirm:hover { opacity: .9; }
+.timeline { position: relative; padding: 0 4px; }
 
-  .badge-duration-avg {
-    font-size: 11px; color: var(--text-muted); font-weight: 400;
-  }
+/* ===== 树形缩进 ===== */
+.tree-child-area {
+  position: relative; margin-left: 20px; padding-left: 12px;
+  border-left: 2px solid var(--tree-line);
+}
 
-  /* ===== 加载动画 ===== */
-  .loading-dots::after {
-    content: ''; animation: dots 1.5s steps(4, end) infinite;
-  }
-  @keyframes dots {
-    0% { content: ''; }
-    25% { content: '.'; }
-    50% { content: '..'; }
-    75% { content: '...'; }
-  }
+.entry {
+  position: relative; padding: 4px 8px 4px 44px;
+  cursor: pointer; border-radius: var(--radius-sm);
+  transition: background .12s; margin: 1px 0; min-height: 32px;
+}
+.entry:hover { background: var(--surface-hover); }
+.entry .dot {
+  position: absolute; left: 18px; top: 7px; width: 20px; height: 20px;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 11px; z-index: 1; box-shadow: 0 0 0 3px var(--surface);
+  transition: box-shadow .2s, transform .15s;
+}
+.entry:hover .dot { transform: scale(1.1); }
+.entry.expanded .dot { box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px rgba(59,130,246,.15); }
+.entry .title { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; min-height: 26px; }
+.entry .tool-name {
+  font-family: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
+  font-size: var(--font-sm); font-weight: 650; letter-spacing: -.01em;
+  padding: 1px 6px; border-radius: 4px; flex-shrink: 0;
+}
+.entry .tool-args {
+  font-family: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
+  font-size: var(--font-sm); color: var(--text-secondary);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  flex: 1; min-width: 30px;
+}
+.entry .status-badge {
+  font-size: var(--font-xs); padding: 0 5px; border-radius: 4px;
+  font-weight: 600; line-height: 18px; flex-shrink: 0;
+}
+.entry .time-tag {
+  font-size: var(--font-xs); color: var(--text-muted);
+  white-space: nowrap; flex-shrink: 0; font-variant-numeric: tabular-nums;
+}
+.entry .duration-tag {
+  font-size: var(--font-xs); font-weight: 600; flex-shrink: 0;
+  padding: 0 5px; border-radius: 4px; line-height: 18px;
+  white-space: nowrap; font-variant-numeric: tabular-nums;
+  transition: color .2s, background .2s;
+}
+.entry .duration-tag.speed-fast { color: var(--speed-fast); background: color-mix(in srgb, var(--speed-fast) 12%, transparent); }
+.entry .duration-tag.speed-mid { color: var(--speed-mid); background: color-mix(in srgb, var(--speed-mid) 12%, transparent); }
+.entry .duration-tag.speed-slow { color: var(--speed-slow); background: color-mix(in srgb, var(--speed-slow) 12%, transparent); }
 
-  /* ===== 加载状态 ===== */
-  .loading-spinner {
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    border: 2px solid var(--border);
-    border-top-color: var(--primary);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
+.entry .details {
+  display: none; margin-top: 4px; padding: 8px 10px; background: var(--bg);
+  border-radius: var(--radius-sm); border: 1px solid var(--border-light);
+  font-size: var(--font-sm); font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+  overflow-x: auto; max-height: 400px; line-height: 1.5;
+  opacity: 0; transform: translateY(-10px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.entry .details pre { white-space: pre-wrap; word-break: break-all; margin: 0; }
+.entry.expanded .details { display: block; opacity: 1; transform: translateY(0); }
 
-  .loading-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.3);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s;
-  }
-  .loading-overlay.show {
-    opacity: 1;
-    pointer-events: auto;
-  }
-  .loading-content {
-    background: var(--surface);
-    padding: 24px 32px;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 14px;
-    color: var(--text);
-  }
-  .loading-content .loading-spinner {
-    width: 24px;
-    height: 24px;
-  }
+/* 错误状态 */
+.entry.is-error { background: rgba(239, 68, 68, 0.04); border-left: 3px solid var(--fail); }
+.entry.is-error:hover { background: rgba(239, 68, 68, 0.08); }
+.entry.is-error .dot { box-shadow: 0 0 0 3px var(--surface), 0 0 0 1px var(--fail); }
+.entry .error-preview {
+  font-size: var(--font-xs); color: var(--fail); padding: 4px 8px; margin-top: 2px;
+  background: var(--fail-bg); border-radius: 4px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+}
+.entry .error-details {
+  display: none; margin-top: 8px; padding: 12px;
+  background: var(--fail-bg); border-radius: var(--radius-sm);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  opacity: 0; transform: translateY(-10px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.entry.expanded .error-details { display: block; opacity: 1; transform: translateY(0); }
+.error-details .error-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-weight: 600; color: var(--fail); }
+.error-details .error-type { font-size: var(--font-xs); padding: 2px 6px; background: rgba(239, 68, 68, 0.1); border-radius: 4px; }
+.error-details .error-message {
+  font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+  font-size: var(--font-xs); line-height: 1.6; white-space: pre-wrap;
+  word-break: break-all; color: var(--text);
+}
+.error-details .error-hint {
+  margin-top: 8px; padding: 8px; background: rgba(239, 68, 68, 0.05);
+  border-radius: 4px; font-size: var(--font-xs); color: var(--text-secondary);
+}
+.error-details .error-hint strong { color: var(--text); }
 
-  /* ===== 按钮点击反馈 ===== */
-  .controls button {
-    transition: all 0.15s ease;
-  }
-  .controls button:active {
-    transform: scale(0.95);
-  }
+/* 工具类型配色 */
+.type-read .dot { background: var(--color-read-bg); color: var(--color-read); }
+.type-read .tool-name { background: var(--color-read-bg); color: var(--color-read); }
+.type-write .dot { background: var(--color-write-bg); color: var(--color-write); }
+.type-write .tool-name { background: var(--color-write-bg); color: var(--color-write); }
+.type-bash .dot { background: var(--color-bash-bg); color: var(--color-bash); }
+.type-bash .tool-name { background: var(--color-bash-bg); color: var(--color-bash); }
+.type-mcp .dot { background: var(--color-mcp-bg); color: var(--color-mcp); }
+.type-mcp .tool-name { background: var(--color-mcp-bg); color: var(--color-mcp); }
+.type-agent .dot { background: var(--color-agent-bg); color: var(--color-agent); }
+.type-agent .tool-name { background: var(--color-agent-bg); color: var(--color-agent); }
+.type-other .dot { background: var(--color-other-bg); color: var(--color-other); }
+.type-other .tool-name { background: var(--color-other-bg); color: var(--color-other); }
+.entry .status-badge.ok { background: var(--success-bg); color: var(--success); }
+.entry .status-badge.fail { background: var(--fail-bg); color: var(--fail); }
 
-  /* ===== 搜索框清除按钮 ===== */
-  .search-box-wrapper {
-    position: relative;
-    display: inline-block;
-  }
-  .search-box {
-    padding-right: 28px;
-  }
-  .search-clear {
-    position: absolute;
-    right: 8px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 16px;
-    height: 16px;
-    border: none;
-    background: var(--text-muted);
-    color: var(--surface);
-    border-radius: 50%;
-    font-size: 10px;
-    cursor: pointer;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
-  }
-  .search-clear.show {
-    display: flex;
-  }
-  .search-clear:hover {
-    background: var(--text-secondary);
-  }
+.entry .duration-tag.warning { color: var(--speed-mid); background: rgba(245, 158, 11, 0.12); }
+.entry .duration-tag.critical { color: var(--speed-slow); background: rgba(239, 68, 68, 0.12); }
 
-  /* ===== 状态栏 ===== */
-  .status-bar {
-    background: var(--surface);
-    border-radius: var(--radius);
-    padding: 12px 16px;
-    box-shadow: var(--shadow);
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    font-size: var(--font-sm);
-    transition: background .2s, box-shadow .2s;
-  }
-  .status-bar .status-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .status-bar .status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-  .status-bar .status-dot.ok { background: var(--success); }
-  .status-bar .status-dot.error { background: var(--fail); }
-  .status-bar .status-dot.warning { background: var(--speed-mid); }
-  .status-bar .status-label {
-    color: var(--text-secondary);
-  }
-  .status-bar .status-value {
-    color: var(--text);
-    font-weight: 600;
-  }
-  .status-bar .status-error {
-    color: var(--fail);
-    background: var(--fail-bg);
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: var(--font-xs);
-    max-width: 300px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    cursor: pointer;
-  }
-  .status-bar .status-error:hover {
-    white-space: normal;
-  }
-  .status-bar .status-actions {
-    margin-left: auto;
-    display: flex;
-    gap: 8px;
-  }
-  .status-bar .status-actions button {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    padding: 4px 10px;
-    border-radius: var(--radius-sm);
-    font-size: var(--font-xs);
-    cursor: pointer;
-    color: var(--text-secondary);
-    transition: all .15s;
-  }
-  .status-bar .status-actions button:hover {
-    background: var(--surface-hover);
-    color: var(--text);
-  }
+/* 慢调用高亮 */
+.entry.slow-warning { border-left: 3px solid var(--speed-mid); background: rgba(245, 158, 11, 0.04); }
+.entry.slow-warning:hover { background: rgba(245, 158, 11, 0.08); }
+.entry.slow-critical { border-left: 3px solid var(--speed-slow); background: rgba(239, 68, 68, 0.04); }
+.entry.slow-critical:hover { background: rgba(239, 68, 68, 0.08); }
 
-  /* ===== 慢调用高亮 ===== */
-  .entry.slow-warning {
-    border-left: 3px solid var(--speed-mid);
-    background: rgba(245, 158, 11, 0.04);
-  }
-  .entry.slow-warning:hover {
-    background: rgba(245, 158, 11, 0.08);
-  }
-  .entry.slow-critical {
-    border-left: 3px solid var(--speed-slow);
-    background: rgba(239, 68, 68, 0.04);
-  }
-  .entry.slow-critical:hover {
-    background: rgba(239, 68, 68, 0.08);
-  }
+.empty-state { text-align: center; padding: 40px 20px; }
+.empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+.empty-state h2 { font-size: var(--font-lg); color: var(--text-secondary); font-weight: 600; margin-bottom: 4px; }
+.empty-state p { font-size: var(--font-sm); color: var(--text-muted); }
 
-  /* ===== 错误详情增强 ===== */
-  .entry .error-details {
-    display: none;
-    margin-top: 8px;
-    padding: 12px;
-    background: var(--fail-bg);
-    border-radius: var(--radius-sm);
-    border: 1px solid rgba(239, 68, 68, 0.2);
-    opacity: 0; transform: translateY(-10px);
-    transition: opacity 0.2s ease, transform 0.2s ease;
-  }
-  .entry.expanded .error-details {
-    display: block; opacity: 1; transform: translateY(0);
-  }
-  .error-details .error-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
-    font-weight: 600;
-    color: var(--fail);
-  }
-  .error-details .error-type {
-    font-size: var(--font-xs);
-    padding: 2px 6px;
-    background: rgba(239, 68, 68, 0.1);
-    border-radius: 4px;
-  }
-  .error-details .error-message {
-    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
-    font-size: var(--font-xs);
-    line-height: 1.6;
-    white-space: pre-wrap;
-    word-break: break-all;
-    color: var(--text);
-  }
-  .error-details .error-hint {
-    margin-top: 8px;
-    padding: 8px;
-    background: rgba(239, 68, 68, 0.05);
-    border-radius: 4px;
-    font-size: var(--font-xs);
-    color: var(--text-secondary);
-  }
-  .error-details .error-hint strong {
-    color: var(--text);
-  }
+/* ===== 加载动画 ===== */
+.loading-dots::after { content: ''; animation: dots 1.5s steps(4, end) infinite; }
+@keyframes dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } }
+.loading-spinner {
+  display: inline-block; width: 16px; height: 16px;
+  border: 2px solid var(--border); border-top-color: var(--color-read);
+  border-radius: 50%; animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.3); display: flex;
+  align-items: center; justify-content: center; z-index: 1000;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s;
+}
+.loading-overlay.show { opacity: 1; pointer-events: auto; }
+.loading-content {
+  background: var(--surface); padding: 24px 32px; border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  display: flex; align-items: center; gap: 12px; font-size: 14px; color: var(--text);
+}
+.loading-content .loading-spinner { width: 24px; height: 24px; }
 
-  /* ===== 耗时标签颜色 ===== */
-  .entry .duration-tag.warning {
-    color: var(--speed-mid);
-    background: rgba(245, 158, 11, 0.12);
-  }
-  .entry .duration-tag.critical {
-    color: var(--speed-slow);
-    background: rgba(239, 68, 68, 0.12);
-  }
+/* ===== Modal ===== */
+.custom-modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.5); backdrop-filter: blur(4px);
+  z-index: 1000; align-items: center; justify-content: center;
+}
+.custom-modal-overlay.show { display: flex; }
+.custom-modal {
+  background: var(--surface); border-radius: 12px; padding: 24px;
+  max-width: 600px; width: 90%; max-height: 80vh;
+  box-shadow: 0 20px 60px rgba(0,0,0,.3);
+  display: flex; flex-direction: column;
+}
+.custom-modal-header {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;
+}
+.custom-modal-header h3 { font-size: var(--font-lg); font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.custom-modal-close {
+  width: 32px; height: 32px; border: none; background: var(--bg); border-radius: 8px;
+  cursor: pointer; font-size: var(--font-lg); color: var(--text-secondary);
+  display: flex; align-items: center; justify-content: center; transition: all .15s;
+}
+.custom-modal-close:hover { background: var(--fail-bg); color: var(--fail); }
+.custom-modal-body { flex: 1; overflow-y: auto; font-size: var(--font-base); line-height: 1.6; }
+.custom-modal-body pre {
+  background: var(--bg); padding: 12px; border-radius: 8px;
+  font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+  font-size: var(--font-xs); white-space: pre-wrap; word-break: break-all;
+  margin: 0; user-select: text; cursor: text;
+}
+.custom-modal-body .copy-hint { font-size: var(--font-xs); color: var(--text-muted); margin-top: 8px; text-align: right; }
+.custom-modal-footer { margin-top: 16px; display: flex; justify-content: flex-end; gap: 8px; }
+.custom-modal-footer button {
+  padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); font-size: var(--font-sm);
+  cursor: pointer; transition: all .15s;
+}
+.custom-modal-footer button:hover { background: var(--surface-hover); }
+.custom-modal-footer button.primary { background: var(--color-read); color: white; border-color: var(--color-read); }
+.custom-modal-footer button.primary:hover { opacity: .9; }
 
-  /* ===== 搜索结果计数 ===== */
-  .search-result-count {
-    font-size: var(--font-xs);
-    color: var(--text-muted);
-    padding: 0 8px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-  .search-result-count .count {
-    color: var(--primary);
-    font-weight: 600;
-  }
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.4); backdrop-filter: blur(2px);
+  z-index: 100; align-items: center; justify-content: center;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: var(--surface); border-radius: var(--radius);
+  padding: 24px; max-width: 400px; width: 90%;
+  box-shadow: 0 20px 60px rgba(0,0,0,.2);
+}
+.modal h3 { font-size: var(--font-lg); margin-bottom: 8px; }
+.modal p { font-size: var(--font-sm); color: var(--text-secondary); margin-bottom: 16px; }
+.modal .actions { display: flex; gap: 8px; justify-content: flex-end; }
+.modal .actions button { padding: 7px 16px; border-radius: var(--radius-sm); font-size: var(--font-sm); cursor: pointer; border: 1px solid var(--border); transition: all .15s; }
+.modal .actions .cancel { background: var(--surface); color: var(--text-secondary); }
+.modal .actions .cancel:hover { background: var(--surface-hover); }
+.modal .actions .confirm { background: var(--fail); color: #fff; border-color: var(--fail); }
+.modal .actions .confirm:hover { opacity: .9; }
 
-  @media (max-width: 700px) {
-    body { padding: 12px; }
-    .header-top { flex-direction: column; align-items: stretch; }
-    .controls { margin-left: 0; }
-    .search-box { width: 100%; }
-    .entry .tool-args { max-width: 30vw; }
-    .session-stats { display: none; }
-    .status-bar { flex-wrap: wrap; gap: 8px; }
-    .status-bar .status-error { max-width: 200px; }
-  }
+.footer {
+  margin-top: 12px; padding: 10px 16px; background: var(--surface);
+  border-radius: var(--radius); box-shadow: var(--shadow);
+  font-size: var(--font-xs); color: var(--text-muted);
+  display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
+  transition: background .2s, box-shadow .2s;
+}
+.footer a { color: var(--color-read); text-decoration: none; cursor: pointer; }
+.footer a:hover { text-decoration: underline; }
+
+.config-block {
+  display: none; margin-top: 8px; padding: 10px; background: var(--bg);
+  border-radius: 6px; font-size: 12px; font-family: monospace; overflow-x: auto;
+}
+
+/* ===========================
+   仪表盘样式
+   =========================== */
+.dashboard-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 24px;
+}
+.dashboard-header h1 { font-size: 24px; font-weight: 700; }
+.dashboard-header-actions {
+  display: flex; gap: 12px; align-items: center;
+}
+.dashboard-header-actions select,
+.dashboard-header-actions button {
+  padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); font-size: 14px; cursor: pointer;
+}
+.dashboard-header-actions button:hover {
+  background: var(--color-read); color: white; border-color: var(--color-read);
+}
+
+.export-menu { position: relative; display: inline-block; }
+.export-dropdown {
+  display: none; position: absolute; top: 100%; right: 0;
+  margin-top: 4px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.15); z-index: 100; min-width: 160px;
+}
+.export-dropdown.show { display: block; }
+.export-dropdown button {
+  display: block; width: 100%; padding: 10px 16px; text-align: left;
+  border: none; background: none; color: var(--text); font-size: 14px; cursor: pointer;
+}
+.export-dropdown button:hover { background: var(--bg); }
+.export-dropdown button:first-child { border-radius: 8px 8px 0 0; }
+.export-dropdown button:last-child { border-radius: 0 0 8px 8px; }
+
+.dashboard-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px; margin-bottom: 24px;
+}
+
+.card {
+  background: var(--surface); border-radius: 12px; padding: 20px;
+  box-shadow: var(--shadow); border: 1px solid var(--border);
+}
+.card-title {
+  font-size: 14px; color: var(--text-secondary); margin-bottom: 16px;
+  display: flex; align-items: center; gap: 8px;
+}
+.card-title .icon { font-size: 18px; }
+.stat-value { font-size: 32px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.stat-label { font-size: 13px; color: var(--text-muted); }
+.stat-change { font-size: 12px; margin-top: 8px; padding: 4px 8px; border-radius: 4px; display: inline-block; }
+.stat-change.positive { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+.stat-change.negative { background: rgba(239, 68, 68, 0.1); color: var(--fail); }
+
+.tool-list { display: flex; flex-direction: column; gap: 12px; }
+.tool-item { display: flex; align-items: center; gap: 12px; }
+.tool-name-bar { width: 80px; font-size: 13px; font-weight: 500; text-align: right; }
+.tool-bar-container { flex: 1; height: 24px; background: var(--bg); border-radius: 4px; overflow: hidden; }
+.tool-bar {
+  height: 100%; border-radius: 4px; display: flex; align-items: center;
+  padding-left: 8px; font-size: 12px; color: white; font-weight: 500;
+  transition: width 0.5s ease;
+}
+.tool-bar.read { background: #3b82f6; }
+.tool-bar.write { background: #10b981; }
+.tool-bar.bash { background: #f59e0b; }
+.tool-bar.skill { background: #ec4899; }
+.tool-bar.mcp { background: #8b5cf6; }
+.tool-bar.agent { background: #f97316; }
+.tool-bar.other { background: #6b7280; }
+.tool-count { width: 50px; font-size: 13px; color: var(--text-secondary); text-align: right; }
+
+.heatmap { display: grid; grid-template-columns: repeat(24, 1fr); gap: 4px; }
+.heatmap-cell {
+  aspect-ratio: 1; border-radius: 4px; background: var(--bg); position: relative;
+}
+.heatmap-cell.level-1 { background: rgba(59, 130, 246, 0.2); }
+.heatmap-cell.level-2 { background: rgba(59, 130, 246, 0.4); }
+.heatmap-cell.level-3 { background: rgba(59, 130, 246, 0.6); }
+.heatmap-cell.level-4 { background: rgba(59, 130, 246, 0.8); }
+.heatmap-labels { display: grid; grid-template-columns: repeat(24, 1fr); gap: 4px; margin-top: 4px; }
+.heatmap-label { font-size: 10px; color: var(--text-muted); text-align: center; }
+
+.duration-list { display: flex; flex-direction: column; gap: 8px; }
+.duration-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 12px; background: var(--bg); border-radius: 8px;
+}
+.duration-rank {
+  width: 24px; height: 24px; background: var(--color-read); color: white;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 600;
+}
+.duration-rank.slow { background: var(--speed-mid); }
+.duration-rank.critical { background: var(--fail); }
+.duration-info { flex: 1; }
+.duration-tool { font-size: 13px; font-weight: 500; }
+.duration-detail { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.duration-time { font-size: 14px; font-weight: 600; color: var(--text); }
+
+.error-list { display: flex; flex-direction: column; gap: 12px; }
+.error-item { display: flex; align-items: center; gap: 12px; }
+.error-type-badge {
+  padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 500;
+  background: rgba(239, 68, 68, 0.1); color: var(--fail);
+}
+.error-count { margin-left: auto; font-size: 14px; font-weight: 600; color: var(--fail); }
+
+.session-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.session-stat { text-align: center; padding: 12px; background: var(--bg); border-radius: 8px; }
+.session-stat-value { font-size: 24px; font-weight: 700; color: var(--color-read); }
+.session-stat-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+.dashboard-empty-state { text-align: center; padding: 40px; color: var(--text-muted); }
+.dashboard-empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+
+/* ===== 响应式 ===== */
+@media (max-width: 700px) {
+  body { padding: 12px; }
+  .header-top { flex-direction: column; align-items: stretch; }
+  .controls { margin-left: 0; }
+  .search-box { width: 100%; }
+  .entry .tool-args { max-width: 30vw; }
+  .session-stats { display: none; }
+  .status-bar { flex-wrap: wrap; gap: 8px; }
+  .status-bar .status-error { max-width: 200px; }
+  .dashboard-grid { grid-template-columns: 1fr; }
+  .session-stats-grid { grid-template-columns: 1fr; }
+}
 </style>
 </head>
 <body>
 
-<!-- 状态栏 -->
-<div class="status-bar" id="statusBar">
-  <div class="status-item">
-    <span class="status-dot ok" id="hookStatus"></span>
-    <span class="status-label">Hook 状态:</span>
-    <span class="status-value" id="hookStatusText">检测中...</span>
-  </div>
-  <div class="status-item">
-    <span class="status-label">最近错误:</span>
-    <span class="status-error" id="lastError" style="display:none" title="点击查看完整错误">无</span>
-    <span id="lastErrorText">无</span>
-  </div>
-  <div class="status-item">
-    <span class="status-label">慢调用:</span>
-    <span class="status-value" id="slowCount">0</span>
-  </div>
-  <div class="status-actions">
-    <button onclick="checkHookStatus()" title="检查 Hook 状态">🔍 检查</button>
-    <button onclick="showErrorLog()" title="查看错误日志">📋 错误日志</button>
+<!-- ===== Tab 导航 ===== -->
+<div class="tab-nav">
+  <div class="tab-title">🧠 AI Tool Tracker</div>
+  <button class="tab-btn active" data-tab="callchain" onclick="switchTab('callchain')">🔗 调用链</button>
+  <button class="tab-btn" data-tab="dashboard" onclick="switchTab('dashboard')">📊 仪表盘</button>
+  <div class="tab-nav-right">
+    <button class="theme-btn" onclick="toggleTheme()" id="themeBtn" title="切换主题">🌙</button>
   </div>
 </div>
 
-<div class="header">
-  <div class="header-top">
-    <h1>
-      🧠 工具调用链路
-      <span class="badge" id="liveBadge">LIVE</span>
-    </h1>
-    <select id="projectSelect" class="project-select" onchange="switchProject()" title="选择项目">
-      <option value="">加载项目列表…</option>
-    </select>
-    <div class="stats" id="stats"><span class="stat-item">加载中…</span></div>
-    <div class="controls">
-      <button onclick="loadLog()" title="刷新">🔄 刷新</button>
-      <button id="autoRefreshBtn" onclick="toggleAutoRefresh()">⏸ 自动</button>
-      <button id="sortBtn" onclick="toggleSort()" title="切换排序">⬇ 最新优先</button>
-      <div class="search-box-wrapper">
-        <input type="text" class="search-box" id="search"
-          placeholder="搜索 工具名 / 会话ID / 文件…" oninput="onSearchInput()">
-        <button class="search-clear" id="searchClear" onclick="clearSearch()">×</button>
-      </div>
-      <span class="search-result-count" id="searchResultCount"></span>
-      <button onclick="window.open('dashboard.html', '_blank')" title="打开分析仪表盘" style="background: var(--color-mcp-bg); color: var(--color-mcp); border-color: var(--color-mcp);">📊 仪表盘</button>
-      <button class="theme-btn" onclick="toggleTheme()" id="themeBtn" title="切换主题">🌙</button>
+<!-- ============================
+     Tab 1: 调用链
+     ============================ -->
+<div class="tab-content active" id="tabCallchain">
+
+  <!-- 状态栏 -->
+  <div class="status-bar" id="statusBar">
+    <div class="status-item">
+      <span class="status-dot ok" id="hookStatus"></span>
+      <span class="status-label">Hook 状态:</span>
+      <span class="status-value" id="hookStatusText">检测中...</span>
+    </div>
+    <div class="status-item">
+      <span class="status-label">最近错误:</span>
+      <span class="status-error" id="lastError" style="display:none" title="点击查看完整错误">无</span>
+      <span id="lastErrorText">无</span>
+    </div>
+    <div class="status-item">
+      <span class="status-label">慢调用:</span>
+      <span class="status-value" id="slowCount">0</span>
+    </div>
+    <div class="status-actions">
+      <button onclick="checkHookStatus()" title="检查 Hook 状态">🔍 检查</button>
+      <button onclick="showErrorLog()" title="查看错误日志">📋 错误日志</button>
     </div>
   </div>
-  <div class="filters" id="filters"></div>
-</div>
 
-<div id="sessionContainer"></div>
-
-<!-- 加载状态 -->
-<div class="loading-overlay" id="loadingOverlay">
-  <div class="loading-content">
-    <div class="loading-spinner"></div>
-    <span>加载中...</span>
+  <div class="header">
+    <div class="header-top">
+      <h1>
+        🧠 工具调用链路
+        <span class="badge" id="liveBadge">LIVE</span>
+      </h1>
+      <select id="projectSelect" class="project-select" onchange="switchProject()" title="选择项目">
+        <option value="">加载项目列表…</option>
+      </select>
+      <div class="stats" id="stats"><span class="stat-item">加载中…</span></div>
+      <div class="controls">
+        <button onclick="loadLog()" title="刷新">🔄 刷新</button>
+        <button id="autoRefreshBtn" onclick="toggleAutoRefresh()">⏸ 自动</button>
+        <button id="sortBtn" onclick="toggleSort()" title="切换排序">⬇ 最新优先</button>
+        <div class="search-box-wrapper">
+          <input type="text" class="search-box" id="search"
+            placeholder="搜索 工具名 / 会话ID / 文件…" oninput="onSearchInput()">
+          <button class="search-clear" id="searchClear" onclick="clearSearch()">×</button>
+        </div>
+        <span class="search-result-count" id="searchResultCount"></span>
+        <button onclick="window.open('dashboard.html', '_blank')" title="打开分析仪表盘" style="background: var(--color-mcp-bg); color: var(--color-mcp); border-color: var(--color-mcp);">📊 仪表盘</button>
+      </div>
+    </div>
+    <div class="filters" id="filters"></div>
   </div>
-</div>
 
-<div class="footer">
-  <span>📁 <code>~/.claude/ai-tool-tracker/logs/</code></span>
-  <span>
-    <a href="#" onclick="toggleCollapseAll(event)">📂 全部展开/折叠</a>
-    · <a href="#" onclick="showClearModal()">🗑 清空记录</a>
-    · <a href="#" onclick="toggleConfig(event)">⚙️ 配置</a>
-    · <span id="entryCount">0 条</span>
-  </span>
-</div>
+  <div id="sessionContainer"></div>
 
-<pre id="configBlock" style="display:none;margin-top:8px;padding:10px;background:var(--bg);border-radius:6px;font-size:12px;font-family:monospace;overflow-x:auto">全局 ~/.claude/settings.json 中已配置 PreToolUse + PostToolUse hook
+  <!-- 加载状态 -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-content">
+      <div class="loading-spinner"></div>
+      <span>加载中...</span>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>📁 <code>~/.claude/ai-tool-tracker/logs/</code></span>
+    <span>
+      <a href="#" onclick="toggleCollapseAll(event)">📂 全部展开/折叠</a>
+      · <a href="#" onclick="showClearModal()">🗑 清空记录</a>
+      · <a href="#" onclick="toggleConfig(event)">⚙️ 配置</a>
+      · <span id="entryCount">0 条</span>
+    </span>
+  </div>
+
+  <pre class="config-block" id="configBlock">全局 ~/.claude/settings.json 中已配置 PreToolUse + PostToolUse hook
 所有项目自动生效，无需单独配置</pre>
+</div>
 
+<!-- ============================
+     Tab 2: 仪表盘
+     ============================ -->
+<div class="tab-content" id="tabDashboard">
+
+  <div class="dashboard-header">
+    <h1>📊 使用分析仪表盘</h1>
+    <div class="dashboard-header-actions">
+      <select id="dashProjectSelect" onchange="loadDashboardData()">
+        <option value="">全部项目</option>
+      </select>
+      <select id="timeRange" onchange="loadDashboardData()">
+        <option value="today">今天</option>
+        <option value="week" selected>本周</option>
+        <option value="month">本月</option>
+        <option value="all">全部</option>
+      </select>
+      <button onclick="loadDashboardData()">🔄 刷新</button>
+      <div class="export-menu">
+        <button onclick="toggleExportMenu()">📥 导出</button>
+        <div class="export-dropdown" id="exportDropdown">
+          <button onclick="exportJSON()">📄 导出 JSON</button>
+          <button onclick="exportCSV()">📊 导出 CSV</button>
+          <button onclick="exportMarkdown()">📝 导出 Markdown</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 总览卡片 -->
+  <div class="dashboard-grid">
+    <div class="card">
+      <div class="card-title"><span class="icon">📊</span> 总览</div>
+      <div class="stat-value" id="totalCalls">0</div>
+      <div class="stat-label">总调用次数</div>
+      <div class="stat-change positive" id="callsChange">-</div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">⏱️</span> 平均耗时</div>
+      <div class="stat-value" id="avgDuration">-</div>
+      <div class="stat-label">每次调用</div>
+      <div class="stat-change" id="durationChange">-</div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">✅</span> 成功率</div>
+      <div class="stat-value" id="successRate">-</div>
+      <div class="stat-label">调用成功率</div>
+      <div class="stat-change" id="successChange">-</div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">🐢</span> 慢调用</div>
+      <div class="stat-value" id="slowCalls">0</div>
+      <div class="stat-label">超过 1 秒</div>
+      <div class="stat-change" id="slowChange">-</div>
+    </div>
+  </div>
+
+  <!-- 工具使用 + 时间分布 -->
+  <div class="dashboard-grid">
+    <div class="card">
+      <div class="card-title"><span class="icon">🔧</span> 工具使用 TOP 10</div>
+      <div class="tool-list" id="toolList">
+        <div class="dashboard-empty-state"><div class="icon">📭</div><div>暂无数据</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">🕐</span> 时间分布（24小时）</div>
+      <div class="heatmap" id="heatmap"></div>
+      <div class="heatmap-labels" id="heatmapLabels"></div>
+    </div>
+  </div>
+
+  <!-- 慢调用 + 错误分布 -->
+  <div class="dashboard-grid">
+    <div class="card">
+      <div class="card-title"><span class="icon">🐌</span> 慢调用排行 TOP 10</div>
+      <div class="duration-list" id="durationList">
+        <div class="dashboard-empty-state"><div class="icon">🚀</div><div>暂无慢调用</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">❌</span> 错误类型分布</div>
+      <div class="error-list" id="errorList">
+        <div class="dashboard-empty-state"><div class="icon">✅</div><div>暂无错误</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 会话统计 + 效率洞察 -->
+  <div class="dashboard-grid">
+    <div class="card">
+      <div class="card-title"><span class="icon">💬</span> 会话统计</div>
+      <div class="session-stats-grid" id="sessionStats">
+        <div class="session-stat">
+          <div class="session-stat-value" id="totalSessions">0</div>
+          <div class="session-stat-label">总会话数</div>
+        </div>
+        <div class="session-stat">
+          <div class="session-stat-value" id="avgCallsPerSession">0</div>
+          <div class="session-stat-label">平均调用/会话</div>
+        </div>
+        <div class="session-stat">
+          <div class="session-stat-value" id="avgSessionDuration">-</div>
+          <div class="session-stat-label">平均会话时长</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">💡</span> 效率洞察</div>
+      <div id="insights" style="font-size: 14px; line-height: 1.8;">
+        <div class="dashboard-empty-state"><div class="icon">🔍</div><div>需要更多数据...</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Skills 追踪 -->
+  <div class="dashboard-grid">
+    <div class="card" style="grid-column: span 2;">
+      <div class="card-title"><span class="icon">🎯</span> Skills 使用追踪</div>
+      <div class="skills-stats" id="skillsStats">
+        <div class="session-stats-grid" style="margin-bottom: 16px;">
+          <div class="session-stat">
+            <div class="session-stat-value" id="totalSkillSessions">0</div>
+            <div class="session-stat-label">会话总数</div>
+          </div>
+          <div class="session-stat">
+            <div class="session-stat-value" id="totalUniqueSkills">0</div>
+            <div class="session-stat-label">唯一 Skills</div>
+          </div>
+          <div class="session-stat">
+            <div class="session-stat-value" id="avgSkillsPerSession">0</div>
+            <div class="session-stat-label">平均 Skills/会话</div>
+          </div>
+        </div>
+      </div>
+      <div id="skillsSummary" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px;">
+        <div class="dashboard-empty-state" style="width: 100%;"><div class="icon">🎯</div><div>暂无 Skills 数据</div></div>
+      </div>
+      <div id="skillsDetail" style="margin-top: 16px; font-size: 13px; color: var(--text-secondary); display: none;">
+        <div style="margin-bottom: 8px; font-weight: 500;">最近会话 Skills：</div>
+        <div id="skillsSessionList"></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /tabDashboard -->
+
+<!-- 清空确认 Modal -->
 <div class="modal-overlay" id="clearModal">
   <div class="modal">
     <h3>🗑 清空工具调用记录？</h3>
@@ -843,9 +941,7 @@
       <h3 id="customModalTitle">提示</h3>
       <button class="custom-modal-close" onclick="hideCustomModal()">×</button>
     </div>
-    <div class="custom-modal-body" id="customModalBody">
-      内容
-    </div>
+    <div class="custom-modal-body" id="customModalBody">内容</div>
     <div class="custom-modal-footer">
       <button onclick="hideCustomModal()">关闭</button>
       <button class="primary" id="customModalCopy" onclick="copyModalContent()">📋 复制</button>
@@ -854,27 +950,40 @@
 </div>
 
 <script>
+/* ==========================================================
+   共享状态
+   ========================================================== */
 const PROJECTS_FILE = 'projects.json';
+const API_BASE = '/api';
 let projects = {};
-let currentProject = null;
 
+// --- 调用链状态 ---
+let currentProject = null;
+let entries = [];
+let autoRefreshTimer = null;
+let incrementalMode = false;
+let renderedSeqs = new Set();
+let searchTimer = null;
+
+// --- 仪表盘状态 ---
+let dashEntries = [];
+
+/* ==========================================================
+   工具类型映射
+   ========================================================== */
 const TOOL_TYPES = {
   Read: 'read', Glob: 'read', Grep: 'read', WebFetch: 'read', WebSearch: 'read',
   Write: 'write', Edit: 'write', NotebookEdit: 'write',
-  Bash: 'bash',
-  Skill: 'skill',
+  Bash: 'bash', Skill: 'skill',
   Agent: 'agent', TaskCreate: 'agent', TaskUpdate: 'agent', TaskOutput: 'agent',
   AskUserQuestion: 'other', EnterPlanMode: 'other', ExitPlanMode: 'other',
-  CronCreate: 'other', CronDelete: 'other', CronList: 'other',
-  ScheduleWakeup: 'other',
+  CronCreate: 'other', CronDelete: 'other', CronList: 'other', ScheduleWakeup: 'other',
 };
 const TYPE_LABELS = { read: '读文件', write: '写文件', bash: '命令', skill: 'Skill', mcp: 'MCP 工具', agent: '子代理', other: '其他' };
 const TYPE_ICONS = { read: '📖', write: '✏️', bash: '💻', skill: '⚡', mcp: '🔌', agent: '🤖', other: '⚙️' };
 const TOOL_ICONS = {
   Read: '📖', Glob: '🔍', Grep: '🔎', WebFetch: '🌐', WebSearch: '🔗',
-  Write: '✏️', Edit: '✂️', NotebookEdit: '📓',
-  Bash: '💻',
-  Skill: '⚡',
+  Write: '✏️', Edit: '✂️', NotebookEdit: '📓', Bash: '💻', Skill: '⚡',
   Agent: '🤖', TaskCreate: '📋', TaskUpdate: '🔄', TaskOutput: '📄',
   AskUserQuestion: '❓', EnterPlanMode: '📝', ExitPlanMode: '✅',
   CronCreate: '⏰', CronDelete: '🗑️', CronList: '📋', ScheduleWakeup: '⏳',
@@ -884,13 +993,9 @@ const SESSION_COLORS = [
   '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1',
 ];
 
-let entries = [];
-let autoRefreshTimer = null;
-let incrementalMode = false;  // true = 自动刷新模式，仅追加新条目
-let renderedSeqs = new Set(); // 已渲染条目的 seq 集合
-let searchTimer = null;       // 搜索防抖
-
-// ===== 状态持久化 =====
+/* ==========================================================
+   状态持久化
+   ========================================================== */
 function getSortOrder() { return localStorage.getItem('tooltrace-sort') || 'desc'; }
 function setSortOrder(v) { localStorage.setItem('tooltrace-sort', v); }
 function getCollapsedSessions() {
@@ -898,12 +1003,13 @@ function getCollapsedSessions() {
 }
 function setCollapsedSessions(arr) { localStorage.setItem('tooltrace-collapsed', JSON.stringify(arr)); }
 
-// ===== 工具函数 =====
+/* ==========================================================
+   通用工具函数
+   ========================================================== */
 function getType(toolName) {
   if (toolName.startsWith('mcp__')) return 'mcp';
   return TOOL_TYPES[toolName] || 'other';
 }
-
 function getIcon(toolName) {
   if (toolName.startsWith('mcp__')) {
     const parts = toolName.split('__');
@@ -911,19 +1017,16 @@ function getIcon(toolName) {
   }
   return TOOL_ICONS[toolName] || '⚙️';
 }
-
 function formatAbsTime(ts) {
   const d = new Date(ts);
   const pad = n => String(n).padStart(2, '0');
   return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
-
 function formatFullTime(ts) {
   const d = new Date(ts);
   const pad = n => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
-
 function relativeTime(ts) {
   const diff = Date.now() - new Date(ts).getTime();
   if (diff < 2000) return '刚刚';
@@ -932,20 +1035,16 @@ function relativeTime(ts) {
   if (mins < 60) return `${mins}m`;
   return `${Math.floor(mins / 60)}h${mins % 60}m`;
 }
-
 function shortId(sid) {
   if (!sid) return 'unknown';
   return sid.length > 8 ? sid.substring(0, 8) + '…' : sid;
 }
-
-function getSessionColor(sid, index) {
+function getSessionColor(sid) {
   if (!sid) return SESSION_COLORS[0];
   let h = 0;
   for (let i = 0; i < sid.length; i++) h = ((h << 5) - h) + sid.charCodeAt(i);
   return SESSION_COLORS[Math.abs(h) % SESSION_COLORS.length];
 }
-
-/** 格式化持续时间为人类可读 */
 function formatDuration(ms) {
   if (ms == null) return '';
   if (ms < 1000) return `${Math.round(ms)}ms`;
@@ -954,8 +1053,6 @@ function formatDuration(ms) {
   const s = Math.round((ms % 60000) / 1000);
   return `${m}m${s}s`;
 }
-
-/** 根据耗时返回速度等级 */
 function speedGrade(ms) {
   if (ms == null) return null;
   if (ms < 500) return 'fast';
@@ -963,69 +1060,30 @@ function speedGrade(ms) {
   return 'slow';
 }
 
-/** 追加新增的条目到 DOM（不重建已有 DOM） */
-function appendEntries(newEntries) {
-  if (newEntries.length === 0) return;
-  // 过滤掉已渲染的
-  const unseen = newEntries.filter(e => !renderedSeqs.has(e.seq));
-  if (unseen.length === 0) return;
+/* ==========================================================
+   Tab 切换
+   ========================================================== */
+let currentTab = 'callchain';
 
-  const container = document.getElementById('sessionContainer');
-  // 如果没有 session-group，触一次全量渲染
-  if (!container.querySelector('.session-group')) {
-    render();
-    return;
-  }
-
-  // 按会话分组
-  const groups = {};
-  unseen.forEach(e => {
-    const sid = e.session_id || 'unknown';
-    if (!groups[sid]) groups[sid] = [];
-    groups[sid].push(e);
+function switchTab(tab) {
+  currentTab = tab;
+  // 更新按钮状态
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tab);
   });
+  // 切换面板
+  document.getElementById('tabCallchain').classList.toggle('active', tab === 'callchain');
+  document.getElementById('tabDashboard').classList.toggle('active', tab === 'dashboard');
 
-  for (const [sid, group] of Object.entries(groups)) {
-    // 查找已有的 session-group
-    let sessionEl = container.querySelector(`[data-sid="${sid}"]`);
-    if (sessionEl) {
-      // 找到 body
-      const body = sessionEl.parentElement.querySelector('.session-body .timeline');
-      if (body) {
-        for (const entry of group) {
-          const html = buildEntryHTML(entry, 0, false);
-          body.insertAdjacentHTML('beforeend', html);
-          if (entry.seq != null) renderedSeqs.add(entry.seq);
-        }
-      }
-      // 更新会话统计
-      updateSessionStats(sessionEl.parentElement);
-    } else {
-      // 没有这个会话组——全量渲染太贵，偷懒直接全量重渲
-      render();
-      return;
-    }
+  // 切换到仪表盘时自动加载数据
+  if (tab === 'dashboard' && dashEntries.length === 0) {
+    loadDashboardData();
   }
 }
 
-function updateSessionStats(sessionGroup) {
-  const header = sessionGroup.querySelector('.session-header');
-  const entriesInGroup = sessionGroup.querySelectorAll('.entry');
-  const gTotal = entriesInGroup.length;
-  const gOk = sessionGroup.querySelectorAll('.entry:not(.is-error)').length;
-  const gFail = gTotal - gOk;
-
-  const statsDiv = header.querySelector('.session-stats');
-  if (statsDiv) {
-    statsDiv.innerHTML = `
-      <span>📋 ${gTotal}</span>
-      <span>✅ ${gOk}</span>
-      ${gFail ? `<span style="color:var(--fail)">❌ ${gFail}</span>` : ''}
-    `;
-  }
-}
-
-// ===== 主题 =====
+/* ==========================================================
+   主题
+   ========================================================== */
 function getTheme() { return localStorage.getItem('tooltrace-theme') || 'light'; }
 function setTheme(t) {
   document.body.classList.toggle('dark', t === 'dark');
@@ -1034,587 +1092,37 @@ function setTheme(t) {
 }
 function toggleTheme() { setTheme(getTheme() === 'dark' ? 'light' : 'dark'); }
 
-// ===== 排序切换 =====
-function toggleSort() {
-  const cur = getSortOrder();
-  const next = cur === 'desc' ? 'asc' : 'desc';
-  setSortOrder(next);
-  document.getElementById('sortBtn').textContent = next === 'desc' ? '⬇ 最新优先' : '⬆ 最早优先';
-  incrementalMode = false;
-  render();
-}
-
-// ===== 搜索防抖 =====
-function onSearchInput() {
-  const searchBox = document.getElementById('search');
-  const clearBtn = document.getElementById('searchClear');
-  clearBtn.classList.toggle('show', searchBox.value.length > 0);
-
-  clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => { incrementalMode = false; render(); }, 200);
-}
-
-function clearSearch() {
-  document.getElementById('search').value = '';
-  document.getElementById('searchClear').classList.remove('show');
-  document.getElementById('searchResultCount').innerHTML = '';
-  incrementalMode = false;
-  render();
-}
-
-// ===== 加载状态 =====
-function showLoading() {
-  document.getElementById('loadingOverlay').classList.add('show');
-}
-
-function hideLoading() {
-  document.getElementById('loadingOverlay').classList.remove('show');
-}
-
-// ===== 全部展开/折叠 =====
-function toggleCollapseAll(e) {
-  e?.preventDefault();
-  const headers = document.querySelectorAll('.session-header');
-  const allCollapsed = Array.from(headers).every(h => h.classList.contains('collapsed'));
-  headers.forEach(h => {
-    h.classList.toggle('collapsed', !allCollapsed);
-    h.nextElementSibling.classList.toggle('hidden', !allCollapsed);
-  });
-  const sids = Array.from(headers).map(h => h.dataset.sid);
-  setCollapsedSessions(allCollapsed ? [] : sids);
-}
-
-// ===== 构建入口 HTML（递归构建树）=====
-function buildEntryHTML(entry, depth, expandErrors) {
-  const type = getType(entry.tool_name);
-  const input = entry.input_summary || {};
-  const argsParts = [];
-  for (const [k, v] of Object.entries(input)) {
-    if (k === 'description' && !v) continue;
-    if (k === 'mcp_server') continue;
-    if (k === 'file_path') argsParts.push(`📄 ${v}`);
-    else if (k === 'command') argsParts.push(`<span style="opacity:.7">$</span> ${v}`);
-    else if (k === 'pattern') argsParts.push(`/${v}/`);
-    else if (k === 'keys') argsParts.push(`[${v.join(', ')}]`);
-    else if (k === 'tool') argsParts.push(`<span style="opacity:.6">${v}</span>`);
-    else if (typeof v === 'string') argsParts.push(`${k}=${v}`);
-  }
-  const argsText = argsParts.join(' · ') || '—';
-  const icon = getIcon(entry.tool_name);
-  const fullTime = formatFullTime(entry.ts);
-  const absTime = formatAbsTime(entry.ts);
-  const relTime = relativeTime(entry.ts);
-  const isError = entry.success === false;
-
-  // 耗时标签 - 增强版（添加 warning 和 critical 等级）
-  const dur = entry.duration_ms;
-  let durClass = '';
-  if (dur != null) {
-    if (dur >= 3000) durClass = 'critical';
-    else if (dur >= 1000) durClass = 'warning';
-    else durClass = speedGrade(dur);
-  }
-  const durHtml = dur != null
-    ? `<span class="duration-tag ${durClass ? 'speed-' + durClass : ''} ${durClass}">${formatDuration(dur)}</span>`
-    : '';
-
-  // 缩进 style
-  const indentStyle = depth > 0 ? ` style="padding-left:${44 + depth * 16}px"` : '';
-
-  // 如果是树形子节点，额外标记
-  const extraClass = depth > 0 ? ' tree-child' : '';
-
-  // 慢调用高亮 class
-  let slowClass = '';
-  if (dur != null) {
-    if (dur >= 3000) slowClass = ' slow-critical';
-    else if (dur >= 1000) slowClass = ' slow-warning';
-  }
-
-  // 错误条目默认展开
-  const expandedClass = (isError || (depth === 0 && expandErrors)) ? ' expanded' : '';
-
-  // 子条目（调用链）
-  let childrenHtml = '';
-  if (entry._children && entry._children.length > 0) {
-    childrenHtml = `<div class="tree-child-area">`;
-    for (const child of entry._children) {
-      childrenHtml += buildEntryHTML(child, depth + 1, expandErrors);
-    }
-    // 最后一个子条目下面的连线截断
-    childrenHtml += `</div>`;
-  }
-
-  return `<div class="entry type-${type}${isError ? ' is-error' : ''}${slowClass}${extraClass}${expandedClass}" onclick="toggleExpand(this)"${indentStyle}>
-    <div class="dot">${icon.match(/[\u{1F000}-\u{1FFFF}]|[☀-➿]|[✀-➿]|[a-zA-Z0-9]/u)?.[0] || icon[0] || '?'}</div>
-    <div class="title">
-      <span class="tool-name">${entry.tool_name}</span>
-      <span class="tool-args" title="${argsText.replace(/"/g, '&quot;')}">${argsText}</span>
-      ${durHtml}
-      <span class="status-badge ${entry.success !== false ? 'ok' : 'fail'}">${entry.success !== false ? '✓' : '✗'}</span>
-      <span class="time-tag" title="${fullTime}">${absTime} ${relTime}</span>
-    </div>
-    ${isError && entry.error ? `<div class="error-preview">❌ ${entry.error.replace(/</g, '&lt;')}</div>` : ''}
-    ${isError && entry.error ? buildErrorDetails(entry.error) : ''}
-    <div class="details"><pre>${JSON.stringify({...entry, ts: fullTime + ' (' + relTime + ')'}, null, 2).replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre></div>
-    ${childrenHtml}
-  </div>`;
-}
-
-/** 构建错误详情 HTML */
-function buildErrorDetails(errorMsg) {
-  // 错误分类
-  let errorType = '未知错误';
-  let errorHint = '';
-
-  if (errorMsg.includes('SyntaxError')) {
-    errorType = '语法错误';
-    errorHint = '检查代码语法，可能是拼写错误或缺少括号';
-  } else if (errorMsg.includes('ReferenceError') || errorMsg.includes('TypeError')) {
-    errorType = '运行时错误';
-    errorHint = '检查变量是否已定义，类型是否正确';
-  } else if (errorMsg.includes('ENOENT') || errorMsg.includes('No such file')) {
-    errorType = '文件不存在';
-    errorHint = '检查文件路径是否正确，文件是否存在';
-  } else if (errorMsg.includes('Permission denied')) {
-    errorType = '权限错误';
-    errorHint = '检查文件权限，可能需要管理员权限';
-  } else if (errorMsg.includes('Exit code')) {
-    errorType = '命令执行失败';
-    errorHint = '检查命令语法和参数是否正确';
-  } else if (errorMsg.includes('timeout') || errorMsg.includes('Timeout')) {
-    errorType = '超时错误';
-    errorHint = '操作耗时过长，可能需要优化或增加超时时间';
-  }
-
-  return `
-    <div class="error-details">
-      <div class="error-header">
-        <span>❌ 错误详情</span>
-        <span class="error-type">${errorType}</span>
-      </div>
-      <div class="error-message">${errorMsg.replace(/</g, '&lt;')}</div>
-      ${errorHint ? `<div class="error-hint"><strong>💡 建议：</strong>${errorHint}</div>` : ''}
-    </div>
-  `;
-}
-
-// ===== 构建树形结构 =====
-function buildTrees(entries) {
-  // 按 seq 索引
-  const bySeq = {};
-  // 找有 parent_seq 的
-  for (const e of entries) {
-    if (e.seq != null) bySeq[e.seq] = e;
-    e._children = [];
-  }
-  // 建立父子关系
-  const roots = [];
-  for (const e of entries) {
-    if (e.parent_seq != null && bySeq[e.parent_seq]) {
-      bySeq[e.parent_seq]._children.push(e);
-    } else {
-      roots.push(e);
-    }
-  }
-  return roots;
-}
-
-// ===== 主渲染 =====
-function render() {
-  const container = document.getElementById('sessionContainer');
-  const q = document.getElementById('search').value.trim().toLowerCase();
-  const activeFilter = document.querySelector('.filters .tag.active')?.dataset?.filter || 'all';
-  const sortDesc = getSortOrder() === 'desc';
-
-  // === 过滤 ===
-  // 先解析出状态筛选（filter 格式: "type|status"）
-  let typeFilter = activeFilter;
-  let statusFilter = 'all';
-  if (activeFilter.includes('|')) {
-    const parts = activeFilter.split('|');
-    typeFilter = parts[0];
-    statusFilter = parts[1];
-  }
-
-  const filtered = entries.filter(e => {
-    // 工具类型筛选
-    if (typeFilter !== 'all' && getType(e.tool_name) !== typeFilter) return false;
-    // 状态筛选
-    if (statusFilter === 'ok' && e.success === false) return false;
-    if (statusFilter === 'fail' && e.success !== false) return false;
-    // 搜索
-    if (!q) return true;
-    if (e.tool_name.toLowerCase().includes(q)) return true;
-    if (e.session_id && e.session_id.toLowerCase().includes(q)) return true;
-    const input = e.input_summary || {};
-    for (const v of Object.values(input)) {
-      if (typeof v === 'string' && v.toLowerCase().includes(q)) return true;
-    }
-    return false;
-  });
-
-  // === 全局统计 ===
-  updateStats();
-
-  // === 搜索结果计数 ===
-  const searchResultCount = document.getElementById('searchResultCount');
-  if (q) {
-    searchResultCount.innerHTML = `<span class="count">${filtered.length}</span> 条结果`;
-  } else {
-    searchResultCount.innerHTML = '';
-  }
-
-  // === 过滤标签 ===
-  renderFilters(typeFilter, statusFilter);
-
-  // === 构建树 ===
-  const roots = buildTrees(filtered);
-
-  // === 按会话分组（使用树根节点）===
-  const groups = {};
-  roots.forEach(e => {
-    const sid = e.session_id || 'unknown';
-    if (!groups[sid]) groups[sid] = [];
-    groups[sid].push(e);
-  });
-
-  let sessionIds = Object.keys(groups);
-  sessionIds.sort((a, b) => {
-    const ga = groups[a], gb = groups[b];
-    const ta = ga.reduce((min, e) => Math.min(min, new Date(e.ts).getTime()), Infinity);
-    const tb = gb.reduce((min, e) => Math.min(min, new Date(e.ts).getTime()), Infinity);
-    return sortDesc ? tb - ta : ta - tb;
-  });
-
-  if (filtered.length === 0) {
-    container.innerHTML = `<div class="empty-state" style="background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:40px 20px">
-      <div class="icon">${q || typeFilter !== 'all' || statusFilter !== 'all' ? '🔍' : '⚡'}</div>
-      <h2>${q || typeFilter !== 'all' || statusFilter !== 'all' ? '没有匹配的调用' : '等待工具调用…'}</h2>
-      ${q || typeFilter !== 'all' || statusFilter !== 'all' ? '<p>试试其他搜索词或取消筛选</p>' : '<p>hook 生效后会自动记录</p>'}
-    </div>`;
-    return;
-  }
-
-  const collapsedSids = getCollapsedSessions();
-
-  let allHtml = '';
-  sessionIds.forEach((sid, si) => {
-    const group = groups[sid];
-    const color = getSessionColor(sid, si);
-
-    // 统计
-    const gTotal = countEntries(group);
-    const gOk = countSuccess(group);
-    const gFail = gTotal - gOk;
-
-    // 平均耗时
-    const allEntries = flattenTree(group);
-    const durations = allEntries.map(e => e.duration_ms).filter(d => d != null);
-    const avgDur = durations.length > 0
-      ? durations.reduce((a, b) => a + b, 0) / durations.length
-      : null;
-
-    const times = allEntries.map(e => new Date(e.ts).getTime());
-    const tMin = Math.min(...times);
-    const tMax = Math.max(...times);
-    const timeRange = tMin === tMax
-      ? formatFullTime(tMin)
-      : `${formatAbsTime(tMin)} ~ ${formatAbsTime(tMax)}`;
-
-    const isCollapsed = collapsedSids.includes(sid);
-    const entryArrow = isCollapsed ? '▶' : '▼';
-
-    allHtml += `<div class="session-group">
-      <div class="session-header ${isCollapsed ? 'collapsed' : ''}" data-sid="${sid}"
-        onclick="toggleSession(this)">
-        <span class="arrow">${entryArrow}</span>
-        <span class="session-id" title="会话ID: ${sid}" style="color:${color}">
-          ${shortId(sid)}
-        </span>
-        <span class="session-time" title="${formatFullTime(tMin)}">${timeRange}</span>
-        <span class="session-stats">
-          <span>📋 ${gTotal}</span>
-          <span>✅ ${gOk}</span>
-          ${gFail ? `<span style="color:var(--fail)">❌ ${gFail}</span>` : ''}
-          ${avgDur != null ? `<span class="badge-duration-avg">⚡ ${formatDuration(avgDur)}</span>` : ''}
-        </span>
-      </div>
-      <div class="session-body ${isCollapsed ? 'hidden' : ''}">
-        <div class="timeline">`;
-
-    // 按时间排序组内条目（树根）
-    const sorted = [...group].sort((a, b) => {
-      const ta = new Date(a.ts).getTime();
-      const tb = new Date(b.ts).getTime();
-      return sortDesc ? tb - ta : ta - tb;
-    });
-
-    for (const entry of sorted) {
-      allHtml += buildEntryHTML(entry, 0, false);
-    }
-
-    allHtml += `</div></div></div>`;
-  });
-
-  container.innerHTML = allHtml;
-
-  // 记录已渲染的 seq
-  renderedSeqs = new Set();
-  for (const e of flattenTree(entries)) {
-    if (e.seq != null) renderedSeqs.add(e.seq);
-  }
-}
-
-/** 扁平化树为数组 */
-function flattenTree(roots) {
-  const result = [];
-  function walk(list) {
-    for (const e of list) {
-      result.push(e);
-      if (e._children) walk(e._children);
-    }
-  }
-  walk(roots);
-  return result;
-}
-
-function countEntries(roots) {
-  return flattenTree(roots).length;
-}
-
-function countSuccess(roots) {
-  return flattenTree(roots).filter(e => e.success !== false).length;
-}
-
-// ===== 统计更新 =====
-function updateStats() {
-  const total = entries.length;
-  const ok = entries.filter(e => e.success !== false).length;
-  const fail = total - ok;
-
-  // 耗时统计
-  const durs = entries.map(e => e.duration_ms).filter(d => d != null);
-  const totalDur = durs.length > 0 ? durs.reduce((a, b) => a + b, 0) : 0;
-  const avgDur = durs.length > 0 ? formatDuration(totalDur / durs.length) : '';
-  const slowTotal = durs.filter(d => d >= 3000).length;
-
-  const byTool = {};
-  entries.forEach(e => { byTool[e.tool_name] = (byTool[e.tool_name] || 0) + 1; });
-  const sortedTools = Object.entries(byTool).sort((a,b) => b[1]-a[1]);
-  const usedTools = sortedTools.slice(0, 3);
-
-  let statsHtml = `<span class="stat-item">📊 共 <strong>${total}</strong> 次调用</span>
-    <span class="stat-item">✅ <strong style="color:var(--success)">${ok}</strong></span>
-    <span class="stat-item">❌ <strong style="color:var(--fail)">${fail}</strong></span>`;
-  if (totalDur > 0) {
-    statsHtml += `<span class="stat-item">⚡ <strong>${formatDuration(totalDur)}</strong>`;
-    if (avgDur) statsHtml += ` <span style="color:var(--text-muted)">(均 ${avgDur})</span>`;
-    statsHtml += `</span>`;
-    if (slowTotal > 0) {
-      statsHtml += `<span class="stat-item" style="color:var(--speed-slow)">🐢 ≥3s: ${slowTotal}</span>`;
-    }
-  }
-  if (usedTools.length > 0 && total > 0) {
-    statsHtml += `<span class="stat-item">🔥 ${usedTools.map(([name, cnt]) =>
-      `<span style="color:var(--text-muted)">${name}</span> <strong>${cnt}</strong>`
-    ).join(' · ')}</span>`;
-  }
-  document.getElementById('stats').innerHTML = statsHtml;
-  document.getElementById('entryCount').textContent = `${total} 条`;
-}
-
-// ===== 过滤标签渲染 =====
-let _lastTypeFilter = 'all';
-let _lastStatusFilter = 'all';
-
-function renderFilters(activeType, activeStatus) {
-  _lastTypeFilter = activeType;
-  _lastStatusFilter = activeStatus;
-
-  const tagSet = new Set();
-  entries.forEach(e => tagSet.add(getType(e.tool_name)));
-  const types = ['all', ...tagSet];
-  const colors = { all: 'var(--text-muted)', read: 'var(--color-read)', write: 'var(--color-write)',
-    bash: 'var(--color-bash)', mcp: 'var(--color-mcp)', agent: 'var(--color-agent)', other: 'var(--color-other)' };
-
-  const failCount = entries.filter(e => e.success === false).length;
-  const okCount = entries.filter(e => e.success !== false).length;
-
-  let html = '';
-  // 类型标签
-  for (const t of types) {
-    const count = t === 'all' ? entries.length : entries.filter(e => getType(e.tool_name) === t).length;
-    const label = t === 'all' ? '全部' : (TYPE_LABELS[t] || t);
-    const icon = t === 'all' ? '' : (TYPE_ICONS[t] || '');
-    const c = colors[t] || 'var(--text-muted)';
-    const filterKey = t;
-    const isActive = activeType === t && activeStatus === 'all';
-    html += `<span class="tag ${isActive ? 'active' : ''}"
-      style="${isActive ? `background:${c};color:#fff` : ''}"
-      data-filter="${filterKey}" onclick="setFilter('${filterKey}')">
-      ${icon} ${label} ${count}</span>`;
-  }
-
-  // 成功/失败标签
-  if (okCount > 0) {
-    const filterKey = `all|ok`;
-    const isActive = activeType === 'all' && activeStatus === 'ok';
-    html += `<span class="tag ${isActive ? 'active' : ''}"
-      style="${isActive ? 'background:var(--success);color:#fff' : ''}"
-      data-filter="${filterKey}" onclick="setFilter('${filterKey}')">
-      ✅ 成功 ${okCount}</span>`;
-  }
-  if (failCount > 0) {
-    const filterKey = `all|fail`;
-    const isActive = activeType === 'all' && activeStatus === 'fail';
-    html += `<span class="tag ${isActive ? 'active' : ''}"
-      style="${isActive ? 'background:var(--fail);color:#fff' : ''}"
-      data-filter="${filterKey}" onclick="setFilter('${filterKey}')">
-      ❌ 失败 ${failCount}</span>`;
-  }
-
-  document.getElementById('filters').innerHTML = html;
-}
-
-function setFilter(f) {
-  document.querySelectorAll('.filters .tag').forEach(t => t.classList.toggle('active', t.dataset.filter === f));
-  incrementalMode = false;
-  render();
-}
-
-function toggleExpand(el) {
-  el.classList.toggle('expanded');
-  if (el.classList.contains('expanded')) {
-    setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
-  }
-}
-
-function toggleSession(header) {
-  header.classList.toggle('collapsed');
-  const body = header.nextElementSibling;
-  body.classList.toggle('hidden');
-  const sid = header.dataset.sid;
-  let collapsed = getCollapsedSessions();
-  if (body.classList.contains('hidden')) {
-    if (!collapsed.includes(sid)) collapsed.push(sid);
-  } else {
-    collapsed = collapsed.filter(s => s !== sid);
-  }
-  setCollapsedSessions(collapsed);
-  const arrow = header.querySelector('.arrow');
-  arrow.textContent = body.classList.contains('hidden') ? '▶' : '▼';
-}
-
-function toggleAutoRefresh() {
-  const btn = document.getElementById('autoRefreshBtn');
-  const liveBadge = document.getElementById('liveBadge');
-  if (autoRefreshTimer) {
-    clearInterval(autoRefreshTimer);
-    autoRefreshTimer = null;
-    btn.innerHTML = '⏸ 自动';
-    btn.classList.remove('active');
-    liveBadge.textContent = 'LIVE';
-    liveBadge.style.background = '';
-    liveBadge.style.color = '';
-    incrementalMode = false;
-  } else {
-    // 自动刷新间隔：比固定 2s 更智能，如果在后台则延长
-    autoRefreshTimer = setInterval(() => {
-      if (document.hidden) return; // 后台标签页不刷新
-      incrementalMode = true;
-      loadLog();
-    }, 3000);
-    btn.innerHTML = '⏹ 自动(3s)';
-    btn.classList.add('active');
-    liveBadge.textContent = '● LIVE';
-    liveBadge.style.background = 'rgba(16,185,129,0.15)';
-    liveBadge.style.color = 'var(--success)';
-    // 首次开启就刷新一次
-    incrementalMode = true;
-    loadLog();
-  }
-}
-
-function toggleConfig(e) {
-  e?.preventDefault();
-  const block = document.getElementById('configBlock');
-  block.style.display = block.style.display === 'none' ? 'block' : 'none';
-}
-
-function showClearModal() { document.getElementById('clearModal').classList.add('show'); }
-function hideClearModal() { document.getElementById('clearModal').classList.remove('show'); }
-async function doClear() {
-  hideClearModal();
-  if (!currentProject) return;
-
-  // 清空当前项目的日志和状态
-  try {
-    const logPath = `logs/${currentProject}.jsonl`;
-    const statePath = `states/${currentProject}.json`;
-    // 通过 fetch 清空（需要本地 server 支持 PUT/DELETE）
-    // 或者直接提示手动操作
-  } catch (e) {}
-
-  showCustomModal('🗑 清空记录', `
-    <div style="padding:10px">
-      <p style="margin-bottom:16px">请在终端执行以下命令清空当前项目：</p>
-      <pre>echo "" > ~/.claude/ai-tool-tracker/logs/${currentProject}.jsonl
-echo "" > ~/.claude/tooltrace/states/${currentProject}.json</pre>
-      <div class="copy-hint">点击"复制"按钮可复制命令</div>
-    </div>
-  `, true);
-
-  // 重置本地状态
-  entries = [];
-  renderedSeqs = new Set();
-  render();
-}
-
-// ===== 键盘快捷键 =====
-document.addEventListener('keydown', (e) => {
-  // Ctrl+F / Cmd+F -> 搜索框
-  if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
-    e.preventDefault();
-    document.getElementById('search').focus();
-  }
-  // R（非输入框内）-> 刷新
-  if (e.key === 'r' && !e.ctrlKey && !e.metaKey &&
-      document.activeElement?.tagName !== 'INPUT') {
-    e.preventDefault();
-    incrementalMode = false;
-    loadLog();
-  }
-});
-
-// ===== 项目切换 =====
+/* ==========================================================
+   加载项目列表（共享）
+   ========================================================== */
 async function loadProjects() {
   try {
     const resp = await fetch(PROJECTS_FILE + '?t=' + Date.now(), { cache: 'no-store' });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     projects = await resp.json();
 
-    const select = document.getElementById('projectSelect');
     const entries = Object.entries(projects).sort((a, b) => {
       return new Date(b[1].last_seen) - new Date(a[1].last_seen);
     });
 
-    if (entries.length === 0) {
-      select.innerHTML = '<option value="">暂无项目</option>';
-      return;
-    }
+    if (entries.length === 0) return;
 
-    // 获取上次选择的项目
+    // 调用链项目选择器
+    const select = document.getElementById('projectSelect');
+    const dashSelect = document.getElementById('dashProjectSelect');
     const lastProject = localStorage.getItem('tooltrace-project');
     let selectedKey = null;
 
     let html = '';
+    let dashHtml = '<option value="">全部项目</option>';
     for (const [key, proj] of entries) {
       const isSelected = lastProject === key || (!lastProject && entries[0][0] === key);
       if (isSelected) selectedKey = key;
       html += `<option value="${key}" ${isSelected ? 'selected' : ''}>${proj.name}</option>`;
+      dashHtml += `<option value="${key}">${proj.name}</option>`;
     }
     select.innerHTML = html;
+    dashSelect.innerHTML = dashHtml;
 
     if (selectedKey) {
       currentProject = selectedKey;
@@ -1636,61 +1144,534 @@ function switchProject() {
   }
 }
 
-// ===== 加载（支持增量）=====
+/* ==========================================================
+   调用链 - 加载日志
+   ========================================================== */
 async function loadLog() {
   try {
-    // 如果没有选择项目，先加载项目列表
     if (!currentProject) {
       await loadProjects();
       if (!currentProject) return;
     }
-
-    // 显示加载状态（仅在非增量模式时）
-    if (!incrementalMode) {
-      showLoading();
-    }
+    if (!incrementalMode) showLoading();
 
     const logPath = `logs/${currentProject}.jsonl`;
     const resp = await fetch(logPath + '?t=' + Date.now(), { cache: 'no-store' });
-    if (!resp.ok) {
-      entries = [];
-      hideLoading();
-      render();
-      return;
-    }
+    if (!resp.ok) { entries = []; hideLoading(); render(); return; }
     const text = await resp.text();
     const newEntries = text.trim().split('\n').filter(Boolean).map(line => {
       try { return JSON.parse(line); } catch { return null; }
     }).filter(Boolean);
 
     if (incrementalMode && entries.length > 0 && newEntries.length > entries.length) {
-      // 增量模式：只追加新条目
       const added = newEntries.slice(entries.length);
       entries = newEntries;
       appendEntries(added);
       updateStats();
     } else {
-      // 全量重渲染
       const wasEmpty = entries.length === 0;
       entries = newEntries;
       renderedSeqs = new Set();
-      if (!wasEmpty) incrementalMode = false; // 手动刷新退出增量模式
+      if (!wasEmpty) incrementalMode = false;
       render();
     }
-
     hideLoading();
   } catch (e) { /* 静默 */ }
 }
 
-// ===== 状态栏功能 =====
+/* ==========================================================
+   调用链 - 增量追加
+   ========================================================== */
+function appendEntries(newEntries) {
+  if (newEntries.length === 0) return;
+  const unseen = newEntries.filter(e => !renderedSeqs.has(e.seq));
+  if (unseen.length === 0) return;
+  const container = document.getElementById('sessionContainer');
+  if (!container.querySelector('.session-group')) { render(); return; }
+
+  const groups = {};
+  unseen.forEach(e => {
+    const sid = e.session_id || 'unknown';
+    if (!groups[sid]) groups[sid] = [];
+    groups[sid].push(e);
+  });
+
+  for (const [sid, group] of Object.entries(groups)) {
+    let sessionEl = container.querySelector(`[data-sid="${sid}"]`);
+    if (sessionEl) {
+      const body = sessionEl.parentElement.querySelector('.session-body .timeline');
+      if (body) {
+        for (const entry of group) {
+          body.insertAdjacentHTML('beforeend', buildEntryHTML(entry, 0, false));
+          if (entry.seq != null) renderedSeqs.add(entry.seq);
+        }
+      }
+      updateSessionStats(sessionEl.parentElement);
+    } else {
+      render(); return;
+    }
+  }
+}
+
+function updateSessionStats(sessionGroup) {
+  const header = sessionGroup.querySelector('.session-header');
+  const entriesInGroup = sessionGroup.querySelectorAll('.entry');
+  const gTotal = entriesInGroup.length;
+  const gOk = sessionGroup.querySelectorAll('.entry:not(.is-error)').length;
+  const gFail = gTotal - gOk;
+  const statsDiv = header.querySelector('.session-stats');
+  if (statsDiv) {
+    statsDiv.innerHTML = `
+      <span>📋 ${gTotal}</span>
+      <span>✅ ${gOk}</span>
+      ${gFail ? `<span style="color:var(--fail)">❌ ${gFail}</span>` : ''}
+    `;
+  }
+}
+
+/* ==========================================================
+   调用链 - 排序 / 搜索
+   ========================================================== */
+function toggleSort() {
+  const cur = getSortOrder();
+  const next = cur === 'desc' ? 'asc' : 'desc';
+  setSortOrder(next);
+  document.getElementById('sortBtn').textContent = next === 'desc' ? '⬇ 最新优先' : '⬆ 最早优先';
+  incrementalMode = false;
+  render();
+}
+
+function onSearchInput() {
+  const searchBox = document.getElementById('search');
+  const clearBtn = document.getElementById('searchClear');
+  clearBtn.classList.toggle('show', searchBox.value.length > 0);
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => { incrementalMode = false; render(); }, 200);
+}
+
+function clearSearch() {
+  document.getElementById('search').value = '';
+  document.getElementById('searchClear').classList.remove('show');
+  document.getElementById('searchResultCount').innerHTML = '';
+  incrementalMode = false;
+  render();
+}
+
+/* ==========================================================
+   调用链 - 加载状态
+   ========================================================== */
+function showLoading() { document.getElementById('loadingOverlay').classList.add('show'); }
+function hideLoading() { document.getElementById('loadingOverlay').classList.remove('show'); }
+
+/* ==========================================================
+   调用链 - 全部展开/折叠
+   ========================================================== */
+function toggleCollapseAll(e) {
+  e?.preventDefault();
+  const headers = document.querySelectorAll('.session-header');
+  const allCollapsed = Array.from(headers).every(h => h.classList.contains('collapsed'));
+  headers.forEach(h => {
+    h.classList.toggle('collapsed', !allCollapsed);
+    h.nextElementSibling.classList.toggle('hidden', !allCollapsed);
+  });
+  const sids = Array.from(headers).map(h => h.dataset.sid);
+  setCollapsedSessions(allCollapsed ? [] : sids);
+}
+
+/* ==========================================================
+   调用链 - 构建条目 HTML
+   ========================================================== */
+function buildEntryHTML(entry, depth, expandErrors) {
+  const type = getType(entry.tool_name);
+  const input = entry.input_summary || {};
+  const argsParts = [];
+  for (const [k, v] of Object.entries(input)) {
+    if (k === 'description' && !v) continue;
+    if (k === 'mcp_server') continue;
+    if (k === 'file_path') argsParts.push(`📄 ${v}`);
+    else if (k === 'command') argsParts.push(`<span style="opacity:.7">$</span> ${v}`);
+    else if (k === 'pattern') argsParts.push(`/${v}/`);
+    else if (k === 'keys') argsParts.push(`[${v.join(', ')}]`);
+    else if (k === 'tool') argsParts.push(`<span style="opacity:.6">${v}</span>`);
+    else if (typeof v === 'string') argsParts.push(`${k}=${v}`);
+  }
+  const argsText = argsParts.join(' · ') || '—';
+  const icon = getIcon(entry.tool_name);
+  const fullTime = formatFullTime(entry.ts);
+  const absTime = formatAbsTime(entry.ts);
+  const relTime = relativeTime(entry.ts);
+  const isError = entry.success === false;
+
+  const dur = entry.duration_ms;
+  let durClass = '';
+  if (dur != null) {
+    if (dur >= 3000) durClass = 'critical';
+    else if (dur >= 1000) durClass = 'warning';
+    else durClass = speedGrade(dur);
+  }
+  const durHtml = dur != null
+    ? `<span class="duration-tag ${durClass ? 'speed-' + durClass : ''} ${durClass}">${formatDuration(dur)}</span>`
+    : '';
+
+  const indentStyle = depth > 0 ? ` style="padding-left:${44 + depth * 16}px"` : '';
+  const extraClass = depth > 0 ? ' tree-child' : '';
+
+  let slowClass = '';
+  if (dur != null) {
+    if (dur >= 3000) slowClass = ' slow-critical';
+    else if (dur >= 1000) slowClass = ' slow-warning';
+  }
+
+  const expandedClass = (isError || (depth === 0 && expandErrors)) ? ' expanded' : '';
+
+  let childrenHtml = '';
+  if (entry._children && entry._children.length > 0) {
+    childrenHtml = `<div class="tree-child-area">`;
+    for (const child of entry._children) {
+      childrenHtml += buildEntryHTML(child, depth + 1, expandErrors);
+    }
+    childrenHtml += `</div>`;
+  }
+
+  return `<div class="entry type-${type}${isError ? ' is-error' : ''}${slowClass}${extraClass}${expandedClass}" onclick="toggleExpand(this)"${indentStyle}>
+    <div class="dot">${icon.match(/[\u{1F000}-\u{1FFFF}]|[☀-➿]|[✀-➿]|[a-zA-Z0-9]/u)?.[0] || icon[0] || '?'}</div>
+    <div class="title">
+      <span class="tool-name">${entry.tool_name}</span>
+      <span class="tool-args" title="${argsText.replace(/"/g, '&quot;')}">${argsText}</span>
+      ${durHtml}
+      <span class="status-badge ${entry.success !== false ? 'ok' : 'fail'}">${entry.success !== false ? '✓' : '✗'}</span>
+      <span class="time-tag" title="${fullTime}">${absTime} ${relTime}</span>
+    </div>
+    ${isError && entry.error ? `<div class="error-preview">❌ ${entry.error.replace(/</g, '&lt;')}</div>` : ''}
+    ${isError && entry.error ? buildErrorDetails(entry.error) : ''}
+    <div class="details"><pre>${JSON.stringify({...entry, ts: fullTime + ' (' + relTime + ')'}, null, 2).replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre></div>
+    ${childrenHtml}
+  </div>`;
+}
+
+function buildErrorDetails(errorMsg) {
+  let errorType = '未知错误';
+  let errorHint = '';
+  if (errorMsg.includes('SyntaxError')) { errorType = '语法错误'; errorHint = '检查代码语法，可能是拼写错误或缺少括号'; }
+  else if (errorMsg.includes('ReferenceError') || errorMsg.includes('TypeError')) { errorType = '运行时错误'; errorHint = '检查变量是否已定义，类型是否正确'; }
+  else if (errorMsg.includes('ENOENT') || errorMsg.includes('No such file')) { errorType = '文件不存在'; errorHint = '检查文件路径是否正确，文件是否存在'; }
+  else if (errorMsg.includes('Permission denied')) { errorType = '权限错误'; errorHint = '检查文件权限，可能需要管理员权限'; }
+  else if (errorMsg.includes('Exit code')) { errorType = '命令执行失败'; errorHint = '检查命令语法和参数是否正确'; }
+  else if (errorMsg.includes('timeout') || errorMsg.includes('Timeout')) { errorType = '超时错误'; errorHint = '操作耗时过长，可能需要优化或增加超时时间'; }
+  return `<div class="error-details">
+    <div class="error-header"><span>❌ 错误详情</span><span class="error-type">${errorType}</span></div>
+    <div class="error-message">${errorMsg.replace(/</g, '&lt;')}</div>
+    ${errorHint ? `<div class="error-hint"><strong>💡 建议：</strong>${errorHint}</div>` : ''}
+  </div>`;
+}
+
+/* ==========================================================
+   调用链 - 树形结构
+   ========================================================== */
+function buildTrees(entries) {
+  const bySeq = {};
+  for (const e of entries) { if (e.seq != null) bySeq[e.seq] = e; e._children = []; }
+  const roots = [];
+  for (const e of entries) {
+    if (e.parent_seq != null && bySeq[e.parent_seq]) bySeq[e.parent_seq]._children.push(e);
+    else roots.push(e);
+  }
+  return roots;
+}
+
+function flattenTree(roots) {
+  const result = [];
+  function walk(list) { for (const e of list) { result.push(e); if (e._children) walk(e._children); } }
+  walk(roots);
+  return result;
+}
+function countEntries(roots) { return flattenTree(roots).length; }
+function countSuccess(roots) { return flattenTree(roots).filter(e => e.success !== false).length; }
+
+/* ==========================================================
+   调用链 - 主渲染
+   ========================================================== */
+function render() {
+  const container = document.getElementById('sessionContainer');
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const activeFilter = document.querySelector('.filters .tag.active')?.dataset?.filter || 'all';
+  const sortDesc = getSortOrder() === 'desc';
+
+  let typeFilter = activeFilter;
+  let statusFilter = 'all';
+  if (activeFilter.includes('|')) { const parts = activeFilter.split('|'); typeFilter = parts[0]; statusFilter = parts[1]; }
+
+  const filtered = entries.filter(e => {
+    if (typeFilter !== 'all' && getType(e.tool_name) !== typeFilter) return false;
+    if (statusFilter === 'ok' && e.success === false) return false;
+    if (statusFilter === 'fail' && e.success !== false) return false;
+    if (!q) return true;
+    if (e.tool_name.toLowerCase().includes(q)) return true;
+    if (e.session_id && e.session_id.toLowerCase().includes(q)) return true;
+    const input = e.input_summary || {};
+    for (const v of Object.values(input)) { if (typeof v === 'string' && v.toLowerCase().includes(q)) return true; }
+    return false;
+  });
+
+  updateStats();
+
+  const searchResultCount = document.getElementById('searchResultCount');
+  searchResultCount.innerHTML = q ? `<span class="count">${filtered.length}</span> 条结果` : '';
+
+  renderFilters(typeFilter, statusFilter);
+  const roots = buildTrees(filtered);
+
+  const groups = {};
+  roots.forEach(e => {
+    const sid = e.session_id || 'unknown';
+    if (!groups[sid]) groups[sid] = [];
+    groups[sid].push(e);
+  });
+
+  let sessionIds = Object.keys(groups);
+  sessionIds.sort((a, b) => {
+    const ta = groups[a].reduce((min, e) => Math.min(min, new Date(e.ts).getTime()), Infinity);
+    const tb = groups[b].reduce((min, e) => Math.min(min, new Date(e.ts).getTime()), Infinity);
+    return sortDesc ? tb - ta : ta - tb;
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="empty-state" style="background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:40px 20px">
+      <div class="icon">${q || typeFilter !== 'all' || statusFilter !== 'all' ? '🔍' : '⚡'}</div>
+      <h2>${q || typeFilter !== 'all' || statusFilter !== 'all' ? '没有匹配的调用' : '等待工具调用…'}</h2>
+      ${q || typeFilter !== 'all' || statusFilter !== 'all' ? '<p>试试其他搜索词或取消筛选</p>' : '<p>hook 生效后会自动记录</p>'}
+    </div>`;
+    return;
+  }
+
+  const collapsedSids = getCollapsedSessions();
+  let allHtml = '';
+
+  sessionIds.forEach((sid, si) => {
+    const group = groups[sid];
+    const color = getSessionColor(sid);
+    const gTotal = countEntries(group);
+    const gOk = countSuccess(group);
+    const gFail = gTotal - gOk;
+    const allEntriesFlat = flattenTree(group);
+    const durations = allEntriesFlat.map(e => e.duration_ms).filter(d => d != null);
+    const avgDur = durations.length > 0 ? durations.reduce((a, b) => a + b, 0) / durations.length : null;
+    const times = allEntriesFlat.map(e => new Date(e.ts).getTime());
+    const tMin = Math.min(...times);
+    const tMax = Math.max(...times);
+    const timeRange = tMin === tMax ? formatFullTime(tMin) : `${formatAbsTime(tMin)} ~ ${formatAbsTime(tMax)}`;
+    const isCollapsed = collapsedSids.includes(sid);
+
+    allHtml += `<div class="session-group">
+      <div class="session-header ${isCollapsed ? 'collapsed' : ''}" data-sid="${sid}" onclick="toggleSession(this)">
+        <span class="arrow">${isCollapsed ? '▶' : '▼'}</span>
+        <span class="session-id" title="会话ID: ${sid}" style="color:${color}">${shortId(sid)}</span>
+        <span class="session-time" title="${formatFullTime(tMin)}">${timeRange}</span>
+        <span class="session-stats">
+          <span>📋 ${gTotal}</span>
+          <span>✅ ${gOk}</span>
+          ${gFail ? `<span style="color:var(--fail)">❌ ${gFail}</span>` : ''}
+          ${avgDur != null ? `<span class="badge-duration-avg">⚡ ${formatDuration(avgDur)}</span>` : ''}
+        </span>
+      </div>
+      <div class="session-body ${isCollapsed ? 'hidden' : ''}"><div class="timeline">`;
+
+    const sorted = [...group].sort((a, b) => {
+      const ta = new Date(a.ts).getTime(), tb = new Date(b.ts).getTime();
+      return sortDesc ? tb - ta : ta - tb;
+    });
+    for (const entry of sorted) allHtml += buildEntryHTML(entry, 0, false);
+    allHtml += `</div></div></div>`;
+  });
+
+  container.innerHTML = allHtml;
+  renderedSeqs = new Set();
+  for (const e of flattenTree(entries)) { if (e.seq != null) renderedSeqs.add(e.seq); }
+}
+
+/* ==========================================================
+   调用链 - 统计更新
+   ========================================================== */
+function updateStats() {
+  const total = entries.length;
+  const ok = entries.filter(e => e.success !== false).length;
+  const fail = total - ok;
+  const durs = entries.map(e => e.duration_ms).filter(d => d != null);
+  const totalDur = durs.length > 0 ? durs.reduce((a, b) => a + b, 0) : 0;
+  const avgDur = durs.length > 0 ? formatDuration(totalDur / durs.length) : '';
+  const slowTotal = durs.filter(d => d >= 3000).length;
+  const byTool = {};
+  entries.forEach(e => { byTool[e.tool_name] = (byTool[e.tool_name] || 0) + 1; });
+  const usedTools = Object.entries(byTool).sort((a,b) => b[1]-a[1]).slice(0, 3);
+
+  let statsHtml = `<span class="stat-item">📊 共 <strong>${total}</strong> 次调用</span>
+    <span class="stat-item">✅ <strong style="color:var(--success)">${ok}</strong></span>
+    <span class="stat-item">❌ <strong style="color:var(--fail)">${fail}</strong></span>`;
+  if (totalDur > 0) {
+    statsHtml += `<span class="stat-item">⚡ <strong>${formatDuration(totalDur)}</strong>`;
+    if (avgDur) statsHtml += ` <span style="color:var(--text-muted)">(均 ${avgDur})</span>`;
+    statsHtml += `</span>`;
+    if (slowTotal > 0) statsHtml += `<span class="stat-item" style="color:var(--speed-slow)">🐢 ≥3s: ${slowTotal}</span>`;
+  }
+  if (usedTools.length > 0 && total > 0) {
+    statsHtml += `<span class="stat-item">🔥 ${usedTools.map(([name, cnt]) =>
+      `<span style="color:var(--text-muted)">${name}</span> <strong>${cnt}</strong>`
+    ).join(' · ')}</span>`;
+  }
+  document.getElementById('stats').innerHTML = statsHtml;
+  document.getElementById('entryCount').textContent = `${total} 条`;
+}
+
+/* ==========================================================
+   调用链 - 过滤标签
+   ========================================================== */
+let _lastTypeFilter = 'all';
+let _lastStatusFilter = 'all';
+
+function renderFilters(activeType, activeStatus) {
+  _lastTypeFilter = activeType;
+  _lastStatusFilter = activeStatus;
+  const tagSet = new Set();
+  entries.forEach(e => tagSet.add(getType(e.tool_name)));
+  const types = ['all', ...tagSet];
+  const colors = { all: 'var(--text-muted)', read: 'var(--color-read)', write: 'var(--color-write)',
+    bash: 'var(--color-bash)', mcp: 'var(--color-mcp)', agent: 'var(--color-agent)', other: 'var(--color-other)' };
+  const failCount = entries.filter(e => e.success === false).length;
+  const okCount = entries.filter(e => e.success !== false).length;
+
+  let html = '';
+  for (const t of types) {
+    const count = t === 'all' ? entries.length : entries.filter(e => getType(e.tool_name) === t).length;
+    const label = t === 'all' ? '全部' : (TYPE_LABELS[t] || t);
+    const icon = t === 'all' ? '' : (TYPE_ICONS[t] || '');
+    const c = colors[t] || 'var(--text-muted)';
+    const filterKey = t;
+    const isActive = activeType === t && activeStatus === 'all';
+    html += `<span class="tag ${isActive ? 'active' : ''}"
+      style="${isActive ? `background:${c};color:#fff` : ''}"
+      data-filter="${filterKey}" onclick="setFilter('${filterKey}')">
+      ${icon} ${label} ${count}</span>`;
+  }
+  if (okCount > 0) {
+    const filterKey = `all|ok`;
+    const isActive = activeType === 'all' && activeStatus === 'ok';
+    html += `<span class="tag ${isActive ? 'active' : ''}"
+      style="${isActive ? 'background:var(--success);color:#fff' : ''}"
+      data-filter="${filterKey}" onclick="setFilter('${filterKey}')">
+      ✅ 成功 ${okCount}</span>`;
+  }
+  if (failCount > 0) {
+    const filterKey = `all|fail`;
+    const isActive = activeType === 'all' && activeStatus === 'fail';
+    html += `<span class="tag ${isActive ? 'active' : ''}"
+      style="${isActive ? 'background:var(--fail);color:#fff' : ''}"
+      data-filter="${filterKey}" onclick="setFilter('${filterKey}')">
+      ❌ 失败 ${failCount}</span>`;
+  }
+  document.getElementById('filters').innerHTML = html;
+}
+
+function setFilter(f) {
+  document.querySelectorAll('.filters .tag').forEach(t => t.classList.toggle('active', t.dataset.filter === f));
+  incrementalMode = false;
+  render();
+}
+
+/* ==========================================================
+   调用链 - 交互
+   ========================================================== */
+function toggleExpand(el) {
+  el.classList.toggle('expanded');
+  if (el.classList.contains('expanded')) {
+    setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+  }
+}
+
+function toggleSession(header) {
+  header.classList.toggle('collapsed');
+  const body = header.nextElementSibling;
+  body.classList.toggle('hidden');
+  const sid = header.dataset.sid;
+  let collapsed = getCollapsedSessions();
+  if (body.classList.contains('hidden')) { if (!collapsed.includes(sid)) collapsed.push(sid); }
+  else { collapsed = collapsed.filter(s => s !== sid); }
+  setCollapsedSessions(collapsed);
+  header.querySelector('.arrow').textContent = body.classList.contains('hidden') ? '▶' : '▼';
+}
+
+function toggleAutoRefresh() {
+  const btn = document.getElementById('autoRefreshBtn');
+  const liveBadge = document.getElementById('liveBadge');
+  if (autoRefreshTimer) {
+    clearInterval(autoRefreshTimer);
+    autoRefreshTimer = null;
+    btn.innerHTML = '⏸ 自动';
+    btn.classList.remove('active');
+    liveBadge.textContent = 'LIVE';
+    liveBadge.style.background = '';
+    liveBadge.style.color = '';
+    incrementalMode = false;
+  } else {
+    autoRefreshTimer = setInterval(() => {
+      if (document.hidden) return;
+      incrementalMode = true;
+      loadLog();
+    }, 3000);
+    btn.innerHTML = '⏹ 自动(3s)';
+    btn.classList.add('active');
+    liveBadge.textContent = '● LIVE';
+    liveBadge.style.background = 'rgba(16,185,129,0.15)';
+    liveBadge.style.color = 'var(--success)';
+    incrementalMode = true;
+    loadLog();
+  }
+}
+
+function toggleConfig(e) {
+  e?.preventDefault();
+  const block = document.getElementById('configBlock');
+  block.style.display = block.style.display === 'none' ? 'block' : 'none';
+}
+
+/* ==========================================================
+   调用链 - 清空记录
+   ========================================================== */
+function showClearModal() { document.getElementById('clearModal').classList.add('show'); }
+function hideClearModal() { document.getElementById('clearModal').classList.remove('show'); }
+async function doClear() {
+  hideClearModal();
+  if (!currentProject) return;
+  showCustomModal('🗑 清空记录', `
+    <div style="padding:10px">
+      <p style="margin-bottom:16px">请在终端执行以下命令清空当前项目：</p>
+      <pre>echo "" > ~/.claude/ai-tool-tracker/logs/${currentProject}.jsonl
+echo "" > ~/.claude/tooltrace/states/${currentProject}.json</pre>
+      <div class="copy-hint">点击"复制"按钮可复制命令</div>
+    </div>
+  `, true);
+  entries = [];
+  renderedSeqs = new Set();
+  render();
+}
+
+/* ==========================================================
+   调用链 - 键盘快捷键
+   ========================================================== */
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'f') { e.preventDefault(); document.getElementById('search').focus(); }
+  if (e.key === 'r' && !e.ctrlKey && !e.metaKey && document.activeElement?.tagName !== 'INPUT') {
+    e.preventDefault(); incrementalMode = false; loadLog();
+  }
+});
+
+/* ==========================================================
+   调用链 - 状态栏
+   ========================================================== */
 function checkHookStatus() {
   const statusDot = document.getElementById('hookStatus');
   const statusText = document.getElementById('hookStatusText');
-
-  // 先检查工具调用错误
   const recentErrors = entries.filter(e => e.success === false).slice(-5);
 
-  // 同时检查钩子执行错误（trace_error.log）
   fetch('trace_error.log?t=' + Date.now(), { cache: 'no-store' })
     .then(resp => resp.ok ? resp.text() : '')
     .catch(() => '')
@@ -1703,11 +1684,8 @@ function checkHookStatus() {
         statusDot.className = 'status-dot error';
         statusText.textContent = hasHookErrors ? '钩子异常' : '有错误';
         statusText.style.color = 'var(--fail)';
-
         const errorEl = document.getElementById('lastError');
         const errorTextEl = document.getElementById('lastErrorText');
-
-        // 优先显示钩子执行错误
         if (hasHookErrors && lastHookError) {
           const shortErr = lastHookError.replace(/^\[.*?\]\s*/, '').substring(0, 60);
           errorEl.textContent = shortErr + (lastHookError.length > 60 ? '...' : '');
@@ -1737,8 +1715,6 @@ function checkHookStatus() {
         document.getElementById('lastErrorText').textContent = '无';
         document.getElementById('lastErrorText').style.color = '';
       }
-
-      // 更新慢调用计数
       const slowCount = entries.filter(e => e.duration_ms != null && e.duration_ms >= 1000).length;
       document.getElementById('slowCount').textContent = slowCount;
       document.getElementById('slowCount').style.color = slowCount > 0 ? 'var(--speed-mid)' : '';
@@ -1746,56 +1722,45 @@ function checkHookStatus() {
 }
 
 function showErrorLog() {
-  // 尝试获取错误日志
   fetch('trace_error.log?t=' + Date.now(), { cache: 'no-store' })
     .then(resp => {
       if (!resp.ok) {
-        // 文件不存在，说明没有错误
-        showCustomModal('📋 错误日志', `
-          <div style="text-align:center;padding:30px">
-            <div style="font-size:48px;margin-bottom:16px">✅</div>
-            <div style="font-size:16px;color:var(--success);margin-bottom:8px">没有错误日志</div>
-            <div style="color:var(--text-muted)">Hook 运行正常，没有记录到错误</div>
-          </div>
-        `, false);
+        showCustomModal('📋 错误日志', `<div style="text-align:center;padding:30px">
+          <div style="font-size:48px;margin-bottom:16px">✅</div>
+          <div style="font-size:16px;color:var(--success);margin-bottom:8px">没有错误日志</div>
+          <div style="color:var(--text-muted)">Hook 运行正常，没有记录到错误</div>
+        </div>`, false);
         return;
       }
       return resp.text();
     })
     .then(text => {
       if (text && text.trim()) {
-        showCustomModal('📋 错误日志', `
-          <div>
-            <pre>${text.replace(/</g, '&lt;')}</pre>
-            <div class="copy-hint">点击"复制"按钮可复制内容</div>
-          </div>
-        `, true);
+        showCustomModal('📋 错误日志', `<div>
+          <pre>${text.replace(/</g, '&lt;')}</pre>
+          <div class="copy-hint">点击"复制"按钮可复制内容</div>
+        </div>`, true);
       }
     })
     .catch(() => {
-      // 网络错误或其他问题
-      showCustomModal('📋 错误日志', `
-        <div style="text-align:center;padding:30px">
-          <div style="font-size:48px;margin-bottom:16px">✅</div>
-          <div style="font-size:16px;color:var(--success);margin-bottom:8px">没有错误日志</div>
-          <div style="color:var(--text-muted)">Hook 运行正常，没有记录到错误</div>
-        </div>
-      `, false);
+      showCustomModal('📋 错误日志', `<div style="text-align:center;padding:30px">
+        <div style="font-size:48px;margin-bottom:16px">✅</div>
+        <div style="font-size:16px;color:var(--success);margin-bottom:8px">没有错误日志</div>
+        <div style="color:var(--text-muted)">Hook 运行正常，没有记录到错误</div>
+      </div>`, false);
     });
 }
 
-// ===== 自定义 Modal =====
+/* ==========================================================
+   Modal 系统
+   ========================================================== */
 function showCustomModal(title, content, showCopy = true) {
   document.getElementById('customModalTitle').innerHTML = title;
   document.getElementById('customModalBody').innerHTML = content;
   document.getElementById('customModalCopy').style.display = showCopy ? 'block' : 'none';
   document.getElementById('customModal').classList.add('show');
 }
-
-function hideCustomModal() {
-  document.getElementById('customModal').classList.remove('show');
-}
-
+function hideCustomModal() { document.getElementById('customModal').classList.remove('show'); }
 function copyModalContent() {
   const content = document.getElementById('customModalBody').innerText;
   navigator.clipboard.writeText(content).then(() => {
@@ -1804,50 +1769,425 @@ function copyModalContent() {
     btn.innerHTML = '✅ 已复制';
     setTimeout(() => { btn.innerHTML = originalText; }, 2000);
   }).catch(() => {
-    // 降级方案
     const textarea = document.createElement('textarea');
     textarea.value = content;
     document.body.appendChild(textarea);
     textarea.select();
     document.execCommand('copy');
     document.body.removeChild(textarea);
-
     const btn = document.getElementById('customModalCopy');
     btn.innerHTML = '✅ 已复制';
     setTimeout(() => { btn.innerHTML = '📋 复制'; }, 2000);
   });
 }
 
-// 点击 overlay 关闭 modal
 document.getElementById('customModal').addEventListener('click', (e) => {
-  if (e.target.id === 'customModal') {
-    hideCustomModal();
-  }
+  if (e.target.id === 'customModal') hideCustomModal();
 });
 
-// ESC 键关闭 modal
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    hideCustomModal();
-  }
-});
+/* ==========================================================
+   仪表盘 - 数据加载（基于 JSONL 文件）
+   ========================================================== */
+async function loadDashboardData() {
+  const projectKey = document.getElementById('dashProjectSelect').value;
+  const timeRange = document.getElementById('timeRange').value;
 
-// ===== 初始化 =====
+  // 计算时间范围
+  let since = null;
+  const now = new Date();
+  if (timeRange === 'today') since = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+  else if (timeRange === 'week') since = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString();
+  else if (timeRange === 'month') since = new Date(now - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+  dashEntries = [];
+
+  // 从 JSONL 文件加载数据
+  if (projectKey) {
+    // 单个项目
+    try {
+      const resp = await fetch(`logs/${projectKey}.jsonl?t=${Date.now()}`, { cache: 'no-store' });
+      if (resp.ok) {
+        const text = await resp.text();
+        dashEntries = text.trim().split('\n').filter(Boolean).map(line => {
+          try { return JSON.parse(line); } catch { return null; }
+        }).filter(Boolean);
+      }
+    } catch (e) { console.error('Dashboard load error:', e); }
+  } else {
+    // 全部项目
+    const projectKeys = Object.keys(projects);
+    for (const key of projectKeys) {
+      try {
+        const resp = await fetch(`logs/${key}.jsonl?t=${Date.now()}`, { cache: 'no-store' });
+        if (resp.ok) {
+          const text = await resp.text();
+          const items = text.trim().split('\n').filter(Boolean).map(line => {
+            try { return JSON.parse(line); } catch { return null; }
+          }).filter(Boolean);
+          dashEntries.push(...items);
+        }
+      } catch (e) { /* 静默 */ }
+    }
+  }
+
+  // 时间过滤
+  if (since) {
+    dashEntries = dashEntries.filter(e => new Date(e.ts) >= new Date(since));
+  }
+
+  // 排序
+  dashEntries.sort((a, b) => new Date(a.ts) - new Date(b.ts));
+
+  // 更新所有图表
+  updateOverview();
+  updateToolList();
+  updateHeatmap();
+  updateDurationList();
+  updateErrorList();
+  updateSessionStats();
+  updateInsights();
+}
+
+/* ==========================================================
+   仪表盘 - 更新总览
+   ========================================================== */
+function updateOverview() {
+  const total = dashEntries.length;
+  const success = dashEntries.filter(e => e.success !== false).length;
+  const fail = total - success;
+  const durations = dashEntries.map(e => e.duration_ms).filter(d => d != null);
+  const avgDur = durations.length > 0 ? durations.reduce((a, b) => a + b, 0) / durations.length : 0;
+  const slowCount = durations.filter(d => d >= 1000).length;
+  const successRate = total > 0 ? (success / total * 100).toFixed(1) : 0;
+
+  document.getElementById('totalCalls').textContent = total;
+  document.getElementById('avgDuration').textContent = formatDuration(avgDur);
+  document.getElementById('successRate').textContent = successRate + '%';
+  document.getElementById('slowCalls').textContent = slowCount;
+
+  document.getElementById('durationChange').className = 'stat-change ' +
+    (avgDur > 2000 ? 'negative' : avgDur > 1000 ? '' : 'positive');
+  document.getElementById('successChange').className = 'stat-change ' +
+    (successRate < 90 ? 'negative' : successRate > 95 ? 'positive' : '');
+  document.getElementById('successChange').textContent = `${success} 成功 / ${fail} 失败`;
+  document.getElementById('slowChange').className = 'stat-change ' +
+    (slowCount > 10 ? 'negative' : slowCount > 0 ? '' : 'positive');
+  document.getElementById('slowChange').textContent = `${slowCount} / ${durations.length} 调用`;
+}
+
+/* ==========================================================
+   仪表盘 - 工具使用 TOP 10
+   ========================================================== */
+function updateToolList() {
+  const toolCounts = {};
+  dashEntries.forEach(e => { toolCounts[e.tool_name] = (toolCounts[e.tool_name] || 0) + 1; });
+  const sorted = Object.entries(toolCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  const maxCount = sorted.length > 0 ? sorted[0][1] : 1;
+  const toolTypes = {
+    Read: 'read', Glob: 'read', Grep: 'read', WebFetch: 'read', WebSearch: 'read',
+    Write: 'write', Edit: 'write', NotebookEdit: 'write',
+    Bash: 'bash', Skill: 'skill',
+    Agent: 'agent', TaskCreate: 'agent', TaskUpdate: 'agent', TaskOutput: 'agent',
+  };
+  let html = '';
+  for (const [name, count] of sorted) {
+    const type = name.startsWith('mcp__') ? 'mcp' : (toolTypes[name] || 'other');
+    const width = (count / maxCount * 100).toFixed(0);
+    html += `<div class="tool-item">
+      <div class="tool-name-bar">${name}</div>
+      <div class="tool-bar-container"><div class="tool-bar ${type}" style="width: ${width}%">${count}</div></div>
+      <div class="tool-count">${(count / dashEntries.length * 100).toFixed(1)}%</div>
+    </div>`;
+  }
+  document.getElementById('toolList').innerHTML = html || '<div class="dashboard-empty-state">暂无数据</div>';
+}
+
+/* ==========================================================
+   仪表盘 - 时间分布热力图
+   ========================================================== */
+function updateHeatmap() {
+  const hourCounts = new Array(24).fill(0);
+  dashEntries.forEach(e => { hourCounts[new Date(e.ts).getHours()]++; });
+  const maxCount = Math.max(...hourCounts, 1);
+  let cellsHtml = '', labelsHtml = '';
+  for (let i = 0; i < 24; i++) {
+    const level = Math.ceil(hourCounts[i] / maxCount * 4);
+    cellsHtml += `<div class="heatmap-cell ${level > 0 ? 'level-' + level : ''}" title="${i}:00 - ${hourCounts[i]} 次"></div>`;
+    labelsHtml += `<div class="heatmap-label">${i}</div>`;
+  }
+  document.getElementById('heatmap').innerHTML = cellsHtml;
+  document.getElementById('heatmapLabels').innerHTML = labelsHtml;
+}
+
+/* ==========================================================
+   仪表盘 - 慢调用排行
+   ========================================================== */
+function updateDurationList() {
+  const sorted = dashEntries
+    .filter(e => e.duration_ms != null)
+    .sort((a, b) => b.duration_ms - a.duration_ms)
+    .slice(0, 10);
+  let html = '';
+  sorted.forEach((e, i) => {
+    const rankClass = e.duration_ms >= 3000 ? 'critical' : e.duration_ms >= 1000 ? 'slow' : '';
+    const input = e.input_summary || {};
+    const detail = input.file_path || input.command || '';
+    html += `<div class="duration-item">
+      <div class="duration-rank ${rankClass}">${i + 1}</div>
+      <div class="duration-info">
+        <div class="duration-tool">${e.tool_name}</div>
+        <div class="duration-detail">${detail.substring(0, 50)}${detail.length > 50 ? '...' : ''}</div>
+      </div>
+      <div class="duration-time">${formatDuration(e.duration_ms)}</div>
+    </div>`;
+  });
+  document.getElementById('durationList').innerHTML = html || '<div class="dashboard-empty-state">暂无数据</div>';
+}
+
+/* ==========================================================
+   仪表盘 - 错误分布
+   ========================================================== */
+function updateErrorList() {
+  const errorTypes = {};
+  dashEntries.filter(e => e.success === false).forEach(e => {
+    let type = '其他错误';
+    const error = e.error || '';
+    if (error.includes('SyntaxError')) type = '语法错误';
+    else if (error.includes('ReferenceError') || error.includes('TypeError')) type = '运行时错误';
+    else if (error.includes('ENOENT') || error.includes('No such file')) type = '文件不存在';
+    else if (error.includes('Permission denied')) type = '权限错误';
+    else if (error.includes('Exit code')) type = '命令执行失败';
+    else if (error.includes('timeout') || error.includes('Timeout')) type = '超时错误';
+    errorTypes[type] = (errorTypes[type] || 0) + 1;
+  });
+  const sorted = Object.entries(errorTypes).sort((a, b) => b[1] - a[1]);
+  let html = '';
+  for (const [type, count] of sorted) {
+    html += `<div class="error-item"><span class="error-type-badge">${type}</span><span class="error-count">${count}</span></div>`;
+  }
+  document.getElementById('errorList').innerHTML = html || '<div class="dashboard-empty-state">✅ 暂无错误</div>';
+}
+
+/* ==========================================================
+   仪表盘 - 会话统计
+   ========================================================== */
+function updateSessionStats() {
+  const sessions = {};
+  dashEntries.forEach(e => {
+    const sid = e.session_id || 'unknown';
+    if (!sessions[sid]) sessions[sid] = [];
+    sessions[sid].push(e);
+  });
+  const sessionCount = Object.keys(sessions).length;
+  const avgCalls = sessionCount > 0 ? (dashEntries.length / sessionCount).toFixed(1) : 0;
+  let totalSessionDuration = 0;
+  for (const entries of Object.values(sessions)) {
+    if (entries.length >= 2) {
+      totalSessionDuration += (new Date(entries[entries.length - 1].ts) - new Date(entries[0].ts));
+    }
+  }
+  const avgSessionDur = sessionCount > 0 ? totalSessionDuration / sessionCount : 0;
+  document.getElementById('totalSessions').textContent = sessionCount;
+  document.getElementById('avgCallsPerSession').textContent = avgCalls;
+  document.getElementById('avgSessionDuration').textContent = formatDuration(avgSessionDur);
+}
+
+/* ==========================================================
+   仪表盘 - 效率洞察
+   ========================================================== */
+function updateInsights() {
+  const insights = [];
+  const toolPairs = {};
+  dashEntries.forEach((e, i) => {
+    if (i > 0) {
+      const prev = dashEntries[i - 1];
+      const pair = `${prev.tool_name} → ${e.tool_name}`;
+      toolPairs[pair] = (toolPairs[pair] || 0) + 1;
+    }
+  });
+  const topPairs = Object.entries(toolPairs).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  if (topPairs.length > 0) {
+    insights.push(`<strong>🔄 常用工作流：</strong>${topPairs.map(([pair, count]) => `${pair} (${count}次)`).join('、')}`);
+  }
+  const slowEntries = dashEntries.filter(e => e.duration_ms >= 1000);
+  if (slowEntries.length > 0) {
+    const slowTools = {};
+    slowEntries.forEach(e => { slowTools[e.tool_name] = (slowTools[e.tool_name] || 0) + 1; });
+    const topSlow = Object.entries(slowTools).sort((a, b) => b[1] - a[1])[0];
+    insights.push(`<strong>🐌 主要性能瓶颈：</strong>${topSlow[0]} 占慢调用的 ${topSlow[1]} 次`);
+  }
+  const readCount = dashEntries.filter(e => e.tool_name === 'Read').length;
+  const editCount = dashEntries.filter(e => e.tool_name === 'Edit').length;
+  if (readCount > editCount * 3) {
+    insights.push(`<strong>💡 建议：</strong>读取操作较多，考虑使用 Grep/Glob 批量查找`);
+  }
+  const bashErrors = dashEntries.filter(e => e.tool_name === 'Bash' && e.success === false).length;
+  const bashTotal = dashEntries.filter(e => e.tool_name === 'Bash').length;
+  if (bashTotal > 0 && bashErrors / bashTotal > 0.2) {
+    insights.push(`<strong>⚠️ 注意：</strong>Bash 命令错误率较高 (${(bashErrors/bashTotal*100).toFixed(0)}%)，建议先测试命令`);
+  }
+  document.getElementById('insights').innerHTML = insights.length > 0
+    ? insights.map(i => `<div style="margin-bottom: 12px;">${i}</div>`).join('')
+    : '<div class="dashboard-empty-state"><div class="icon">🔍</div><div>需要更多数据...</div></div>';
+}
+
+/* ==========================================================
+   仪表盘 - 导出功能
+   ========================================================== */
+function toggleExportMenu() {
+  const dropdown = document.getElementById('exportDropdown');
+  dropdown.classList.toggle('show');
+  const closeMenu = (e) => {
+    if (!e.target.closest('.export-menu')) { dropdown.classList.remove('show'); document.removeEventListener('click', closeMenu); }
+  };
+  setTimeout(() => document.addEventListener('click', closeMenu), 0);
+}
+
+function downloadFile(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+function formatDate(date) { return date.toISOString().split('T')[0]; }
+
+function exportJSON() {
+  const data = { exportTime: new Date().toISOString(), totalEntries: dashEntries.length, entries: dashEntries };
+  downloadFile(JSON.stringify(data, null, 2), `tool-tracker-${formatDate(new Date())}.json`, 'application/json');
+  document.getElementById('exportDropdown').classList.remove('show');
+}
+
+function exportCSV() {
+  const headers = ['时间', '工具', '会话ID', '项目', '成功', '耗时(ms)', '详情'];
+  const rows = dashEntries.map(e => {
+    const input = e.input_summary || {};
+    const detail = input.file_path || input.command || input.pattern || '';
+    return [
+      new Date(e.ts).toLocaleString(), e.tool_name, e.session_id || '',
+      e.project_name || '', e.success !== false ? '是' : '否',
+      e.duration_ms || '', `"${String(detail).replace(/"/g, '""')}"`
+    ].join(',');
+  });
+  const csv = '﻿' + headers.join(',') + '\n' + rows.join('\n');
+  downloadFile(csv, `tool-tracker-${formatDate(new Date())}.csv`, 'text/csv;charset=utf-8');
+  document.getElementById('exportDropdown').classList.remove('show');
+}
+
+function exportMarkdown() {
+  const total = dashEntries.length;
+  const success = dashEntries.filter(e => e.success !== false).length;
+  const fail = total - success;
+  const successRate = total > 0 ? (success / total * 100).toFixed(1) : 0;
+  const durations = dashEntries.map(e => e.duration_ms).filter(d => d != null);
+  const avgDuration = durations.length > 0 ? durations.reduce((a, b) => a + b, 0) / durations.length : 0;
+  const slowCount = durations.filter(d => d >= 1000).length;
+
+  const toolCounts = {};
+  dashEntries.forEach(e => { toolCounts[e.tool_name] = (toolCounts[e.tool_name] || 0) + 1; });
+  const topTools = Object.entries(toolCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+
+  let md = `# AI Tool Tracker 报告\n\n**导出时间**: ${new Date().toLocaleString()}\n\n`;
+  md += `## 📊 总览\n\n| 指标 | 数值 |\n|------|------|\n`;
+  md += `| 总调用次数 | ${total} |\n| 成功次数 | ${success} |\n| 失败次数 | ${fail} |\n`;
+  md += `| 成功率 | ${successRate}% |\n| 平均耗时 | ${formatDuration(avgDuration)} |\n| 慢调用 (>1s) | ${slowCount} |\n\n`;
+  md += `## 🔧 工具使用 TOP 10\n\n| 排名 | 工具 | 次数 | 占比 |\n|------|------|------|------|\n`;
+  topTools.forEach(([name, count], i) => {
+    md += `| ${i + 1} | ${name} | ${count} | ${(count / total * 100).toFixed(1)}% |\n`;
+  });
+
+  downloadFile(md, `tool-tracker-${formatDate(new Date())}.md`, 'text/markdown;charset=utf-8');
+  document.getElementById('exportDropdown').classList.remove('show');
+}
+
+/* ==========================================================
+   仪表盘 - Skills 追踪
+   ========================================================== */
+async function loadSkillsData() {
+  try {
+    const resp = await fetch(`${API_BASE}/skills?t=${Date.now()}`);
+    if (!resp.ok) return;
+    const data = await resp.json();
+
+    document.getElementById('totalSkillSessions').textContent = data.totalSessions;
+    document.getElementById('totalUniqueSkills').textContent = data.totalUniqueSkills;
+    const avgSkills = data.totalSessions > 0
+      ? (Object.values(data.skillsSummary).reduce((sum, s) => sum + s.count, 0) / data.totalSessions).toFixed(1)
+      : '0';
+    document.getElementById('avgSkillsPerSession').textContent = avgSkills;
+
+    const skillsSummaryEl = document.getElementById('skillsSummary');
+    if (data.totalUniqueSkills > 0) {
+      const sortedSkills = Object.entries(data.skillsSummary).sort((a, b) => b[1].count - a[1].count);
+      const maxCount = sortedSkills[0][1].count;
+      skillsSummaryEl.innerHTML = sortedSkills.map(([skill, info]) => {
+        const intensity = info.count / maxCount;
+        const bgColor = `rgba(59, 130, 246, ${0.1 + intensity * 0.3})`;
+        const borderColor = `rgba(59, 130, 246, ${0.3 + intensity * 0.4})`;
+        return `<div style="padding: 8px 14px; background: ${bgColor}; border: 1px solid ${borderColor};
+          border-radius: 8px; font-size: 13px; display: flex; align-items: center; gap: 6px;
+          cursor: default; transition: transform 0.1s;"
+          onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+          <span style="font-weight: 500;">${skill}</span>
+          <span style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 10px;
+            font-size: 11px; font-weight: 600;">${info.count}</span>
+        </div>`;
+      }).join('');
+    } else {
+      skillsSummaryEl.innerHTML = '<div class="dashboard-empty-state" style="width: 100%;"><div class="icon">🎯</div><div>暂无 Skills 数据</div></div>';
+    }
+
+    if (data.sessions.length > 0) {
+      const skillsDetailEl = document.getElementById('skillsDetail');
+      const skillsSessionListEl = document.getElementById('skillsSessionList');
+      const recentSessions = data.sessions.slice(0, 5);
+      skillsSessionListEl.innerHTML = recentSessions.map(session => {
+        const date = new Date(session.timestamp).toLocaleString();
+        const shortId = session.sessionId.substring(0, 8);
+        return `<div style="padding: 8px 12px; background: var(--bg); border-radius: 6px; margin-bottom: 6px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+            <span style="font-weight: 500;">📦 ${shortId}...</span>
+            <span style="font-size: 12px; color: var(--text-muted);">${date}</span>
+          </div>
+          <div style="font-size: 12px; color: var(--text-muted); word-break: break-all;">
+            ${session.skillCount} skills: ${session.skills.join(', ')}
+          </div>
+        </div>`;
+      }).join('');
+      skillsDetailEl.style.display = 'block';
+    }
+  } catch (e) { console.error('Failed to load skills data:', e); }
+}
+
+/* ==========================================================
+   初始化
+   ========================================================== */
 setTheme(getTheme());
 const sortDesc = getSortOrder() === 'desc';
 document.getElementById('sortBtn').textContent = sortDesc ? '⬇ 最新优先' : '⬆ 最早优先';
+
 loadProjects().then(() => {
   loadLog();
-  // 初始化状态栏
   setTimeout(checkHookStatus, 1000);
 });
-// 页面可见时重新加载（但保持增量模式）
+
+// 页面可见时重新加载
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden && !autoRefreshTimer) {
     loadLog();
     checkHookStatus();
   }
 });
+
+// 仪表盘自动刷新（每 30 秒，仅在仪表盘 tab 激活时）
+setInterval(() => {
+  if (currentTab === 'dashboard') {
+    loadDashboardData();
+    loadSkillsData();
+  }
+}, 30000);
 </script>
 </body>
 </html>
