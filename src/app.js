@@ -239,9 +239,12 @@ window.setTimeRange = function (range) {
 };
 
 // ─── 会话展开/折叠 ─────────────────────────────────
-window.toggleSession = function (header) {
-  const body = header.parentElement.querySelector('.session-body');
-  const arrow = header.querySelector('.session-arrow');
+window.toggleSession = function (el) {
+  // 兼容：传入 header 或 card
+  const card = el.classList.contains('session-card') ? el : el.closest('.session-card');
+  if (!card) return;
+  const body = card.querySelector('.session-body');
+  const arrow = card.querySelector('.session-arrow');
   if (body) {
     body.classList.toggle('hidden');
     if (arrow) {

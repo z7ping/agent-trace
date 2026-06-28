@@ -122,7 +122,7 @@ function renderSession(session) {
   const avgDur = (session.toolCount || session.calls?.length || 0) > 0 ? session.totalDuration / (session.toolCount || session.calls.length) : 0;
 
   const header = `
-    <div class="session-header" onclick="toggleSession(this)">
+    <div class="session-header">
       <div class="flex items-center gap-2">
         <svg class="session-arrow w-3 h-3 text-neutral-400 transition-transform duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M9 18l6-6-6-6"/>
@@ -145,7 +145,7 @@ function renderSession(session) {
   const calls = tree.map((call, i) => renderCall(call, i, session.project)).join('');
 
   return `
-    <div class="session-card${isActive ? ' active-session' : ''}">
+    <div class="session-card${isActive ? ' active-session' : ''}" onclick="toggleSession(this)">
       ${header}
       <div class="session-body hidden">
         ${calls}
