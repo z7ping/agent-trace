@@ -7,13 +7,13 @@
 @layer components {
   /* 工具 Tab */
   .tool-tab {
-    @apply px-3 py-1.5 text-sm font-medium text-neutral-500 rounded-lg transition-all whitespace-nowrap;
+    @apply px-3 py-1.5 text-sm font-medium text-neutral-500 rounded-lg transition-all whitespace-nowrap border-b-2 border-transparent;
   }
   .tool-tab:hover {
     @apply text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800;
   }
   .tool-tab.active {
-    @apply text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-500/10;
+    @apply text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-500/10 border-b-2 border-primary-500 dark:border-primary-400;
   }
 
   /* 功能 Tab */
@@ -81,7 +81,7 @@
 
   /* ═══ 会话卡片 ═══ */
   .session-card {
-    @apply bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden mb-3 shadow-sm transition-all;
+    @apply bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden mb-3 shadow-sm transition-all border-l-[3px];
   }
   .session-header {
     @apply px-4 py-2.5 flex items-center justify-between cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors select-none border-b border-neutral-100 dark:border-neutral-800;

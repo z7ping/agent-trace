@@ -391,6 +391,18 @@ async function main() {
             });
             unique.sort((a, b) => (b.start_time || '').localeCompare(a.start_time || ''));
 
+            // 添加 project_name（从 projects.json 查找）
+            try {
+                const projectsFile = path.join(ROOT, 'projects.json');
+                const projects = fs.existsSync(projectsFile)
+                    ? JSON.parse(fs.readFileSync(projectsFile, 'utf-8'))
+                    : {};
+                for (const s of unique) {
+                    const proj = projects[s.project_key];
+                    s.project_name = proj?.name || s.project_key;
+                }
+            } catch (_) {}
+
             sendJson(res, { items: unique.slice(0, limit) });
         } catch (e) {
             sendJson(res, { error: e.message }, 500);

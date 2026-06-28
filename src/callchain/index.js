@@ -31,6 +31,7 @@ export function renderCallChain(data) {
     sessions = data.map(s => ({
       id: s.session_id,
       project: s.project_key || '',
+      projectName: s.project_name || s.project_key || '',
       source: s.source || '',
       startTime: s.start_time,
       endTime: s.end_time,
@@ -160,6 +161,22 @@ function renderSession(session) {
   const color = hashColor(session.id);
   const avgDur = (session.toolCount || session.calls?.length || 0) > 0 ? session.totalDuration / (session.toolCount || session.calls.length) : 0;
 
+  // 来源标签样式
+  const source = session.source || '';
+  const sourceLabels = { 'claude-code': 'Claude', 'hermes': 'Hermes', 'codex': 'Codex', 'opencode': 'OpenCode', 'cursor': 'Cursor' };
+  const sourceColors = {
+    'claude-code': 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+    'hermes': 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+    'codex': 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+    'opencode': 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+    'cursor': 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',
+  };
+  const sourceLabel = sourceLabels[source] || source;
+  const sourceColor = sourceColors[source] || 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400';
+
+  // 项目名（优先使用 project_name，回退到 project_key）
+  const projectName = session.projectName || session.project || '';
+
   const header = `
     <div class="session-header" onclick="toggleSession(event.currentTarget)">
       <div class="flex items-center gap-2">
@@ -167,7 +184,8 @@ function renderSession(session) {
           <path d="M9 18l6-6-6-6"/>
         </svg>
         <span class="session-id font-mono text-xs font-semibold" style="color:${color}" title="会话ID: ${escapeHtml(session.id)}">${escapeHtml(shortId(session.id))}</span>
-        <span class="text-xs text-neutral-500">${escapeHtml(truncate(session.project, 30))}</span>
+        ${sourceLabel ? `<span class="text-[10px] px-1.5 py-0.5 rounded-md font-medium ${sourceColor}">${escapeHtml(sourceLabel)}</span>` : ''}
+        <span class="text-xs text-neutral-500 dark:text-neutral-400 font-medium">${escapeHtml(truncate(projectName, 30))}</span>
         <span class="text-xs text-neutral-400">${timeRange}</span>
       </div>
       <div class="flex items-center gap-3 text-xs text-neutral-500">
@@ -183,8 +201,18 @@ function renderSession(session) {
   const tree = buildTree(session.calls);
   const calls = tree.map((call, i) => renderCall(call, i, session.project)).join('');
 
+  // 来源左边框颜色
+  const sourceBorderColors = {
+    'claude-code': 'border-l-blue-500 dark:border-l-blue-400',
+    'hermes': 'border-l-purple-500 dark:border-l-purple-400',
+    'codex': 'border-l-green-500 dark:border-l-green-400',
+    'opencode': 'border-l-orange-500 dark:border-l-orange-400',
+    'cursor': 'border-l-cyan-500 dark:border-l-cyan-400',
+  };
+  const borderClass = sourceBorderColors[source] || 'border-l-neutral-300 dark:border-l-neutral-600';
+
   return `
-    <div class="session-card${isActive ? ' active-session' : ''}"
+    <div class="session-card ${borderClass}${isActive ? ' active-session' : ''}"
          data-session-id="${escapeHtml(session.id)}"
          data-source="${escapeHtml(session.source)}">
       ${header}
