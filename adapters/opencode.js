@@ -270,6 +270,65 @@ class OpenCodeAdapter extends BaseAdapter {
         } catch (_) {}
     }
 
+    // ─── getRecords（供 /api/timeline 直接读取 opencode.db）──────
+
+    /**
+     * 从 opencode.db 查询工具调用记录，返回统一格式
+     * @param {Object} filter
+     * @param {string} [filter.session_id]
+     * @param {string} [filter.project_key]
+     * @param {string} [filter.source]
+     * @param {number} [filter.limit=1000]
+     * @returns {Array}
+     */
+    async getRecords(filter = {}) {
+        const db = await this._getDb();
+        if (!db) return [];
+
+        const limit = Math.min(parseInt(filter.limit, 10) || 1000, 10000);
+        const sessionId = filter.session_id;
+
+        let sql = `
+            SELECT p.id, p.session_id, p.time_created, p.data,
+                   s.directory
+            FROM part p
+            LEFT JOIN session s ON p.session_id = s.id
+            WHERE p.data LIKE '%"type":"tool"%'
+        `;
+        const params = [];
+
+        if (sessionId) {
+            sql += ' AND p.session_id = ?';
+            params.push(sessionId);
+        }
+
+        sql += ' ORDER BY p.time_created DESC LIMIT ?';
+        params.push(limit);
+
+        let toolParts;
+        try {
+            toolParts = db.prepare(sql).all(...params);
+        } catch (_) {
+            return [];
+        }
+
+        const items = [];
+        for (const part of toolParts) {
+            const record = this._buildRecord(part);
+            if (!record) continue;
+
+            // 过滤 project_key
+            if (filter.project_key && record.project_key !== filter.project_key) continue;
+
+            // 过滤 source
+            if (filter.source && filter.source !== this.name) continue;
+
+            items.push(record);
+        }
+
+        return items;
+    }
+
     // ─── 启动/停止轮询 ──────────────────────────────────────
 
     /**

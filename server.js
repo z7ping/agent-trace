@@ -339,35 +339,26 @@ async function main() {
         }
     }
 
-    function handleApiTimeline(req, res, params) {
+    async function handleApiTimeline(req, res, params) {
         const project = params.get('project');
         const session = params.get('session');
-        const source = params.get('source');
+        const source = params.get('source') || 'hermes';
         const limit = Math.min(parseInt(params.get('limit') || '1000', 10), 10000);
 
         try {
-            const logsDir = path.join(ROOT, 'logs');
-            const items = [];
+            const { getAdapter, getAllAdapters } = require('./adapters');
+            const filter = { session_id: session, project_key: project, source, limit };
 
-            if (fs.existsSync(logsDir)) {
-                const files = fs.readdirSync(logsDir).filter(f => f.endsWith('.jsonl'));
-                for (const file of files) {
-                    // 如果指定了 project，只读对应的日志文件
-                    if (project && file !== `${project}.jsonl`) continue;
-
-                    const logFile = path.join(logsDir, file);
-                    try {
-                        const content = fs.readFileSync(logFile, 'utf-8');
-                        const lines = content.split('\n').filter(line => line.trim());
-                        for (const line of lines) {
-                            try {
-                                const record = JSON.parse(line);
-                                if (session && record.session_id !== session) continue;
-                                if (source && record.source !== source) continue;
-                                items.push(record);
-                            } catch (_) {}
-                        }
-                    } catch (_) {}
+            // 如果指定了 source，只用该适配器；否则用所有适配器
+            let items = [];
+            if (source) {
+                const adapter = getAdapter(source);
+                if (adapter) items = await adapter.getRecords(filter);
+            } else {
+                const adapters = getAllAdapters();
+                for (const adapter of adapters.values()) {
+                    const records = await adapter.getRecords(filter);
+                    items.push(...records);
                 }
             }
 

@@ -339,6 +339,120 @@ class HermesAdapter extends BaseAdapter {
         return record;
     }
 
+    // ─── getRecords（供 /api/timeline 直接读取 state.db）────────
+
+    /**
+     * 从 state.db 查询工具调用记录，返回统一格式
+     * @param {Object} filter
+     * @param {string} [filter.session_id]
+     * @param {string} [filter.project_key]
+     * @param {string} [filter.source]
+     * @param {number} [filter.limit=1000]
+     * @returns {Array}
+     */
+    async getRecords(filter = {}) {
+        const db = this._getDb();
+        if (!db) return [];
+
+        const limit = Math.min(parseInt(filter.limit, 10) || 1000, 10000);
+        const sessionId = filter.session_id;
+
+        // 查询所有 tool 消息（包含已处理和未处理的），按时间倒序
+        let sql = `
+            SELECT m.*, s.cwd
+            FROM messages m
+            LEFT JOIN sessions s ON m.session_id = s.id
+            WHERE m.role = 'tool'
+        `;
+        const params = [];
+
+        if (sessionId) {
+            sql += ' AND m.session_id = ?';
+            params.push(sessionId);
+        }
+
+        sql += ' ORDER BY m.timestamp DESC LIMIT ?';
+        params.push(limit);
+
+        let toolMessages;
+        try {
+            toolMessages = db.prepare(sql).all(...params);
+        } catch (_) {
+            return [];
+        }
+
+        // 预编译查找 assistant 消息
+        const findAssistant = db.prepare(`
+            SELECT m.id, m.timestamp, m.tool_calls
+            FROM messages m, json_each(m.tool_calls) j
+            WHERE m.role = 'assistant' AND m.tool_calls IS NOT NULL
+            AND json_extract(j.value, '$.id') = ?
+            ORDER BY m.id DESC
+            LIMIT 1
+        `);
+
+        const items = [];
+        for (const msg of toolMessages) {
+            const cwd = msg.cwd || '';
+            const projectKey = this.getProjectKey(cwd);
+            const projectName = this.getProjectName(cwd);
+
+            // 过滤 project_key
+            if (filter.project_key && projectKey !== filter.project_key) continue;
+
+            // 过滤 source
+            if (filter.source && filter.source !== this.name) continue;
+
+            // 查找 assistant 消息获取 tool_name 和 input
+            let toolName = msg.tool_name || 'unknown';
+            let inputSummary = {};
+            let durationMs = null;
+            let assistantTs = null;
+
+            if (msg.tool_call_id) {
+                try {
+                    const assistant = findAssistant.get(`%${msg.tool_call_id}%`);
+                    if (assistant) {
+                        const extracted = this._extractToolCallInput(assistant.tool_calls, msg.tool_call_id);
+                        if (extracted) {
+                            toolName = extracted.toolName;
+                            inputSummary = this.summarizeInput(toolName, extracted.args);
+                        }
+                        assistantTs = assistant.timestamp;
+                    }
+                } catch (_) {}
+            }
+
+            // 计算耗时
+            if (assistantTs) {
+                durationMs = Math.round((msg.timestamp - assistantTs) * 1000) / 1000;
+            }
+
+            // 判断成功/失败
+            const { success, error } = this._judgeSuccess(msg.content);
+
+            // 转换时间戳
+            const ts = new Date(msg.timestamp * 1000).toISOString();
+
+            const record = {
+                ts,
+                session_id: msg.session_id,
+                project_key: projectKey,
+                project_name: projectName,
+                tool_name: toolName,
+                source: this.name,
+                input_summary: inputSummary,
+                success,
+            };
+            if (durationMs !== null) record.duration_ms = durationMs;
+            if (!success && error) record.error = error.substring(0, 500).trim();
+
+            items.push(record);
+        }
+
+        return items;
+    }
+
     // ─── 启动/停止轮询 ──────────────────────────────────────
 
     /**

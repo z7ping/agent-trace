@@ -148,7 +148,7 @@ function renderSession(session) {
   const avgDur = (session.toolCount || session.calls?.length || 0) > 0 ? session.totalDuration / (session.toolCount || session.calls.length) : 0;
 
   const header = `
-    <div class="session-header">
+    <div class="session-header" onclick="toggleSession(event.currentTarget)">
       <div class="flex items-center gap-2">
         <svg class="session-arrow w-3 h-3 text-neutral-400 transition-transform duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M9 18l6-6-6-6"/>
@@ -173,8 +173,7 @@ function renderSession(session) {
   return `
     <div class="session-card${isActive ? ' active-session' : ''}"
          data-session-id="${escapeHtml(session.id)}"
-         data-source="${escapeHtml(session.source)}"
-         onclick="toggleSession(this)">
+         data-source="${escapeHtml(session.source)}">
       ${header}
       <div class="session-body hidden">
         ${calls.length > 0 ? calls : '<div class="text-center py-4 text-neutral-400 text-sm">加载中...</div>'}
