@@ -168,40 +168,15 @@ class CursorAdapter extends BaseAdapter {
         fs.appendFileSync(logFile, JSON.stringify(record) + '\n', 'utf-8');
 
         // 双写 SQLite（如果数据库存在）
-        this._writeToSqlite(data, record, projectKey, projectName, cwd, toolName, callSeq, parentSeq, durationMs, success);
-    }
-
-    /**
-     * 写入统计摘要到 a-beat.db
-     * @private
-     */
-    _writeToSqlite(data, record, projectKey, projectName, cwd, toolName, callSeq, parentSeq, durationMs, success) {
-        try {
-            const abeatDb = require('../abeat-db');
-            const ts = record.ts || '';
-
-            // 按天统计
-            abeatDb.updateDailyStats(ts.slice(0, 10), 'cursor', toolName, 1, success ? 0 : 1, durationMs || 0);
-
-            // 错误记录
-            if (!success && record.error) {
-                abeatDb.saveError(ts, data.session_id || '', 'cursor', toolName, record.error);
-            }
-
-            // session 摘要（累加）
-            if (data.session_id) {
-                abeatDb.upsertSession({
-                    session_id: data.session_id,
-                    project_key: projectKey,
-                    source: 'cursor',
-                    start_time: ts,
-                    end_time: ts,
-                    tool_count: 1,
-                    error_count: success ? 0 : 1,
-                    total_duration_ms: durationMs || 0,
-                });
-            }
-        } catch (_) {}
+        this._writeToSqlite({
+            sessionId: data.session_id || '',
+            projectKey,
+            toolName,
+            ts: record.ts,
+            success,
+            durationMs,
+            error: record.error,
+        });
     }
 }
 

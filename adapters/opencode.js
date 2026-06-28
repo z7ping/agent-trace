@@ -299,53 +299,6 @@ class OpenCodeAdapter extends BaseAdapter {
         }
     }
 
-    // ─── getRecords ────────────────────────────────────────
-
-    /**
-     * 获取工具调用记录
-     * @param {Object} filter - 过滤条件
-     * @param {string} filter.project_key
-     * @param {string} filter.session_id
-     * @param {number} filter.limit
-     * @returns {Array}
-     */
-    async getRecords(filter = {}) {
-        const { project_key, session_id, limit = 100 } = filter;
-        const records = [];
-
-        if (project_key) {
-            const logFile = this.getLogFile(project_key);
-            if (fs.existsSync(logFile)) {
-                const lines = fs.readFileSync(logFile, 'utf-8').trim().split('\n').filter(Boolean);
-                for (const line of lines) {
-                    try {
-                        const record = JSON.parse(line);
-                        if (session_id && record.session_id !== session_id) continue;
-                        records.push(record);
-                    } catch (_) {}
-                }
-            }
-        } else {
-            const logsDir = path.join(__dirname, '..', 'logs');
-            if (fs.existsSync(logsDir)) {
-                const files = fs.readdirSync(logsDir).filter(f => f.endsWith('.jsonl'));
-                for (const file of files) {
-                    const logFile = path.join(logsDir, file);
-                    const lines = fs.readFileSync(logFile, 'utf-8').trim().split('\n').filter(Boolean);
-                    for (const line of lines) {
-                        try {
-                            const record = JSON.parse(line);
-                            if (record.source !== this.name) continue;
-                            if (session_id && record.session_id !== session_id) continue;
-                            records.push(record);
-                        } catch (_) {}
-                    }
-                }
-            }
-        }
-
-        return records.slice(-limit);
-    }
 }
 
 module.exports = OpenCodeAdapter;

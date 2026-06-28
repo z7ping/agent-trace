@@ -70,32 +70,6 @@ class CodexAdapter extends BaseAdapter {
     }
 
     /**
-     * 判断工具调用是否成功
-     * @param {*} response
-     * @returns {{ success: boolean, error: string|null }}
-     */
-    judgeSuccess(response) {
-        let success = true;
-        let errorMsg = null;
-
-        if (response && typeof response === 'object') {
-            success = response.success !== false;
-            const exitCode = response.exit_code ?? response.exitCode;
-            if (exitCode !== null && exitCode !== undefined && exitCode !== 0) {
-                success = false;
-            }
-            if (!success) {
-                errorMsg = response.stderr || response.error || response.output || this.extractError(response);
-                if (exitCode !== null && exitCode !== undefined && exitCode !== 0) {
-                    errorMsg = `Exit code ${exitCode}` + (errorMsg ? `: ${errorMsg}` : '');
-                }
-            }
-        }
-
-        return { success, error: errorMsg };
-    }
-
-    /**
      * 处理 PostToolUse 事件：记录工具调用日志
      * @param {Object} data - 从 stdin 读取的 JSON 数据
      */
@@ -175,89 +149,15 @@ class CodexAdapter extends BaseAdapter {
         fs.appendFileSync(logFile, JSON.stringify(record) + '\n', 'utf-8');
 
         // 双写 SQLite
-        this._writeToSqlite(data, record, projectKey, projectName, cwd, toolName, callSeq, parentSeq, durationMs, success);
-    }
-
-    _writeToSqlite(data, record, projectKey, projectName, cwd, toolName, callSeq, parentSeq, durationMs, success) {
-        try {
-            const abeatDb = require('../abeat-db');
-            const ts = record.ts || '';
-
-            // 按天统计
-            abeatDb.updateDailyStats(ts.slice(0, 10), 'codex', toolName, 1, success ? 0 : 1, durationMs || 0);
-
-            // 错误记录
-            if (!success && record.error) {
-                abeatDb.saveError(ts, data.session_id || '', 'codex', toolName, record.error);
-            }
-
-            // session 摘要（累加）
-            if (data.session_id) {
-                abeatDb.upsertSession({
-                    session_id: data.session_id,
-                    project_key: projectKey,
-                    source: 'codex',
-                    start_time: ts,
-                    end_time: ts,
-                    tool_count: 1,
-                    error_count: success ? 0 : 1,
-                    total_duration_ms: durationMs || 0,
-                });
-            }
-        } catch (_) {}
-    }
-
-    // ─── getRecords ────────────────────────────────────────
-
-    /**
-     * 获取工具调用记录
-     * @param {Object} filter - 过滤条件
-     * @param {string} filter.project_key
-     * @param {string} filter.session_id
-     * @param {number} filter.limit
-     * @returns {Array}
-     */
-    async getRecords(filter = {}) {
-        const { project_key, session_id, limit = 100 } = filter;
-        const records = [];
-
-        if (project_key) {
-            const logFile = this.getLogFile(project_key);
-            if (fs.existsSync(logFile)) {
-                const lines = fs.readFileSync(logFile, 'utf-8').trim().split('\n').filter(Boolean);
-                for (const line of lines) {
-                    try {
-                        const record = JSON.parse(line);
-                        if (session_id && record.session_id !== session_id) continue;
-                        records.push(record);
-                    } catch (e) {
-                        // 跳过无效行
-                    }
-                }
-            }
-        } else {
-            // 遍历所有项目
-            const logsDir = path.join(__dirname, '..', 'logs');
-            if (fs.existsSync(logsDir)) {
-                const files = fs.readdirSync(logsDir).filter(f => f.endsWith('.jsonl'));
-                for (const file of files) {
-                    const logFile = path.join(logsDir, file);
-                    const lines = fs.readFileSync(logFile, 'utf-8').trim().split('\n').filter(Boolean);
-                    for (const line of lines) {
-                        try {
-                            const record = JSON.parse(line);
-                            if (record.source !== this.name) continue;
-                            if (session_id && record.session_id !== session_id) continue;
-                            records.push(record);
-                        } catch (e) {
-                            // 跳过无效行
-                        }
-                    }
-                }
-            }
-        }
-
-        return records.slice(-limit);
+        this._writeToSqlite({
+            sessionId: data.session_id || '',
+            projectKey,
+            toolName,
+            ts: record.ts,
+            success,
+            durationMs,
+            error: record.error,
+        });
     }
 }
 

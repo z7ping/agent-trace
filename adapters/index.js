@@ -69,12 +69,24 @@ function listAdapterNames() {
     return Array.from(adapters.keys());
 }
 
+/**
+ * 停止所有适配器（轮询 + 关闭数据库连接）
+ */
+function stopAll() {
+    for (const adapter of adapters.values()) {
+        if (typeof adapter.stopPolling === 'function') {
+            try { adapter.stopPolling(); } catch (_) {}
+        }
+    }
+}
+
 module.exports = {
     getAdapter,
     getDefaultAdapter,
     getAllAdapters,
     registerAdapter,
     listAdapterNames,
+    stopAll,
     // 同时导出类以便外部使用
     BaseAdapter: require('./base'),
     ClaudeCodeAdapter,

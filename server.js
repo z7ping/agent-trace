@@ -657,6 +657,14 @@ async function main() {
         // ─── 优雅关闭 ──────────────────────────────────────────────
 
         function shutdown() {
+            try {
+                const { stopAll } = require('./adapters');
+                stopAll();
+            } catch (_) {}
+            try {
+                const abeatDb = require('./abeat-db');
+                abeatDb.closeDb();
+            } catch (_) {}
             removePid();
             if (!isDaemon) {
                 console.log('');

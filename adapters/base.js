@@ -284,13 +284,14 @@ class BaseAdapter {
      */
     async getRecords(filter = {}) {
         const { project_key, session_id, limit = 100, source } = filter;
+        const filterSource = source || this.name;
         const records = [];
         const logsDir = path.join(BASE_DIR, 'logs');
 
         const processLine = (line) => {
             try {
                 const record = JSON.parse(line);
-                if (source && record.source !== source) return;
+                if (filterSource && record.source !== filterSource) return;
                 if (session_id && record.session_id !== session_id) return;
                 records.push(record);
             } catch (_) {}
@@ -314,6 +315,47 @@ class BaseAdapter {
         }
 
         return records.slice(-limit);
+    }
+
+    /**
+     * 双写 SQLite 统计摘要到 a-beat.db（共享实现）
+     * @param {Object} opts
+     * @param {string} opts.sessionId
+     * @param {string} opts.projectKey
+     * @param {string} opts.toolName
+     * @param {string} opts.ts
+     * @param {boolean} opts.success
+     * @param {number} [opts.durationMs]
+     * @param {string} [opts.error]
+     */
+    _writeToSqlite({ sessionId, projectKey, toolName, ts, success, durationMs, error }) {
+        try {
+            const abeatDb = require('../abeat-db');
+            const date = ts ? ts.slice(0, 10) : '';
+
+            // 按天统计
+            abeatDb.updateDailyStats(date, this.name, toolName, 1, success ? 0 : 1, durationMs || 0);
+
+            // 错误记录
+            if (!success && error) {
+                abeatDb.saveError(ts, sessionId || '', this.name, toolName, error);
+            }
+
+            // session 摘要（累加 total_duration_ms）
+            if (sessionId) {
+                const existingDuration = abeatDb.getSessionDuration(sessionId);
+                abeatDb.upsertSession({
+                    session_id: sessionId,
+                    project_key: projectKey,
+                    source: this.name,
+                    start_time: ts,
+                    end_time: ts,
+                    tool_count: 1,
+                    error_count: success ? 0 : 1,
+                    total_duration_ms: existingDuration + (durationMs || 0),
+                });
+            }
+        } catch (_) {}
     }
 
     /**
