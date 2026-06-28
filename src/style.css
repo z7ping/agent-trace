@@ -1,0 +1,142 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ═══ 自定义组件样式 ═══ */
+
+@layer components {
+  /* Tab 按钮 */
+  .tab-btn {
+    @apply flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-neutral-500 rounded-lg transition-all;
+  }
+  .tab-btn:hover {
+    @apply text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800;
+  }
+  .tab-btn.active {
+    @apply text-primary-500 bg-primary-50 dark:bg-primary-500/10;
+  }
+
+  /* 时间范围按钮 */
+  .time-btn {
+    @apply px-3 py-1.5 text-sm font-medium text-neutral-500 rounded-md transition-all;
+  }
+  .time-btn:hover {
+    @apply text-neutral-700 dark:text-neutral-300;
+  }
+  .time-btn.active {
+    @apply text-neutral-900 dark:text-white bg-white dark:bg-neutral-700 shadow-sm;
+  }
+
+  /* 筛选标签 */
+  .filter-chip {
+    @apply px-3 py-1 text-xs font-medium text-neutral-500 rounded-full border border-neutral-200 dark:border-neutral-700 transition-all;
+  }
+  .filter-chip:hover {
+    @apply text-neutral-700 dark:text-neutral-300 border-neutral-300 dark:border-neutral-600;
+  }
+  .filter-chip.active {
+    @apply text-primary-600 dark:text-primary-400 border-primary-300 dark:border-primary-600 bg-primary-50 dark:bg-primary-500/10;
+  }
+
+  /* 统计卡片 */
+  .stat-card {
+    @apply bg-white dark:bg-neutral-900 rounded-card p-6 shadow-card;
+  }
+  .stat-value {
+    @apply text-3xl font-bold tracking-tight mb-1;
+  }
+  .stat-label {
+    @apply text-sm text-neutral-500;
+  }
+
+  /* 图表卡片 */
+  .chart-card {
+    @apply bg-white dark:bg-neutral-900 rounded-card p-6 shadow-card;
+  }
+  .chart-title {
+    @apply text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-4;
+  }
+  .chart-container {
+    @apply relative h-48;
+  }
+  .chart-container-tall {
+    @apply relative h-64;
+  }
+
+  /* 列表卡片 */
+  .list-card {
+    @apply bg-white dark:bg-neutral-900 rounded-card p-6 shadow-card;
+  }
+
+  /* 会话卡片 */
+  .session-card {
+    @apply bg-white dark:bg-neutral-900 rounded-card shadow-card overflow-hidden;
+  }
+  .session-header {
+    @apply px-5 py-3 flex items-center justify-between cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors;
+  }
+  .session-body {
+    @apply border-t border-neutral-100 dark:border-neutral-800;
+  }
+
+  /* 调用行 */
+  .call-row {
+    @apply flex items-center gap-3 px-5 py-2.5 border-l-3 border-transparent hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors cursor-pointer;
+  }
+  .call-row:hover {
+    @apply bg-neutral-50 dark:bg-neutral-800/30;
+  }
+  .call-row.error {
+    @apply border-l-danger-500 bg-danger-50/30 dark:bg-danger-500/5;
+  }
+  .call-row.slow {
+    @apply border-l-warning-500 bg-warning-50/30 dark:bg-warning-500/5;
+  }
+  .call-row.mcp {
+    @apply border-l-info-500;
+  }
+
+  /* 工具类型标签 */
+  .tool-badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md;
+  }
+  .tool-badge.bash { @apply bg-warning-50 text-warning-600 dark:bg-warning-500/10 dark:text-warning-400; }
+  .tool-badge.read { @apply bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400; }
+  .tool-badge.write { @apply bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-400; }
+  .tool-badge.mcp { @apply bg-info-50 text-info-600 dark:bg-info-500/10 dark:text-info-400; }
+  .tool-badge.agent { @apply bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400; }
+
+  /* 项目选择器 */
+  .project-select {
+    @apply text-sm bg-transparent border border-neutral-200 dark:border-neutral-700 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500;
+  }
+}
+
+/* ═══ 自定义边框宽度 ═══ */
+.border-l-3 {
+  border-left-width: 3px;
+}
+
+/* ═══ 滚动条美化 ═══ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-neutral-300 dark:bg-neutral-700 rounded-full;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-neutral-400 dark:bg-neutral-600;
+}
+
+/* ═══ 过渡动画 ═══ */
+.tab-panel {
+  animation: fadeIn 0.15s ease-out;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}

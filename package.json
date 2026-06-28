@@ -1,12 +1,16 @@
 {
   "name": "agent-beat",
   "version": "1.8.1",
+  "type": "module",
   "description": "实时记录并可视化 Claude Code 的每次工具调用，按会话分组展示，方便调试和回溯。",
   "main": "install-hooks.js",
   "bin": {
     "agent-beat": "./cli.js"
   },
   "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node cli.js start",
     "stop": "node cli.js stop",
@@ -22,6 +26,14 @@
   "author": "",
   "license": "ISC",
   "dependencies": {},
+  "devDependencies": {
+    "vite": "^6.3.5",
+    "tailwindcss": "^3.4.17",
+    "@tailwindcss/typography": "^0.5.16",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.4",
+    "chart.js": "^4.4.9"
+  },
   "optionalDependencies": {
     "better-sqlite3": "^12.10.0",
     "sql.js": "^1.11.0"
