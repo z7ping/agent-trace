@@ -96,7 +96,7 @@ agent-beat/
 
 ### 安装后自动运行（推荐）
 
-首次使用工具时，钩子会自动检测并拉起服务（端口 **37215**）。
+首次使用工具时，钩子会自动检测并拉起服务（端口 **56789**）。
 
 ### 手动管理
 
@@ -108,14 +108,14 @@ node cli.js stop              # 停止服务
 node cli.js status            # 查看状态
 
 # 或直接使用 server.js
-node server.js 37215
+node server.js 56789
 node server.js --status
 node server.js --stop
 ```
 
 ### 访问可视化页面
 
-- **主页**：http://localhost:37215/
+- **主页**：http://localhost:56789/
 - Tab 切换：调用链 / 仪表盘
 
 ## 🎯 使用步骤
@@ -124,7 +124,7 @@ node server.js --stop
 2. **启动服务**：运行 `node server.js`
 3. **配置钩子**：在对应工具的配置文件中添加 hooks（见下方）
 4. **使用工具**：工具调用会自动记录
-5. **打开浏览器**：访问 http://localhost:37215/
+5. **打开浏览器**：访问 http://localhost:56789/
 
 ## 📋 多工具适配器
 
@@ -217,19 +217,19 @@ node server.js --stop
 
 1. 确认已重启对应工具
 2. 检查 hooks 配置是否正确
-3. 查看服务是否运行：`curl http://localhost:37215/`
+3. 查看服务是否运行：`curl http://localhost:56789/`
 
 ### 页面没有数据显示？
 
 1. 确认 HTTP 服务器正在运行
-2. 确认浏览器访问的是 `http://localhost:37215/`
+2. 确认浏览器访问的是 `http://localhost:56789/`
 3. 确认已执行过一些工具操作
 
 ### better-sqlite3 安装失败？
 
 配置国内镜像（见上方"国内网络加速"），或使用方式一直接运行。
 
-### 端口 37215 被占用？
+### 端口 56789 被占用？
 
 ```bash
 # 指定其他端口
@@ -262,7 +262,7 @@ rm -rf ~/.claude/agent-beat
 ### v1.7.0 (2026-06-05)
 - 新增服务守护：钩子自动拉起 HTTP 服务器
 - 新增守护进程模式
-- 默认端口从 8080 改为 37215
+- 默认端口从 8080 改为 56789
 
 ### v1.6.0 (2026-06-05)
 - 新增数据导出功能（JSON/CSV/Markdown）

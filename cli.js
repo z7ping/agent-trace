@@ -250,7 +250,7 @@ function cmdStart(argv) {
     const isDaemon = argv.includes('--daemon') || argv.includes('-d');
     const shouldOpen = argv.includes('--open');
 
-    // 解析端口: 支持 --port 37215 或直接 37215
+    // 解析端口: 支持 --port 56789 或直接 56789
     let port = DEFAULT_PORT;
     const portFlagIdx = argv.indexOf('--port');
     if (portFlagIdx >= 0 && argv[portFlagIdx + 1]) {

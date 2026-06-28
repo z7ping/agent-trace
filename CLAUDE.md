@@ -20,7 +20,7 @@ npx agent-beat status             # 查看状态
 npx agent-beat package            # 打包分发
 
 # 向后兼容（仍可使用）
-node server.js 37215           # 直接启动
+node server.js 56789           # 直接启动
 node server.js --stop          # 停止服务
 node server.js --status        # 查看状态
 ```
@@ -53,7 +53,7 @@ node server.js --status        # 查看状态
 
 2. **PostToolUse 钩子** (`hooks/log.js` / `hooks/log.py`) -- 在每次工具调用后触发。从调用栈弹出，构建包含耗时/成功/错误的日志记录，以 JSONL 格式追加到 `logs/<projectKey>.jsonl`，并更新 `hooks/projects.json`。
 
-3. **HTTP 服务器** (`server.js`) -- 最小化静态文件服务器，端口 37215。支持守护进程模式（`--daemon`），通过 `.server.pid` 管理生命周期。提供 HTML 页面及运行时数据文件 (`logs/`, `states/`, `projects.json`)。
+3. **HTTP 服务器** (`server.js`) -- 最小化静态文件服务器，端口 56789。支持守护进程模式（`--daemon`），通过 `.server.pid` 管理生命周期。提供 HTML 页面及运行时数据文件 (`logs/`, `states/`, `projects.json`)。
 
 4. **服务守护** (`hooks/server-guard.js`) -- 钩子自动拉起服务的核心模块。通过 TCP 端口检测 + PID 文件双重验证服务状态。使用 `npx agent-beat start --daemon` 启动服务（跨平台统一方案）。
 

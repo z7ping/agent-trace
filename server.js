@@ -9,7 +9,7 @@
  *   node server.js --stop              # 停止守护进程
  *   node server.js --status            # 查看运行状态
  *
- * 默认端口: 37215（定义在 config.js）
+ * 默认端口: 56789（定义在 config.js）
  *
  * 特点:
  * - 可选依赖 better-sqlite3（用于仪表盘 API）
@@ -36,7 +36,7 @@ const shouldOpen = flags.includes('--open');
 const shouldStop = flags.includes('--stop');
 const shouldStatus = flags.includes('--status');
 
-// 端口：第一个非 flag 参数，或环境变量，或默认 37215
+// 端口：第一个非 flag 参数，或环境变量，或默认 56789
 const PORT = parseInt(positional[0], 10) || parseInt(process.env.TRACKER_PORT, 10) || require('./config').DEFAULT_PORT;
 const ROOT = __dirname;
 const DIR = fs.existsSync(path.join(ROOT, 'dist'))
