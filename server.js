@@ -216,11 +216,11 @@ async function main() {
     // ─── SQLite 数据库 ──────────────────────────────────────────
 
     const { openDb, getAvailableBackend } = require('./db');
-    const DB_FILE = path.join(ROOT, 'tracker.db');
+    const DB_FILE = path.join(ROOT, 'a-beat.db');
     let db = null;
 
-    // ─── tracker-db 集成 ─────────────────────────────────────
-    const trackerDb = require('./tracker-db');
+    // ─── a-beat.db 集成 ─────────────────────────────────────
+    const trackerDb = require('./abeat-db');
 
     function getDb() {
         try {
@@ -561,7 +561,7 @@ async function main() {
     // ─── 初始化数据库后端 ──────────────────────────────────────
 
     async function initDb() {
-        // tracker-db 已自动初始化，无需额外 ready()
+        // a-beat.db 已自动初始化，无需额外 ready()
         try {
             const d = getDb();
             if (d) log(`  ✅ 数据库就绪 (better-sqlite3)`, 'green');
@@ -571,14 +571,6 @@ async function main() {
     }
 
     // ─── 启动服务器 ────────────────────────────────────────────
-
-    // 启动时自动迁移 JSONL → SQLite
-    try {
-        const imported = trackerDb.migrateJsonlToSqlite();
-        if (imported > 0) log(`📦 迁移了 ${imported} 条 JSONL 记录到 SQLite`, 'cyan');
-    } catch (e) {
-        log(`⚠️  JSONL 迁移失败: ${e.message}`, 'yellow');
-    }
 
     initDb().then(() => {
         server.listen(PORT, () => {
