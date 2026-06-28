@@ -179,7 +179,7 @@ function renderCall(call, index, projectPath) {
       ${indent}
       ${statusIcon || '<div class="w-4"></div>'}
       <span class="tool-badge ${type}">${escapeHtml(toolName)}</span>
-      ${sourceLabel ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 flex-shrink-0">${escapeHtml(sourceLabel)}</span>` : ''}
+      ${sourceLabel ? `<span class="text-[11px] px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 flex-shrink-0">${escapeHtml(sourceLabel)}</span>` : ''}
       <span class="flex-1 text-sm text-neutral-600 dark:text-neutral-400 truncate" title="${escapeHtml(summary)}">${escapeHtml(truncate(summary, 60))}</span>
       ${filePath ? `<span class="text-[11px] text-neutral-400 dark:text-neutral-500 truncate max-w-[300px] flex-shrink-0 font-mono" title="${escapeHtml(filePath.full)}">📂 ${escapeHtml(filePath.short)}</span>` : ''}
       <span class="text-xs text-neutral-400 flex-shrink-0">${duration}</span>
