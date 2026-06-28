@@ -42,10 +42,17 @@ function shortId(sid) {
 
 /** 格式化时间范围 */
 function formatTimeRange(start, end) {
-  const s = formatTime(start);
-  const e = formatTime(end);
-  if (s === e) return s;
-  return `${s} ~ ${e}`;
+  if (!start) return '';
+  const s = new Date(start);
+  const e = end ? new Date(end) : s;
+  const fmtDate = (d) => d.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-');
+  const fmtTime = (d) => d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+  // 同一天：2026-06-28 13:22:42~13:42:42
+  if (fmtDate(s) === fmtDate(e)) {
+    return `${fmtDate(s)} ${fmtTime(s)}~${fmtTime(e)}`;
+  }
+  // 跨天：2026-06-28 13:22~06-29 01:42
+  return `${fmtDate(s)} ${fmtTime(s)}~${fmtDate(e)} ${fmtTime(e)}`;
 }
 
 /** 构建树形结构 */
