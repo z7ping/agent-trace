@@ -110,23 +110,106 @@ class HermesAdapter extends BaseAdapter {
 
         const summary = {};
 
-        if (toolName === 'terminal') {
-            const cmd = String(args.command || '');
+        if (toolName === 'terminal' || toolName === 'execute_code') {
+            const cmd = String(args.command || args.code || '');
             summary.command = cmd.length > 120 ? cmd.substring(0, 120) + '…' : cmd;
-        } else if (toolName === 'file_editor') {
+        } else if (toolName === 'read_file' || toolName === 'write_file') {
+            summary.file_path = args.file_path || args.path || '';
+        } else if (toolName === 'patch' || toolName === 'file_editor') {
             summary.file_path = args.file_path || args.path || '';
             if (args.old_string) {
                 summary.old_len = args.old_string.length;
                 summary.new_len = (args.new_string || '').length;
             }
+        } else if (toolName === 'search_files') {
+            summary.pattern = args.pattern || args.query || '';
+            summary.path = args.path || '';
+        } else if (toolName === 'process') {
+            const action = args.action || '';
+            const sid = args.session_id ? args.session_id.replace('proc_', '') : '';
+            const sidShort = sid.length > 8 ? sid.substring(0, 8) + '…' : sid;
+            if (action === 'submit') {
+                const data = String(args.data || '').substring(0, 60);
+                summary.description = `submit → ${sidShort}: ${data}`;
+            } else if (action === 'log') {
+                summary.description = `log(limit=${args.limit || '?'}) → ${sidShort}`;
+            } else if (action === 'wait') {
+                summary.description = `wait(timeout=${args.timeout || '?'}s) → ${sidShort}`;
+            } else {
+                summary.description = `${action} → ${sidShort}`;
+            }
+        } else if (toolName === 'todo') {
+            const todos = args.todos || [];
+            if (args.merge && todos.length > 0) {
+                const done = todos.filter(t => t.status === 'completed').length;
+                summary.description = `${todos.length}项 (${done}完成)`;
+            } else if (todos.length > 0) {
+                summary.description = todos.map(t => {
+                    const icon = t.status === 'completed' ? '✅' : '⬜';
+                    return `${icon}${t.content || ''}`;
+                }).join(' | ').substring(0, 120);
+            } else {
+                summary.description = args.content || args.action || '';
+            }
+        } else if (toolName === 'clarify') {
+            summary.description = String(args.question || '').substring(0, 120);
+            if (Array.isArray(args.choices) && args.choices.length > 0) {
+                summary.description += ` [${args.choices.length}个选项]`;
+            }
+        } else if (toolName === 'send_message') {
+            const target = args.target || '';
+            const msg = String(args.message || '').substring(0, 60);
+            summary.description = `→ ${target}: ${msg}`;
+        } else if (toolName === 'delegate_task') {
+            const tasks = args.tasks || [];
+            if (tasks.length > 0) {
+                summary.description = tasks.map(t => t.goal || t.description || '').join(' | ').substring(0, 120);
+            } else {
+                summary.description = String(args.description || args.goal || '').substring(0, 120);
+            }
+        } else if (toolName === 'memory') {
+            const action = args.action || '';
+            const content = String(args.content || args.old_text || '').substring(0, 60);
+            summary.description = content ? `${action}: ${content}` : action;
+        } else if (toolName === 'session_search') {
+            summary.query = String(args.query || args.keyword || '').substring(0, 100);
+        } else if (toolName === 'browser_console') {
+            summary.command = String(args.expression || '').substring(0, 120);
+        } else if (toolName === 'browser_vision' || toolName === 'vision_analyze') {
+            summary.question = String(args.question || '').substring(0, 100);
+        } else if (toolName === 'browser_scroll') {
+            summary.direction = args.direction || '';
+        } else if (toolName === 'browser_click' || toolName === 'browser_type' || toolName === 'browser_press') {
+            summary.target = args.target || args.selector || '';
+        } else if (toolName === 'browser_navigate') {
+            summary.url = String(args.url || '').substring(0, 100);
+        } else if (toolName === 'browser_snapshot') {
+            summary.description = 'snapshot';
         } else if (toolName === 'web_search') {
             summary.query = String(args.query || '').substring(0, 100);
         } else if (toolName === 'skill_view' || toolName === 'skill_manage') {
             summary.skill = args.name || '';
-        } else if (toolName === 'memory') {
-            summary.action = args.action || '';
+        } else if (toolName.startsWith('mcp_')) {
+            // MCP 工具：提取服务器名和关键参数
+            summary.mcp_tool = toolName;
+            for (const key of ['query', 'symbol', 'pattern', 'prompt', 'path', 'url', 'question', 'name', 'uid']) {
+                if (key in args) {
+                    const val = String(args[key]);
+                    summary[key] = val.length > 100 ? val.substring(0, 100) + '…' : val;
+                }
+            }
+        } else if (toolName.startsWith('viking_')) {
+            summary.description = toolName.replace('viking_', '');
+            if (args.query) summary.query = String(args.query).substring(0, 100);
+            if (args.uri) summary.uri = String(args.uri).substring(0, 100);
         } else {
-            summary.keys = Object.keys(args).slice(0, 8);
+            // 通用回退：提取第一个有意义的字符串参数
+            const strVal = Object.entries(args).find(([, v]) => typeof v === 'string' && v.length > 0);
+            if (strVal) {
+                summary[strVal[0]] = String(strVal[1]).substring(0, 100);
+            } else {
+                summary.keys = Object.keys(args).slice(0, 8);
+            }
         }
 
         return summary;
@@ -296,7 +379,7 @@ class HermesAdapter extends BaseAdapter {
 
             if (msg.tool_call_id) {
                 try {
-                    const assistant = findAssistant.get(`%${msg.tool_call_id}%`);
+                    const assistant = findAssistant.get(msg.tool_call_id);
                     if (assistant) {
                         const extracted = this._extractToolCallInput(assistant.tool_calls, msg.tool_call_id);
                         if (extracted) {
