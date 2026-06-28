@@ -251,7 +251,8 @@ class HermesAdapter extends BaseAdapter {
                     observedIds.push(msg.id);
                 }
 
-                // 写入 session 摘要
+                // 写入 session 摘要（累加 total_duration_ms）
+                const existingDuration = abeatDb.getSessionDuration(sessionId);
                 abeatDb.upsertSession({
                     session_id: sessionId,
                     project_key: projectKey,
@@ -260,7 +261,7 @@ class HermesAdapter extends BaseAdapter {
                     end_time: lastTs || '',
                     tool_count: messages.length,
                     error_count: errorCount,
-                    total_duration_ms: totalDuration,
+                    total_duration_ms: existingDuration + totalDuration,
                 });
             }
 

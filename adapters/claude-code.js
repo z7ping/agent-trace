@@ -2,6 +2,7 @@
 /**
  * Claude Code 适配器
  * 复用现有 hooks/prelog.js + hooks/log.js 的核心逻辑
+ * 支持 JSONL 轮询聚合到 a-beat.db
  */
 
 const fs = require('fs');
@@ -9,11 +10,17 @@ const path = require('path');
 const BaseAdapter = require('./base');
 
 const BASE_DIR = path.join(__dirname, '..');
+const LOGS_DIR = path.join(BASE_DIR, 'logs');
+// 可配置：轮询间隔（毫秒），默认 30 分钟
+const POLL_INTERVAL_MS = parseInt(process.env.CLAUDE_CODE_POLL_INTERVAL_MS, 10) || 30 * 60 * 1000;
+// 轮询状态文件：记录每个 JSONL 文件已处理的行数
+const POLL_STATE_FILE = path.join(BASE_DIR, 'states', 'claude-code-poll-state.json');
 
 class ClaudeCodeAdapter extends BaseAdapter {
     constructor() {
         super();
         this._db = null;
+        this._pollTimer = null;
     }
 
     get name() {
@@ -226,6 +233,144 @@ class ClaudeCodeAdapter extends BaseAdapter {
             } catch (_) {}
         } finally {
             // 连接保持复用，不关闭
+        }
+    }
+
+    // ─── JSONL 轮询聚合 ──────────────────────────────────
+
+    /**
+     * 读取轮询状态（每个文件已处理的行数）
+     * @returns {Object} { [filename]: processedLineCount }
+     */
+    _readPollState() {
+        try {
+            if (fs.existsSync(POLL_STATE_FILE)) {
+                return JSON.parse(fs.readFileSync(POLL_STATE_FILE, 'utf-8'));
+            }
+        } catch (_) {}
+        return {};
+    }
+
+    /**
+     * 写入轮询状态
+     * @param {Object} state
+     */
+    _writePollState(state) {
+        try {
+            const dir = path.dirname(POLL_STATE_FILE);
+            if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+            fs.writeFileSync(POLL_STATE_FILE, JSON.stringify(state, null, 2), 'utf-8');
+        } catch (_) {}
+    }
+
+    /**
+     * 轮询一次：扫描 JSONL 文件，聚合新记录到 a-beat.db
+     */
+    async _pollOnce() {
+        if (!fs.existsSync(LOGS_DIR)) return;
+
+        try {
+            const abeatDb = require('../abeat-db');
+            const pollState = this._readPollState();
+            const files = fs.readdirSync(LOGS_DIR).filter(f => f.endsWith('.jsonl'));
+
+            for (const file of files) {
+                const logFile = path.join(LOGS_DIR, file);
+                const content = fs.readFileSync(logFile, 'utf-8');
+                const lines = content.split('\n').filter(l => l.trim());
+                const totalLines = lines.length;
+                const processed = pollState[file] || 0;
+
+                if (processed >= totalLines) continue;
+
+                // 只处理新增行
+                const newLines = lines.slice(processed);
+                const bySession = new Map();
+
+                for (const line of newLines) {
+                    try {
+                        const record = JSON.parse(line);
+                        // 只聚合 claude-code 来源的记录
+                        if (record.source && record.source !== 'claude-code') continue;
+                        if (!record.session_id) continue;
+
+                        if (!bySession.has(record.session_id)) {
+                            bySession.set(record.session_id, []);
+                        }
+                        bySession.get(record.session_id).push(record);
+                    } catch (_) {}
+                }
+
+                for (const [sessionId, records] of bySession) {
+                    let totalDuration = 0;
+                    let errorCount = 0;
+                    let firstTs = null;
+                    let lastTs = null;
+
+                    for (const record of records) {
+                        totalDuration += record.duration_ms || 0;
+                        if (!record.success) errorCount++;
+
+                        const ts = record.ts || '';
+                        if (ts) {
+                            if (!firstTs || ts < firstTs) firstTs = ts;
+                            if (!lastTs || ts > lastTs) lastTs = ts;
+
+                            // 按天统计
+                            const date = ts.slice(0, 10);
+                            abeatDb.updateDailyStats(date, 'claude-code', record.tool_name, 1, record.success ? 0 : 1, record.duration_ms || 0);
+
+                            // 错误记录
+                            if (!record.success && record.error) {
+                                abeatDb.saveError(ts, sessionId, 'claude-code', record.tool_name, record.error);
+                            }
+                        }
+                    }
+
+                    // session 摘要（累加 total_duration_ms）
+                    const projectKey = records[0].project_key || '';
+                    const existingDuration = abeatDb.getSessionDuration(sessionId);
+                    abeatDb.upsertSession({
+                        session_id: sessionId,
+                        project_key: projectKey,
+                        source: 'claude-code',
+                        start_time: firstTs || '',
+                        end_time: lastTs || '',
+                        tool_count: records.length,
+                        error_count: errorCount,
+                        total_duration_ms: existingDuration + totalDuration,
+                    });
+                }
+
+                pollState[file] = totalLines;
+            }
+
+            this._writePollState(pollState);
+        } catch (e) {
+            this.logError(e, 'claude-code:poll');
+        }
+    }
+
+    /**
+     * 启动 JSONL 轮询
+     * @param {number} intervalMs - 轮询间隔（毫秒）
+     */
+    startPolling(intervalMs = POLL_INTERVAL_MS) {
+        if (this._pollTimer) return;
+
+        // 立即执行一次
+        this._pollOnce();
+
+        this._pollTimer = setInterval(() => this._pollOnce(), intervalMs);
+    }
+
+    /**
+     * 停止轮询
+     */
+    stopPolling() {
+        if (this._pollTimer) {
+            clearInterval(this._pollTimer);
+            this._pollTimer = null;
         }
     }
 }

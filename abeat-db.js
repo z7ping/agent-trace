@@ -139,6 +139,13 @@ function querySessions(options = {}) {
   `).all(...params, limit);
 }
 
+/** 获取 session 已有的 total_duration_ms */
+function getSessionDuration(sessionId) {
+  const db = getDb();
+  const row = db.prepare('SELECT total_duration_ms FROM sessions WHERE session_id = ?').get(sessionId);
+  return row ? (row.total_duration_ms || 0) : 0;
+}
+
 /** 查询最近错误 */
 function queryRecentErrors(limit = 50) {
   const db = getDb();
@@ -165,6 +172,7 @@ module.exports = {
   getDb,
   closeDb,
   upsertSession,
+  getSessionDuration,
   updateDailyStats,
   saveError,
   queryStats,

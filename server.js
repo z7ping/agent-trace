@@ -602,6 +602,18 @@ async function main() {
         } catch (e) {
             log(`  ⚠️ 数据库初始化失败: ${e.message}`, 'yellow');
         }
+
+        // 启动 Claude Code 适配器 JSONL 轮询
+        try {
+            const { getAdapter } = require('./adapters');
+            const ccAdapter = getAdapter('claude-code');
+            if (ccAdapter && ccAdapter.startPolling) {
+                ccAdapter.startPolling();
+                log(`  ✅ Claude Code JSONL 轮询已启动`, 'green');
+            }
+        } catch (e) {
+            log(`  ⚠️ Claude Code 轮询启动失败: ${e.message}`, 'yellow');
+        }
     }
 
     // ─── 启动服务器 ────────────────────────────────────────────
