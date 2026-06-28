@@ -133,7 +133,7 @@ export function renderToolDistChart(canvasId, tools) {
 /**
  * 工具调用排行（横向柱状图）
  */
-export function renderSkillFreqChart(canvasId, tools) {
+export function renderToolRankChart(canvasId, tools) {
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
   destroyChart(canvasId);
@@ -203,6 +203,90 @@ export function renderSkillFreqChart(canvasId, tools) {
             color: colors.text,
             font: { size: 11 },
             callback: (v) => v >= 1000 ? `${(v/1000).toFixed(0)}k` : v,
+          },
+        },
+        y: {
+          grid: { display: false },
+          ticks: {
+            color: colors.text,
+            font: { size: 11 },
+          },
+        },
+      },
+    },
+  });
+}
+
+/**
+ * 技能调用频率（横向柱状图）
+ */
+export function renderSkillFreqChart(canvasId, skills) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  destroyChart(canvasId);
+
+  // 空数据状态
+  if (!skills || skills.length === 0) {
+    const parent = canvas.parentElement;
+    if (!parent.querySelector('.empty-state')) {
+      canvas.style.display = 'none';
+      const empty = document.createElement('div');
+      empty.className = 'empty-state';
+      empty.innerHTML = '<div class="empty-state-icon">🎯</div><div class="text-sm">暂无技能调用数据</div>';
+      parent.appendChild(empty);
+    }
+    return;
+  }
+  canvas.style.display = '';
+
+  const sorted = [...skills]
+    .sort((a, b) => (b.count || 0) - (a.count || 0))
+    .slice(0, 10);
+
+  const labels = sorted.map(s => {
+    const name = s.name || s.skill || '未知';
+    // 简化技能名称：移除命名空间前缀
+    const parts = name.split('/');
+    return parts.length > 1 ? parts[parts.length - 1] : name;
+  });
+  const data = sorted.map(s => s.count || 0);
+  const total = data.reduce((sum, v) => sum + v, 0);
+
+  const colors = getChartColors();
+  const ctx = canvas.getContext('2d');
+  chartInstances[canvasId] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        backgroundColor: '#8b5cf6', // 紫色，与技能相关
+        borderRadius: 4,
+        barThickness: 18,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: 'y',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const v = ctx.parsed.x;
+              const pct = total > 0 ? ((v / total) * 100).toFixed(1) : 0;
+              return `${v.toLocaleString()} 次 (${pct}%)`;
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          grid: { color: colors.grid },
+          ticks: {
+            color: colors.text,
+            font: { size: 11 },
           },
         },
         y: {

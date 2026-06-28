@@ -141,7 +141,7 @@
         </div>
 
         <!-- 图表区域 -->
-        <div class="grid grid-cols-2 gap-4 mb-6">
+        <div class="grid grid-cols-3 gap-4 mb-6">
           <div class="chart-card">
             <h3 class="chart-title">工具使用分布</h3>
             <div class="chart-container">
@@ -150,6 +150,12 @@
           </div>
           <div class="chart-card">
             <h3 class="chart-title">工具调用排行</h3>
+            <div class="chart-container">
+              <canvas id="toolRankChart"></canvas>
+            </div>
+          </div>
+          <div class="chart-card">
+            <h3 class="chart-title">技能调用频率</h3>
             <div class="chart-container">
               <canvas id="skillFreqChart"></canvas>
             </div>

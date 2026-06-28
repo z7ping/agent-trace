@@ -4,7 +4,7 @@
 
 import { CONFIG, getToolType, escapeHtml } from '../config.js';
 import { fetchStats, fetchTools, fetchTimeline, fetchSkills, getTimeRangeStart } from '../utils.js';
-import { renderToolDistChart, renderSkillFreqChart, renderTrendChart } from './charts.js';
+import { renderToolDistChart, renderToolRankChart, renderSkillFreqChart, renderTrendChart } from './charts.js';
 
 let currentTimeRange = 'week';
 let currentProject = '';
@@ -54,7 +54,12 @@ export async function loadDashboardData(project, timeRange, source) {
   renderToolDistChart('toolDistChart', tools);
   // 工具调用排行：使用 byTool 数据（更丰富），回退到 tools 数据
   const toolRankData = stats?.byTool || tools || [];
-  renderSkillFreqChart('skillFreqChart', toolRankData);
+  renderToolRankChart('toolRankChart', toolRankData);
+  // 技能调用频率：从 skills API 获取
+  const skillData = skills?.skillsSummary
+    ? Object.entries(skills.skillsSummary).map(([name, v]) => ({ name, count: v.count }))
+    : [];
+  renderSkillFreqChart('skillFreqChart', skillData);
   renderTrendChart('trendChart', stats?.byDay || []);
 
   // 会话回顾
