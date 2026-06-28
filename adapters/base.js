@@ -341,3 +341,4 @@ class BaseAdapter {
 }
 
 module.exports = BaseAdapter;
+module.exports.BASE_DIR = BASE_DIR;

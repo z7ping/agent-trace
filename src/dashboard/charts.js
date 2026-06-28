@@ -2,7 +2,7 @@
  * dashboard/charts.js - Chart.js 图表渲染
  */
 
-import { Chart } from 'chart.js';
+import Chart from 'chart.js/auto';
 import { CONFIG, getToolType, getToolColor } from '../config.js';
 
 const chartInstances = {};

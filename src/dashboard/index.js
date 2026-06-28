@@ -2,7 +2,7 @@
  * dashboard/index.js - 仪表盘模块
  */
 
-import { CONFIG, getToolType } from '../config.js';
+import { CONFIG, getToolType, escapeHtml } from '../config.js';
 import { fetchStats, fetchTools, fetchTimeline, fetchSkills, getTimeRangeStart } from '../utils.js';
 import { renderToolDistChart, renderSkillFreqChart, renderTrendChart } from './charts.js';
 
@@ -13,13 +13,14 @@ let currentProject = '';
  * 初始化仪表盘
  */
 export function initDashboard() {
-  loadDashboardData();
+  loadDashboardData().catch(e => console.error('[Dashboard] init error:', e));
 }
 
 /**
  * 加载仪表盘数据
  */
 export async function loadDashboardData(project, timeRange) {
+  try {
   if (project !== undefined) currentProject = project;
   if (timeRange) currentTimeRange = timeRange;
 
@@ -27,6 +28,8 @@ export async function loadDashboardData(project, timeRange) {
     fetchStats(currentProject, currentTimeRange),
     fetchTools(currentProject),
   ]);
+
+  console.log('[Dashboard] stats:', !!stats, 'tools:', tools?.length);
 
   // 核心指标（兼容新旧格式）
   if (stats) {
@@ -48,6 +51,9 @@ export async function loadDashboardData(project, timeRange) {
 
   // 错误分析
   renderErrorAnalysis(stats);
+  } catch (e) {
+    console.error('[Dashboard] loadDashboardData error:', e);
+  }
 }
 
 function setTextIfExists(id, value) {

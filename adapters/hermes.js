@@ -288,9 +288,10 @@ class HermesAdapter extends BaseAdapter {
         let toolName = msg.tool_name || 'unknown';
         let inputSummary = {};
 
+        let assistant = null;
         if (msg.tool_call_id) {
             const likePattern = `%${msg.tool_call_id}%`;
-            const assistant = this._prepared.findAssistantByToolCallId.get(likePattern);
+            assistant = this._prepared.findAssistantByToolCallId.get(likePattern);
 
             if (assistant) {
                 const extracted = this._extractToolCallInput(assistant.tool_calls, msg.tool_call_id);
@@ -305,12 +306,8 @@ class HermesAdapter extends BaseAdapter {
 
         // 计算耗时：tool 消息时间戳 - assistant 消息时间戳
         let durationMs = null;
-        if (msg.tool_call_id) {
-            const likePattern = `%${msg.tool_call_id}%`;
-            const assistant = this._prepared.findAssistantByToolCallId.get(likePattern);
-            if (assistant) {
-                durationMs = Math.round((msg.timestamp - assistant.timestamp) * 1000) / 1000;
-            }
+        if (assistant) {
+            durationMs = Math.round((msg.timestamp - assistant.timestamp) * 1000) / 1000;
         }
 
         // 转换时间戳（秒 -> ISO）

@@ -38,7 +38,7 @@ function closeDb() {
 function writeToolCall(record) {
   const db = getDb();
   const stmt = db.prepare(`
-    INSERT OR IGNORE INTO tool_calls
+    INSERT INTO tool_calls
       (ts, session_id, project_key, tool_name, input_summary, success, seq, parent_seq, duration_ms, error, source)
     VALUES
       (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -62,7 +62,7 @@ function writeToolCall(record) {
 function writeToolCalls(records) {
   const db = getDb();
   const stmt = db.prepare(`
-    INSERT OR IGNORE INTO tool_calls
+    INSERT INTO tool_calls
       (ts, session_id, project_key, tool_name, input_summary, success, seq, parent_seq, duration_ms, error, source)
     VALUES
       (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)

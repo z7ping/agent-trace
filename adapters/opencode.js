@@ -32,13 +32,14 @@ class OpenCodeAdapter extends BaseAdapter {
      * 懒加载 SQLite 连接（只读）
      * @returns {import('better-sqlite3').Database|null}
      */
-    _getDb() {
+    async _getDb() {
         if (this._db) return this._db;
         if (!fs.existsSync(OPENCODE_DB)) return null;
 
         try {
             const { openDb } = require('../db');
             this._db = openDb(OPENCODE_DB, { readonly: true });
+            await this._db.ready();
             return this._db;
         } catch (e) {
             this.logError(e, 'opencode:db');
@@ -49,9 +50,9 @@ class OpenCodeAdapter extends BaseAdapter {
     /**
      * 预编译常用查询
      */
-    _ensurePrepared() {
+    async _ensurePrepared() {
         if (Object.keys(this._prepared).length > 0) return;
-        const db = this._getDb();
+        const db = await this._getDb();
         if (!db) return;
 
         // 查询未处理的 tool 类型 part，关联 session 获取项目目录
@@ -195,8 +196,8 @@ class OpenCodeAdapter extends BaseAdapter {
      * 轮询一次：读取未处理的 tool 类型 part，转换并写入日志
      */
     async _pollOnce() {
-        this._ensurePrepared();
-        const db = this._getDb();
+        await this._ensurePrepared();
+        const db = await this._getDb();
         if (!db || !this._prepared.fetchToolParts) return;
 
         try {

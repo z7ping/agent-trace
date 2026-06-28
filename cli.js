@@ -383,9 +383,23 @@ async function cmdUninstall() {
         if (fs.existsSync(SETTINGS_FILE)) {
             const settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf-8'));
             if (settings.hooks) {
-                delete settings.hooks;
+                const agentBeatMarker = 'agent-beat';
+                function removeAgentBeatHooks(hookArray) {
+                    if (!Array.isArray(hookArray)) return [];
+                    return hookArray.filter(entry => {
+                        if (!entry || !entry.hooks) return true;
+                        return !entry.hooks.some(h => h.command && h.command.includes(agentBeatMarker));
+                    });
+                }
+                settings.hooks.PreToolUse = removeAgentBeatHooks(settings.hooks.PreToolUse);
+                settings.hooks.PostToolUse = removeAgentBeatHooks(settings.hooks.PostToolUse);
+                // Clean up empty hook arrays
+                if ((!settings.hooks.PreToolUse || settings.hooks.PreToolUse.length === 0) &&
+                    (!settings.hooks.PostToolUse || settings.hooks.PostToolUse.length === 0)) {
+                    delete settings.hooks;
+                }
                 fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
-                log('[OK] hooks 配置已移除', 'green');
+                log('[OK] agent-beat hooks 配置已移除', 'green');
             } else {
                 log('[SKIP] 未找到 hooks 配置', 'dim');
             }

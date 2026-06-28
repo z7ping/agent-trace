@@ -21,7 +21,7 @@ function main() {
     try {
         const chunks = [];
         process.stdin.on('data', (chunk) => chunks.push(chunk));
-        process.stdin.on('end', () => {
+        process.stdin.on('end', async () => {
             try {
                 const input = Buffer.concat(chunks).toString('utf-8');
                 if (!input.trim()) return;
@@ -29,9 +29,11 @@ function main() {
                 const data = JSON.parse(input);
 
                 if (Array.isArray(data)) {
-                    data.forEach(item => adapter.post(item));
+                    for (const item of data) {
+                        await adapter.post(item);
+                    }
                 } else {
-                    adapter.post(data);
+                    await adapter.post(data);
                 }
             } catch (e) {
                 // 记录错误日志

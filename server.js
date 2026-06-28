@@ -601,7 +601,7 @@ async function main() {
             }
 
             // 自动打开浏览器（仅前台模式或显式 --open）
-            if (shouldOpen || (!isDaemon && process.env.TRAKER_AUTO_OPEN !== '0')) {
+            if (shouldOpen || (!isDaemon && process.env.TRACKER_AUTO_OPEN !== '0')) {
                 const url = `http://localhost:${PORT}/`;
                 // 延迟 500ms 等服务器完全就绪
                 setTimeout(() => openBrowser(url), 500);
