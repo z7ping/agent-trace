@@ -300,6 +300,84 @@ class ClaudeCodeAdapter extends BaseAdapter {
     }
 
     /**
+     * 获取会话列表（从 JSONL 文件聚合）
+     * @param {Object} filter - 过滤条件
+     * @returns {Array} 会话摘要列表
+     */
+    async getSessions(filter = {}) {
+        const limit = Math.min(parseInt(filter.limit, 10) || 50, 200);
+        const logsDir = path.join(BASE_DIR, 'logs');
+
+        if (!fs.existsSync(logsDir)) return [];
+
+        // 按 session 聚合记录
+        const sessionMap = new Map();
+
+        const files = fs.readdirSync(logsDir).filter(f => f.endsWith('.jsonl'));
+        for (const file of files) {
+            try {
+                const content = fs.readFileSync(path.join(logsDir, file), 'utf-8');
+                const lines = content.split('\n').filter(l => l.trim());
+
+                for (const line of lines) {
+                    try {
+                        const record = JSON.parse(line);
+                        if (record.source !== 'claude-code') continue;
+                        if (!record.session_id) continue;
+
+                        // 过滤 project_key
+                        if (filter.project_key && record.project_key !== filter.project_key) continue;
+
+                        if (!sessionMap.has(record.session_id)) {
+                            sessionMap.set(record.session_id, {
+                                session_id: record.session_id,
+                                project_key: record.project_key || '',
+                                source: 'claude-code',
+                                calls: [],
+                                first_ts: record.ts,
+                                last_ts: record.ts,
+                            });
+                        }
+
+                        const session = sessionMap.get(record.session_id);
+                        session.calls.push(record);
+                        if (record.ts < session.first_ts) session.first_ts = record.ts;
+                        if (record.ts > session.last_ts) session.last_ts = record.ts;
+                    } catch (_) {}
+                }
+            } catch (_) {}
+        }
+
+        // 转换为统一格式
+        const sessions = [];
+        for (const [sessionId, data] of sessionMap) {
+            let totalDuration = 0;
+            let errorCount = 0;
+
+            for (const call of data.calls) {
+                totalDuration += call.duration_ms || 0;
+                if (!call.success) errorCount++;
+            }
+
+            sessions.push({
+                session_id: sessionId,
+                project_key: data.project_key,
+                source: 'claude-code',
+                start_time: data.firstTs || data.first_ts || '',
+                end_time: data.lastTs || data.last_ts || '',
+                tool_count: data.calls.length,
+                error_count: errorCount,
+                total_duration_ms: totalDuration,
+            });
+        }
+
+        // 按时间倒序排序
+        sessions.sort((a, b) => (b.start_time || '').localeCompare(a.start_time || ''));
+
+        return sessions.slice(0, limit);
+    }
+
+    /**
      * 停止轮询
      */
     stopPolling() {

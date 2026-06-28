@@ -89,12 +89,20 @@ async function fetchJsonlLogs(projectKey, sessionId) {
 
 /**
  * 获取仪表盘统计数据
+ * @param {string} project - 项目键
+ * @param {string} timeRange - 时间范围
+ * @param {string} source - 工具来源
  */
-export async function fetchStats(project, timeRange) {
+export async function fetchStats(project, timeRange, source) {
   try {
     const params = new URLSearchParams();
     if (project) params.set('project', project);
-    if (timeRange) params.set('since', timeRange);
+    if (source) params.set('source', source);
+    if (timeRange) {
+      // Convert time range to actual date string for SQL WHERE clause
+      const sinceDate = getTimeRangeDate(timeRange);
+      if (sinceDate) params.set('since', sinceDate);
+    }
     const url = `${CONFIG.API_BASE}/api/stats?${params}`;
     const res = await fetch(url);
     if (!res.ok) return null;
@@ -105,12 +113,39 @@ export async function fetchStats(project, timeRange) {
 }
 
 /**
- * 获取工具列表统计
+ * 将时间范围转换为日期字符串（YYYY-MM-DD）
  */
-export async function fetchTools(project) {
+function getTimeRangeDate(range) {
+  const now = new Date();
+  switch (range) {
+    case 'today':
+      return now.toISOString().slice(0, 10);
+    case 'week': {
+      const d = new Date(now);
+      d.setDate(d.getDate() - 7);
+      return d.toISOString().slice(0, 10);
+    }
+    case 'month': {
+      const d = new Date(now);
+      d.setMonth(d.getMonth() - 1);
+      return d.toISOString().slice(0, 10);
+    }
+    case 'all':
+    default:
+      return null;
+  }
+}
+
+/**
+ * 获取工具列表统计
+ * @param {string} project - 项目键
+ * @param {string} source - 工具来源
+ */
+export async function fetchTools(project, source) {
   try {
     const params = new URLSearchParams();
     if (project) params.set('project', project);
+    if (source) params.set('source', source);
     const url = `${CONFIG.API_BASE}/api/tools?${params}`;
     const res = await fetch(url);
     if (!res.ok) return [];

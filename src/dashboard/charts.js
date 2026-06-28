@@ -57,7 +57,8 @@ export function renderToolDistChart(canvasId, tools) {
   const top8 = sorted.slice(0, 8);
   const otherCount = sorted.slice(8).reduce((sum, t) => sum + (t.count || 0), 0);
 
-  const labels = top8.map(t => t.name);
+  // Support both {name, count} and {tool_name, count} formats
+  const labels = top8.map(t => t.name || t.tool_name || 'unknown');
   const data = top8.map(t => t.count || 0);
   if (otherCount > 0) {
     labels.push('其他');
@@ -65,7 +66,8 @@ export function renderToolDistChart(canvasId, tools) {
   }
 
   const colors = top8.map(t => {
-    const type = getToolType(t.name);
+    const toolName = t.name || t.tool_name || '';
+    const type = getToolType(toolName);
     const c = getToolColor(type);
     return getChartColors().text === '#a3a3a3' ? c.dark : c.light;
   });

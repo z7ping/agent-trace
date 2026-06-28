@@ -104,6 +104,11 @@ window.selectTool = function (tool) {
     tab.classList.toggle('active', tab.dataset.tool === tool);
   });
   loadCallChain();
+  // 如果仪表盘激活，也刷新仪表盘数据（传递 source 参数）
+  if (currentTab === 'dashboard') {
+    const source = tool === 'all' ? '' : tool;
+    loadDashboardData(currentProject, undefined, source);
+  }
 };
 
 // ─── 自动刷新 ───────────────────────────────────────

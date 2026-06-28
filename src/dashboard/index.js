@@ -8,6 +8,7 @@ import { renderToolDistChart, renderSkillFreqChart, renderTrendChart } from './c
 
 let currentTimeRange = 'week';
 let currentProject = '';
+let currentSource = '';
 
 /**
  * 初始化仪表盘
@@ -18,15 +19,19 @@ export function initDashboard() {
 
 /**
  * 加载仪表盘数据
+ * @param {string} project - 项目键
+ * @param {string} timeRange - 时间范围
+ * @param {string} source - 工具来源（如 'claude-code', 'hermes' 等）
  */
-export async function loadDashboardData(project, timeRange) {
+export async function loadDashboardData(project, timeRange, source) {
   try {
   if (project !== undefined) currentProject = project;
   if (timeRange) currentTimeRange = timeRange;
+  if (source !== undefined) currentSource = source;
 
   const [stats, tools, skills] = await Promise.all([
-    fetchStats(currentProject, currentTimeRange),
-    fetchTools(currentProject),
+    fetchStats(currentProject, currentTimeRange, currentSource),
+    fetchTools(currentProject, currentSource),
     fetchSkills(),
   ]);
 
@@ -78,11 +83,12 @@ function renderSessionReview(tools) {
 
   const sorted = [...tools].sort((a, b) => (b.count || 0) - (a.count || 0));
   container.innerHTML = sorted.slice(0, 8).map(tool => {
-    const type = getToolType(tool.name);
+    const toolName = tool.name || tool.tool_name || 'unknown';
+    const type = getToolType(toolName);
     const colors = CONFIG.TOOL_COLORS[type] || CONFIG.TOOL_COLORS.other;
     return `
       <div class="flex items-center justify-between py-1.5">
-        <span class="text-sm font-medium">${escapeHtml(tool.name)}</span>
+        <span class="text-sm font-medium">${escapeHtml(toolName)}</span>
         <span class="text-sm text-neutral-500">${tool.count || 0} 次</span>
       </div>
     `;
@@ -105,7 +111,7 @@ function renderErrorAnalysis(stats) {
   const sorted = [...errors].sort((a, b) => (b.error_count || b.errors || 0) - (a.error_count || a.errors || 0));
   container.innerHTML = sorted.slice(0, 5).map(err => `
     <div class="flex items-center justify-between py-1.5">
-      <span class="text-sm text-danger-500">${escapeHtml(err.name || err.tool || '未知')}</span>
+      <span class="text-sm text-danger-500">${escapeHtml(err.name || err.tool_name || err.tool || '未知')}</span>
       <span class="text-sm font-medium">${err.error_count || err.errors || 0} 次</span>
     </div>
   `).join('');

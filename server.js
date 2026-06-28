@@ -239,44 +239,52 @@ async function main() {
         res.end(JSON.stringify(data));
     }
 
-    function handleApiStats(req, res, params) {
-        const database = getDb();
-        if (!database) {
-            sendJson(res, { error: 'SQLite 数据库不可用' }, 503);
-            return;
-        }
-
+    async function handleApiStats(req, res, params) {
         try {
+            const { getAdapter } = require('./adapters');
             const source = params.get('source');
             const since = params.get('since');
+
+            // Hermes 直接查 state.db
+            if (source === 'hermes') {
+                const hermesAdapter = getAdapter('hermes');
+                if (hermesAdapter) {
+                    const stats = await hermesAdapter.getStats({ since });
+                    sendJson(res, stats);
+                    return;
+                }
+            }
+
+            // 其他来源或全部：查 a-beat.db
+            const database = getDb();
+            if (!database) {
+                sendJson(res, { error: 'SQLite 数据库不可用' }, 503);
+                return;
+            }
 
             let whereClause = 'WHERE 1=1';
             const queryParams = [];
             if (source) { whereClause += ' AND source = ?'; queryParams.push(source); }
             if (since) { whereClause += ' AND date >= ?'; queryParams.push(since); }
 
-            // 按工具聚合
             const byTool = database.prepare(`
                 SELECT tool_name, SUM(call_count) as count, SUM(error_count) as errors, AVG(avg_duration_ms) as avg_duration_ms
                 FROM daily_stats ${whereClause}
                 GROUP BY tool_name ORDER BY count DESC
             `).all(...queryParams);
 
-            // 按来源聚合
             const bySource = database.prepare(`
                 SELECT source, SUM(call_count) as count, SUM(error_count) as errors
                 FROM daily_stats ${whereClause}
                 GROUP BY source ORDER BY count DESC
             `).all(...queryParams);
 
-            // 按天趋势
             const byDay = database.prepare(`
                 SELECT date, SUM(call_count) as count, SUM(error_count) as errors
                 FROM daily_stats ${whereClause}
                 GROUP BY date ORDER BY date ASC
             `).all(...queryParams);
 
-            // 总体统计
             const totals = database.prepare(`
                 SELECT
                     SUM(call_count) as total_calls,
@@ -291,49 +299,99 @@ async function main() {
         }
     }
 
-    function handleApiTools(req, res, params) {
-        const database = getDb();
-        if (!database) {
-            sendJson(res, { error: 'SQLite 数据库不可用' }, 503);
-            return;
-        }
-
+    async function handleApiTools(req, res, params) {
         try {
-            const items = database.prepare(`
-                SELECT tool_name, SUM(call_count) as count, SUM(error_count) as errors
-                FROM daily_stats
-                GROUP BY tool_name ORDER BY count DESC
-            `).all();
+            const { getAdapter, getAllAdapters } = require('./adapters');
 
+            // 查所有适配器的工具统计，合并结果
+            const allAdapters = getAllAdapters();
+            const toolMap = new Map();
+
+            for (const [name, adapter] of allAdapters) {
+                if (adapter.getTools) {
+                    const tools = await adapter.getTools();
+                    for (const t of tools) {
+                        const key = t.tool_name;
+                        if (toolMap.has(key)) {
+                            const existing = toolMap.get(key);
+                            existing.count += t.count || 0;
+                            existing.errors += t.errors || 0;
+                        } else {
+                            toolMap.set(key, { tool_name: key, count: t.count || 0, errors: t.errors || 0 });
+                        }
+                    }
+                }
+            }
+
+            // 同时查 a-beat.db（Claude Code 等已同步的数据）
+            const database = getDb();
+            if (database) {
+                const dbTools = database.prepare(`
+                    SELECT tool_name, SUM(call_count) as count, SUM(error_count) as errors
+                    FROM daily_stats
+                    GROUP BY tool_name
+                `).all();
+                for (const t of dbTools) {
+                    const key = t.tool_name;
+                    if (toolMap.has(key)) {
+                        const existing = toolMap.get(key);
+                        existing.count += t.count || 0;
+                        existing.errors += t.errors || 0;
+                    } else {
+                        toolMap.set(key, { tool_name: key, count: t.count || 0, errors: t.errors || 0 });
+                    }
+                }
+            }
+
+            const items = Array.from(toolMap.values()).sort((a, b) => b.count - a.count);
             sendJson(res, { items });
         } catch (e) {
             sendJson(res, { error: e.message }, 500);
         }
     }
 
-    function handleApiSessions(req, res, params) {
-        const database = getDb();
-        if (!database) {
-            sendJson(res, { error: 'SQLite 数据库不可用' }, 503);
-            return;
-        }
-
+    async function handleApiSessions(req, res, params) {
         try {
+            const { getAdapter, getAllAdapters } = require('./adapters');
             const source = params.get('source');
             const project = params.get('project');
             const limit = Math.min(parseInt(params.get('limit') || '50', 10), 200);
 
-            let whereClause = 'WHERE 1=1';
-            const queryParams = [];
-            if (source) { whereClause += ' AND source = ?'; queryParams.push(source); }
-            if (project) { whereClause += ' AND project_key = ?'; queryParams.push(project); }
+            let allSessions = [];
 
-            const items = database.prepare(`
-                SELECT * FROM sessions ${whereClause}
-                ORDER BY start_time DESC LIMIT ?
-            `).all(...queryParams, limit);
+            // 从各适配器获取 sessions
+            const adapters = source ? { [source]: getAdapter(source) } : Object.fromEntries(getAllAdapters());
+            for (const [name, adapter] of Object.entries(adapters)) {
+                if (!adapter || !adapter.getSessions) continue;
+                const sessions = await adapter.getSessions({ project_key: project, limit });
+                allSessions.push(...sessions);
+            }
 
-            sendJson(res, { items });
+            // 同时查 a-beat.db
+            const database = getDb();
+            if (database) {
+                let whereClause = 'WHERE 1=1';
+                const queryParams = [];
+                if (source) { whereClause += ' AND source = ?'; queryParams.push(source); }
+                if (project) { whereClause += ' AND project_key = ?'; queryParams.push(project); }
+
+                const dbSessions = database.prepare(`
+                    SELECT * FROM sessions ${whereClause}
+                    ORDER BY start_time DESC LIMIT ?
+                `).all(...queryParams, limit * 2);
+                allSessions.push(...dbSessions);
+            }
+
+            // 去重（按 session_id）+ 排序 + 截断
+            const seen = new Set();
+            const unique = allSessions.filter(s => {
+                if (seen.has(s.session_id)) return false;
+                seen.add(s.session_id);
+                return true;
+            });
+            unique.sort((a, b) => (b.start_time || '').localeCompare(a.start_time || ''));
+
+            sendJson(res, { items: unique.slice(0, limit) });
         } catch (e) {
             sendJson(res, { error: e.message }, 500);
         }
@@ -342,7 +400,7 @@ async function main() {
     async function handleApiTimeline(req, res, params) {
         const project = params.get('project');
         const session = params.get('session');
-        const source = params.get('source') || 'hermes';
+        const source = params.get('source') || null;
         const limit = Math.min(parseInt(params.get('limit') || '1000', 10), 10000);
 
         try {
@@ -413,7 +471,7 @@ async function main() {
             };
             scanDir(claudeProjectsDir);
 
-            // 处理每个 JSONL 文件
+            // 处理每个 JSONL 文件 - 统计实际 Skill 工具调用次数
             const processedSessions = new Set();
             for (const filePath of jsonlFiles) {
                 try {
@@ -423,37 +481,40 @@ async function main() {
                     for (const line of lines) {
                         try {
                             const entry = JSON.parse(line);
+                            const sessionId = entry.sessionId;
 
-                            // 只处理 skill_listing 类型的 attachment
-                            if (entry.type === 'attachment' && 
-                                entry.attachment && 
-                                entry.attachment.type === 'skill_listing' &&
-                                entry.attachment.names &&
-                                Array.isArray(entry.attachment.names) &&
-                                entry.sessionId) {
-
-                                // 每个 session 只处理一次（取最新的 skill listing）
-                                if (processedSessions.has(entry.sessionId)) {
-                                    continue;
-                                }
-                                processedSessions.add(entry.sessionId);
-
-                                const sessionData = {
-                                    sessionId: entry.sessionId,
-                                    cwd: entry.cwd || '',
-                                    timestamp: entry.timestamp || '',
-                                    skillCount: entry.attachment.skillCount || entry.attachment.names.length,
-                                    skills: entry.attachment.names
-                                };
-                                sessions.push(sessionData);
-
-                                // 统计每个 skill 出现的 session 数量
-                                for (const skill of entry.attachment.names) {
-                                    if (!skillsSummary[skill]) {
-                                        skillsSummary[skill] = { count: 0, sessions: [] };
+                            // 统计 Skill 工具的实际调用
+                            // JSONL 格式: type="assistant", message.content 中的 tool_use
+                            if (entry.type === 'assistant' && entry.message?.content) {
+                                const contentArr = Array.isArray(entry.message.content) ? entry.message.content : [];
+                                for (const item of contentArr) {
+                                    if (item.type === 'tool_use' && item.name === 'Skill' && item.input?.skill) {
+                                        const skillName = item.input.skill;
+                                        if (!skillsSummary[skillName]) {
+                                            skillsSummary[skillName] = { count: 0, sessions: [] };
+                                        }
+                                        skillsSummary[skillName].count++;
+                                        if (sessionId && !skillsSummary[skillName].sessions.includes(sessionId)) {
+                                            skillsSummary[skillName].sessions.push(sessionId);
+                                        }
                                     }
-                                    skillsSummary[skill].count++;
-                                    skillsSummary[skill].sessions.push(entry.sessionId);
+                                }
+                            }
+
+                            // 同时保留 session 信息（用于 totalSessions 统计）
+                            if (entry.type === 'attachment' &&
+                                entry.attachment &&
+                                entry.attachment.type === 'skill_listing' &&
+                                entry.sessionId) {
+                                if (!processedSessions.has(entry.sessionId)) {
+                                    processedSessions.add(entry.sessionId);
+                                    sessions.push({
+                                        sessionId: entry.sessionId,
+                                        cwd: entry.cwd || '',
+                                        timestamp: entry.timestamp || '',
+                                        skillCount: entry.attachment.skillCount || entry.attachment.names?.length || 0,
+                                        skills: entry.attachment.names || []
+                                    });
                                 }
                             }
                         } catch (parseErr) {
@@ -594,7 +655,7 @@ async function main() {
             log(`  ⚠️ 数据库初始化失败: ${e.message}`, 'yellow');
         }
 
-        // 启动 Claude Code 适配器 JSONL 轮询
+        // 启动 Claude Code JSONL 轮询
         try {
             const { getAdapter } = require('./adapters');
             const ccAdapter = getAdapter('claude-code');

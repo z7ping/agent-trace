@@ -10,15 +10,10 @@ const BaseAdapter = require('./base');
 
 const HOME_DIR = require('os').homedir();
 const STATE_DB = path.join(HOME_DIR, '.hermes', 'state.db');
-// 可配置：轮询间隔（毫秒），默认 30 分钟
-const POLL_INTERVAL_MS = parseInt(process.env.HERMES_POLL_INTERVAL_MS, 10) || 30 * 60 * 1000;
-// 可配置：每次轮询最大处理条数，默认 100
-const POLL_BATCH_SIZE = parseInt(process.env.HERMES_POLL_BATCH_SIZE, 10) || 100;
 
 class HermesAdapter extends BaseAdapter {
     constructor() {
         super();
-        this._pollTimer = null;
         this._db = null;
         this._prepared = {};
     }
@@ -30,7 +25,7 @@ class HermesAdapter extends BaseAdapter {
     // ─── 数据库连接 ─────────────────────────────────────────
 
     /**
-     * 懒加载 SQLite 连接（只读）
+     * 懒加载 SQLite 连接（只读，不写入 Hermes 的数据库）
      * @returns {import('better-sqlite3').Database|null}
      */
     _getDb() {
@@ -38,7 +33,6 @@ class HermesAdapter extends BaseAdapter {
         if (!fs.existsSync(STATE_DB)) return null;
 
         try {
-            // 直接用 better-sqlite3 连接（只读），跳过 db.js 的 LazyDb
             const Database = require('better-sqlite3');
             this._db = new Database(STATE_DB, { readonly: true, fileMustExist: true });
             return this._db;
@@ -55,19 +49,6 @@ class HermesAdapter extends BaseAdapter {
         if (Object.keys(this._prepared).length > 0) return;
         const db = this._getDb();
         if (!db) return;
-
-        this._prepared.fetchToolMessages = db.prepare(`
-            SELECT m.*, s.cwd
-            FROM messages m
-            LEFT JOIN sessions s ON m.session_id = s.id
-            WHERE m.role = 'tool' AND m.observed = 0
-            ORDER BY m.id ASC
-            LIMIT ?
-        `);
-
-        this._prepared.markObserved = db.prepare(`
-            UPDATE messages SET observed = 1 WHERE id = ?
-        `);
 
         this._prepared.findAssistantByToolCallId = db.prepare(`
             SELECT m.id, m.timestamp, m.tool_calls
@@ -181,102 +162,6 @@ class HermesAdapter extends BaseAdapter {
         }
 
         return { success, error: errorMsg, exitCode };
-    }
-
-    /**
-     * 轮询一次：读取未处理的 tool 消息，聚合后写入 a-beat.db
-     */
-    async _pollOnce() {
-        this._ensurePrepared();
-        const db = this._getDb();
-        if (!db || !this._prepared.fetchToolMessages) return;
-
-        try {
-            const toolMessages = this._prepared.fetchToolMessages.all(POLL_BATCH_SIZE);
-            if (toolMessages.length === 0) return;
-
-            const abeatDb = require('../abeat-db');
-
-            // 按 session 分组
-            const bySession = new Map();
-            for (const msg of toolMessages) {
-                const sid = msg.session_id;
-                if (!bySession.has(sid)) bySession.set(sid, []);
-                bySession.get(sid).push(msg);
-            }
-
-            const observedIds = [];
-
-            for (const [sessionId, messages] of bySession) {
-                const cwd = messages[0].cwd || process.cwd();
-                const projectKey = this.getProjectKey(cwd);
-                const projectName = this.getProjectName(cwd);
-
-                this.updateProjectsFile(projectKey, cwd, projectName);
-
-                // 聚合 session 统计
-                let totalDuration = 0;
-                let errorCount = 0;
-                const toolCounts = {};
-                let firstTs = null;
-                let lastTs = null;
-
-                for (const msg of messages) {
-                    const record = this._buildRecord(msg, sessionId, projectKey, projectName, cwd);
-                    if (!record) {
-                        observedIds.push(msg.id);
-                        continue;
-                    }
-
-                    // 累加统计
-                    totalDuration += record.duration_ms || 0;
-                    if (!record.success) errorCount++;
-                    toolCounts[record.tool_name] = (toolCounts[record.tool_name] || 0) + 1;
-
-                    const ts = record.ts || record.timestamp;
-                    if (ts) {
-                        if (!firstTs || ts < firstTs) firstTs = ts;
-                        if (!lastTs || ts > lastTs) lastTs = ts;
-
-                        // 按天统计
-                        const date = ts.slice(0, 10);
-                        abeatDb.updateDailyStats(date, 'hermes', record.tool_name, 1, record.success ? 0 : 1, record.duration_ms || 0);
-
-                        // 错误记录
-                        if (!record.success && record.error) {
-                            abeatDb.saveError(ts, sessionId, 'hermes', record.tool_name, record.error);
-                        }
-                    }
-
-                    observedIds.push(msg.id);
-                }
-
-                // 写入 session 摘要（累加 total_duration_ms）
-                const existingDuration = abeatDb.getSessionDuration(sessionId);
-                abeatDb.upsertSession({
-                    session_id: sessionId,
-                    project_key: projectKey,
-                    source: 'hermes',
-                    start_time: firstTs || '',
-                    end_time: lastTs || '',
-                    tool_count: messages.length,
-                    error_count: errorCount,
-                    total_duration_ms: existingDuration + totalDuration,
-                });
-            }
-
-            // 批量标记为已处理
-            if (observedIds.length > 0) {
-                const markBatch = db.transaction((ids) => {
-                    for (const id of ids) {
-                        this._prepared.markObserved.run(id);
-                    }
-                });
-                markBatch(observedIds);
-            }
-        } catch (e) {
-            this.logError(e, 'hermes:poll');
-        }
     }
 
     /**
@@ -453,32 +338,151 @@ class HermesAdapter extends BaseAdapter {
         return items;
     }
 
-    // ─── 启动/停止轮询 ──────────────────────────────────────
+    // ─── 直接查询 state.db（供 API 使用）─────────────────────
 
     /**
-     * 启动轮询
-     * @param {number} intervalMs - 轮询间隔（毫秒），默认 5000
+     * 从 state.db 查询 session 列表
+     * @param {Object} filter
+     * @param {string} [filter.project_key]
+     * @param {number} [filter.limit=50]
+     * @returns {Array}
      */
-    startPolling(intervalMs = POLL_INTERVAL_MS) {
-        if (this._pollTimer) return;
+    async getSessions(filter = {}) {
+        const db = this._getDb();
+        if (!db) return [];
 
-        // 立即执行一次
-        this._pollOnce();
+        const limit = Math.min(parseInt(filter.limit, 10) || 50, 200);
 
-        this._pollTimer = setInterval(() => this._pollOnce(), intervalMs);
+        let sql = 'SELECT * FROM sessions';
+        const params = [];
+
+        if (filter.project_key) {
+            sql += ' WHERE cwd IS NOT NULL';
+            // 需要在应用层过滤 project_key（因为 state.db 没有 project_key 字段）
+        }
+
+        sql += ' ORDER BY started_at DESC LIMIT ?';
+        params.push(limit);
+
+        let sessions;
+        try {
+            sessions = db.prepare(sql).all(...params);
+        } catch (_) {
+            return [];
+        }
+
+        // 转换为统一格式
+        return sessions
+            .map(s => {
+                const cwd = s.cwd || '';
+                const projectKey = this.getProjectKey(cwd);
+                // 过滤 project_key
+                if (filter.project_key && projectKey !== filter.project_key) return null;
+                return {
+                    session_id: s.id,
+                    project_key: projectKey,
+                    source: this.name,
+                    start_time: s.started_at ? new Date(s.started_at * 1000).toISOString() : '',
+                    end_time: s.ended_at ? new Date(s.ended_at * 1000).toISOString() : '',
+                    tool_count: s.tool_call_count || 0,
+                    error_count: 0, // state.db 没有直接的错误计数
+                    total_duration_ms: 0,
+                };
+            })
+            .filter(Boolean)
+            .slice(0, limit);
     }
 
     /**
-     * 停止轮询并关闭数据库
+     * 从 state.db 聚合统计数据
+     * @param {Object} filter
+     * @param {string} [filter.since] - 日期字符串 YYYY-MM-DD
+     * @returns {Object} { totals, byTool, bySource, byDay }
      */
-    stopPolling() {
-        if (this._pollTimer) {
-            clearInterval(this._pollTimer);
-            this._pollTimer = null;
+    async getStats(filter = {}) {
+        const db = this._getDb();
+        if (!db) return { totals: { total_calls: 0, total_errors: 0, session_count: 0 }, byTool: [], bySource: [], byDay: [] };
+
+        try {
+            // 按工具聚合
+            let toolSql = `
+                SELECT tool_name, COUNT(*) as count,
+                       SUM(CASE WHEN content LIKE '%"exit_code":%' OR content LIKE '%"error"%' THEN 1 ELSE 0 END) as errors
+                FROM messages WHERE role = 'tool'
+            `;
+            const toolParams = [];
+            if (filter.since) {
+                toolSql += ' AND timestamp >= ?';
+                toolParams.push(new Date(filter.since).getTime() / 1000);
+            }
+            toolSql += ' GROUP BY tool_name ORDER BY count DESC';
+            const byTool = db.prepare(toolSql).all(...toolParams);
+
+            // 按天聚合
+            let daySql = `
+                SELECT date(timestamp, 'unixepoch', 'localtime') as date, COUNT(*) as count,
+                       SUM(CASE WHEN content LIKE '%"exit_code":%' OR content LIKE '%"error"%' THEN 1 ELSE 0 END) as errors
+                FROM messages WHERE role = 'tool'
+            `;
+            const dayParams = [];
+            if (filter.since) {
+                daySql += ' AND timestamp >= ?';
+                dayParams.push(new Date(filter.since).getTime() / 1000);
+            }
+            daySql += ' GROUP BY date ORDER BY date ASC';
+            const byDay = db.prepare(daySql).all(...dayParams);
+
+            // 总体统计
+            let totalSql = `
+                SELECT COUNT(*) as total_calls,
+                       SUM(CASE WHEN content LIKE '%"exit_code":%' OR content LIKE '%"error"%' THEN 1 ELSE 0 END) as total_errors
+                FROM messages WHERE role = 'tool'
+            `;
+            const totalParams = [];
+            if (filter.since) {
+                totalSql += ' AND timestamp >= ?';
+                totalParams.push(new Date(filter.since).getTime() / 1000);
+            }
+            const totals = db.prepare(totalSql).get(...totalParams);
+
+            // session 数量
+            let sessionSql = 'SELECT COUNT(*) as session_count FROM sessions';
+            const sessionParams = [];
+            if (filter.since) {
+                sessionSql += ' WHERE started_at >= ?';
+                sessionParams.push(new Date(filter.since).getTime() / 1000);
+            }
+            const sessionCount = db.prepare(sessionSql).get(...sessionParams);
+            totals.session_count = sessionCount.session_count;
+
+            return {
+                totals,
+                byTool,
+                bySource: [{ source: this.name, count: totals.total_calls, errors: totals.total_errors }],
+                byDay,
+            };
+        } catch (_) {
+            return { totals: { total_calls: 0, total_errors: 0, session_count: 0 }, byTool: [], bySource: [], byDay: [] };
         }
-        if (this._db) {
-            try { this._db.close(); } catch (_) {}
-            this._db = null;
+    }
+
+    /**
+     * 从 state.db 聚合工具使用统计
+     * @returns {Array} [{ tool_name, count, errors }]
+     */
+    async getTools() {
+        const db = this._getDb();
+        if (!db) return [];
+
+        try {
+            return db.prepare(`
+                SELECT tool_name, COUNT(*) as count,
+                       SUM(CASE WHEN content LIKE '%"exit_code":%' OR content LIKE '%"error"%' THEN 1 ELSE 0 END) as errors
+                FROM messages WHERE role = 'tool'
+                GROUP BY tool_name ORDER BY count DESC
+            `).all();
+        } catch (_) {
+            return [];
         }
     }
 
