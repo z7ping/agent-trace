@@ -129,7 +129,7 @@ function renderSession(session) {
   return `
     <div class="session-card${isActive ? ' active-session' : ''}">
       ${header}
-      <div class="session-body">
+      <div class="session-body hidden">
         ${calls}
       </div>
     </div>

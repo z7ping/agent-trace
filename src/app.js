@@ -78,6 +78,8 @@ window.switchTab = function (tab) {
   document.getElementById('tab-dashboard')?.classList.toggle('active', tab === 'dashboard');
   // 调用链操作区
   document.getElementById('callchainActions')?.classList.toggle('hidden', tab !== 'callchain');
+  // 工具 Tab：仪表盘时隐藏
+  document.querySelector('.fixed.top-\\[6rem\\]')?.classList.toggle('hidden', tab !== 'callchain');
   // 切换到仪表盘时加载数据
   if (tab === 'dashboard') {
     loadDashboardData(currentProject);
@@ -195,16 +197,15 @@ function updateStatusFromLogs(logs) {
   const errors = logs.filter(l => l.error || l.exit_code !== 0);
   const slow = logs.filter(l => l.duration_ms > CONFIG.SLOW_THRESHOLD);
 
-  const lastErr = document.getElementById('lastError');
-  const lastErrText = document.getElementById('lastErrorText');
-  if (errors.length > 0) {
+  // 错误计数 badge
+  const errCount = document.getElementById('lastErrorCount');
+  const errTooltip = document.getElementById('lastErrorTooltip');
+  if (errCount) errCount.textContent = errors.length;
+  if (errTooltip && errors.length > 0) {
     const latest = errors[errors.length - 1];
-    lastErr.style.display = 'inline';
-    lastErrText.style.display = 'none';
-    lastErr.textContent = latest.error || latest.tool_name || '未知错误';
-  } else {
-    lastErr.style.display = 'none';
-    lastErrText.style.display = 'inline';
+    const msg = latest.error || latest.tool_name || '未知错误';
+    errTooltip.title = `最近: ${msg}`;
+    errTooltip.classList.remove('hidden');
   }
 
   const slowCount = document.getElementById('slowCount');

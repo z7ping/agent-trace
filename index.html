@@ -6,7 +6,6 @@
   <title>🧠 Agent Beat</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
   <link rel="stylesheet" href="/src/style.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 </head>
 <body class="bg-gray-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 min-h-screen font-sans antialiased transition-colors duration-200">
 
@@ -92,7 +91,7 @@
           </span>
           <span id="hookStatusText">检测中...</span>
           <span class="text-neutral-300 dark:text-neutral-700">·</span>
-          <span>错误: <span id="lastError" class="text-danger-500" style="display:none">—</span><span id="lastErrorText" class="text-neutral-400">无</span></span>
+          <span>错误: <span id="lastErrorCount" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-bold bg-danger-100 text-danger-700 dark:bg-danger-900/30 dark:text-danger-400">0</span><span id="lastErrorTooltip" class="hidden" title=""></span></span>
           <span class="text-neutral-300 dark:text-neutral-700">·</span>
           <span>慢: <span id="slowCount" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-bold bg-warning-100 text-warning-700 dark:bg-warning-900/30 dark:text-warning-400">0</span></span>
           <!-- 展开/折叠 + 排序 -->
