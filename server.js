@@ -38,8 +38,11 @@ const shouldStatus = flags.includes('--status');
 
 // 端口：第一个非 flag 参数，或环境变量，或默认 37215
 const PORT = parseInt(positional[0], 10) || parseInt(process.env.TRACKER_PORT, 10) || require('./config').DEFAULT_PORT;
-const DIR = __dirname;
-const PID_FILE = path.join(DIR, '.server.pid');
+const ROOT = __dirname;
+const DIR = fs.existsSync(path.join(ROOT, 'dist'))
+    ? path.join(ROOT, 'dist')
+    : ROOT;
+const PID_FILE = path.join(ROOT, '.server.pid');
 
 // ─── 彩色输出 ────────────────────────────────────────────────
 
@@ -213,7 +216,7 @@ async function main() {
     // ─── SQLite 数据库 ──────────────────────────────────────────
 
     const { openDb, getAvailableBackend } = require('./db');
-    const DB_FILE = path.join(DIR, 'tracker.db');
+    const DB_FILE = path.join(ROOT, 'tracker.db');
     let db = null;
 
     function getDb() {
@@ -611,9 +614,24 @@ async function main() {
         fs.readFile(filePath, (err, content) => {
             if (err) {
                 if (err.code === 'ENOENT') {
-                    res.writeHead(404, { 'Content-Type': 'text/plain' });
-                    res.end('404 Not Found');
-                    log(`  404 ${req.method} ${urlPath}`, 'red');
+                    // 回退到项目根目录（logs/、states/、projects.json 等数据文件）
+                    const rootPath = path.resolve(path.join(ROOT, urlPath));
+                    if (rootPath.startsWith(path.resolve(ROOT))) {
+                        fs.readFile(rootPath, (err2, content2) => {
+                            if (err2) {
+                                res.writeHead(404, { 'Content-Type': 'text/plain' });
+                                res.end('404 Not Found');
+                                log(`  404 ${req.method} ${urlPath}`, 'red');
+                            } else {
+                                res.writeHead(200, { 'Content-Type': contentType });
+                                res.end(content2);
+                                log(`  200 ${req.method} ${urlPath}`, 'green');
+                            }
+                        });
+                    } else {
+                        res.writeHead(404, { 'Content-Type': 'text/plain' });
+                        res.end('404 Not Found');
+                    }
                 } else {
                     res.writeHead(500, { 'Content-Type': 'text/plain' });
                     res.end('500 Internal Server Error');

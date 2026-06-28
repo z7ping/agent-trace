@@ -1,7 +1,6 @@
 {
   "name": "agent-beat",
   "version": "1.8.1",
-  "type": "module",
   "description": "实时记录并可视化 Claude Code 的每次工具调用，按会话分组展示，方便调试和回溯。",
   "main": "install-hooks.js",
   "bin": {
