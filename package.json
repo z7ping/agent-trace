@@ -1,13 +1,13 @@
 {
   "name": "agent-beat",
   "version": "1.8.1",
-  "description": "实时记录并可视化 Claude Code 的每次工具调用，按会话分组展示，方便调试和回溯。",
-  "main": "install-hooks.js",
+  "description": "实时监控和可视化 Claude Code、Hermes、Codex、OpenCode 等 AI 编码工具的调用记录，多工具统一追踪，按会话分组展示。",
+  "main": "cli.js",
   "bin": {
     "agent-beat": "./cli.js"
   },
   "scripts": {
-    "dev": "node server.js 37215 & vite --port 5173",
+    "dev": "concurrently -k \"node server.js 37215\" \"vite --port 5173\"",
     "dev:frontend": "vite --port 5173",
     "dev:backend": "node server.js 37215",
     "build": "vite build",
@@ -24,6 +24,7 @@
     "cli.js",
     "db.js",
     "config.js",
+    "abeat-db.js",
     "install-hooks.js",
     "hooks/",
     "adapters/",
@@ -33,13 +34,17 @@
     "type": "git",
     "url": "https://gitea.7ping.site/ai-area/agent-beat.git"
   },
-  "keywords": [],
+  "keywords": ["claude-code", "ai-tools", "monitoring", "visualization", "agent"],
   "author": "",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "license": "ISC",
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.16",
     "autoprefixer": "^10.4.21",
     "chart.js": "^4.5.1",
+    "concurrently": "^9.1.2",
     "postcss": "^8.5.4",
     "tailwindcss": "^3.4.17",
     "vite": "^6.3.5"

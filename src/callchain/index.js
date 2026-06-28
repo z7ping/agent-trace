@@ -132,7 +132,7 @@ function renderSession(session) {
         <span class="text-xs text-neutral-400">${timeRange}</span>
       </div>
       <div class="flex items-center gap-3 text-xs text-neutral-500">
-        <span>📋 ${session.calls.length}</span>
+        <span>📋 ${toolCount}</span>
         <span class="text-success-600 dark:text-success-400">✅ ${okCount}</span>
         ${hasError ? `<span class="text-danger-500">❌ ${session.errors}</span>` : ''}
         <span class="text-neutral-400">⚡ ${formatDuration(avgDur)}</span>

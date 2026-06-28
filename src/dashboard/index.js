@@ -24,12 +24,13 @@ export async function loadDashboardData(project, timeRange) {
   if (project !== undefined) currentProject = project;
   if (timeRange) currentTimeRange = timeRange;
 
-  const [stats, tools] = await Promise.all([
+  const [stats, tools, skills] = await Promise.all([
     fetchStats(currentProject, currentTimeRange),
     fetchTools(currentProject),
+    fetchSkills(),
   ]);
 
-  console.log('[Dashboard] stats:', !!stats, 'tools:', tools?.length);
+  console.log('[Dashboard] stats:', !!stats, 'tools:', tools?.length, 'skills:', skills?.totalUniqueSkills);
 
   // 核心指标（兼容新旧格式）
   if (stats) {
@@ -44,6 +45,7 @@ export async function loadDashboardData(project, timeRange) {
 
   // 图表
   renderToolDistChart('toolDistChart', tools);
+  renderSkillFreqChart('skillFreqChart', skills?.skillsSummary ? Object.entries(skills.skillsSummary).map(([name, v]) => ({ name, count: v.count })) : []);
   renderTrendChart('trendChart', stats?.byDay || []);
 
   // 会话回顾
