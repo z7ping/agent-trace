@@ -6,12 +6,30 @@ import { getToolType, getToolColor, formatDuration, formatTime, escapeHtml, trun
 import { extractSessions } from '../utils.js';
 
 /** 渲染调用链 */
-export function renderCallChain(logs) {
+export function renderCallChain(data) {
   const container = document.getElementById('sessionContainer');
   const emptyState = document.getElementById('emptyState');
   if (!container) return;
 
-  const sessions = extractSessions(logs);
+  // 兼容两种格式：原始 log 条目 or session 摘要
+  let sessions;
+  if (data.length > 0 && data[0].session_id && data[0].tool_count !== undefined) {
+    // 已经是 session 摘要格式
+    sessions = data.map(s => ({
+      id: s.session_id,
+      project: s.project_key || '',
+      source: s.source || '',
+      startTime: s.start_time,
+      endTime: s.end_time,
+      calls: [],
+      tools: new Set(),
+      errors: s.error_count || 0,
+      totalDuration: s.total_duration_ms || 0,
+      toolCount: s.tool_count || 0,
+    }));
+  } else {
+    sessions = extractSessions(data);
+  }
 
   if (sessions.length === 0) {
     container.innerHTML = '';
@@ -94,14 +112,14 @@ function buildTree(calls) {
 
 /** 渲染单个会话卡片 */
 function renderSession(session) {
-  const toolCount = session.tools.size;
+  const toolCount = session.toolCount || session.tools?.size || 0;
   const duration = formatDuration(session.totalDuration);
   const timeRange = formatTimeRange(session.startTime, session.endTime);
   const hasError = session.errors > 0;
-  const okCount = session.calls.length - session.errors;
+  const okCount = (session.toolCount || session.calls?.length || 0) - session.errors;
   const isActive = (Date.now() - new Date(session.endTime).getTime()) < 5 * 60 * 1000;
   const color = hashColor(session.id);
-  const avgDur = session.calls.length > 0 ? session.totalDuration / session.calls.length : 0;
+  const avgDur = (session.toolCount || session.calls?.length || 0) > 0 ? session.totalDuration / (session.toolCount || session.calls.length) : 0;
 
   const header = `
     <div class="session-header" onclick="toggleSession(this)">

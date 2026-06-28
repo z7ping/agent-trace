@@ -142,22 +142,25 @@ window.toggleSort = function () {
 
 // ─── 加载调用链 ─────────────────────────────────────
 async function loadCallChain() {
-  const projects = await fetchProjects();
-  const projectKeys = currentProject ? [currentProject] : Object.keys(projects);
-  const allLogs = [];
+  try {
+    const params = new URLSearchParams();
+    if (currentTool !== 'all') params.set('source', currentTool);
+    if (currentProject) params.set('project', currentProject);
+    params.set('limit', '100');
 
-  for (const key of projectKeys) {
-    const logs = await fetchSessionLogs(key);
-    allLogs.push(...logs);
+    const res = await fetch(`${CONFIG.API_BASE}/api/sessions?${params}`);
+    if (!res.ok) {
+      renderCallChain([]);
+      return;
+    }
+    const data = await res.json();
+    const sessions = data.items || [];
+
+    renderCallChain(sessions);
+    updateStatusFromSessions(sessions);
+  } catch {
+    renderCallChain([]);
   }
-
-  // 按工具 Tab 过滤
-  const filtered = currentTool === 'all'
-    ? allLogs
-    : allLogs.filter(log => log.source === currentTool);
-
-  renderCallChain(filtered);
-  updateStatusFromLogs(filtered);
 }
 
 // ─── 工具类型过滤 ───────────────────────────────────
@@ -191,6 +194,21 @@ async function checkStatus() {
   if (text) {
     text.textContent = ok ? '在线' : '离线';
   }
+}
+
+function updateStatusFromSessions(sessions) {
+  let errorCount = 0;
+  let slowCount = 0;
+  for (const s of sessions) {
+    errorCount += s.error_count || 0;
+    if ((s.total_duration_ms || 0) > 5000) slowCount++;
+  }
+
+  const errCount = document.getElementById('lastErrorCount');
+  if (errCount) errCount.textContent = errorCount;
+
+  const slowEl = document.getElementById('slowCount');
+  if (slowEl) slowEl.textContent = slowCount;
 }
 
 function updateStatusFromLogs(logs) {
