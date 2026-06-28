@@ -420,8 +420,14 @@ async function main() {
                 }
             }
 
-            // 按时间倒序，取最近的 limit 条
-            items.sort((a, b) => (b.ts || b.timestamp || '').localeCompare(a.ts || a.timestamp || ''));
+            // 按 seq 升序排列（树结构需要父节点在子节点之前）
+            // 如果有 seq 字段则按 seq 排序，否则按时间倒序
+            const hasSeq = items.length > 0 && items.some(i => i.seq != null);
+            if (hasSeq) {
+                items.sort((a, b) => (a.seq || 0) - (b.seq || 0));
+            } else {
+                items.sort((a, b) => (b.ts || b.timestamp || '').localeCompare(a.ts || a.timestamp || ''));
+            }
             sendJson(res, { items: items.slice(0, limit) });
         } catch (e) {
             sendJson(res, { error: e.message }, 500);

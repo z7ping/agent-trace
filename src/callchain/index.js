@@ -101,14 +101,25 @@ function formatTimeRange(start, end) {
 
 /** 构建树形结构 */
 function buildTree(calls) {
-  // 按 seq 建索引
+  if (!calls || calls.length === 0) return [];
+
+  // 按 seq 升序排序（API 可能返回倒序），无 seq 的放最后保持原序
+  const sorted = [...calls].sort((a, b) => {
+    if (a.seq == null && b.seq == null) return 0;
+    if (a.seq == null) return 1;
+    if (b.seq == null) return -1;
+    return a.seq - b.seq;
+  });
+
+  // 按 seq 建索引（用排序后的引用）
   const seqMap = new Map();
-  for (const c of calls) {
+  for (const c of sorted) {
     if (c.seq != null) seqMap.set(c.seq, { ...c, children: [] });
   }
-  // 建立父子关系
+
+  // 按 seq 升序遍历建立父子关系（父节点一定先于子节点被处理）
   const roots = [];
-  for (const c of calls) {
+  for (const c of sorted) {
     const node = c.seq != null ? seqMap.get(c.seq) : null;
     if (!node) { roots.push({ ...c, children: [], _depth: 0 }); continue; }
     const parent = c.parent_seq != null ? seqMap.get(c.parent_seq) : null;
@@ -120,6 +131,7 @@ function buildTree(calls) {
       roots.push(node);
     }
   }
+
   // 扁平化（保留树序）
   const flat = [];
   function walk(nodes) {
@@ -129,6 +141,7 @@ function buildTree(calls) {
     }
   }
   walk(roots);
+
   // 如果树构建失败（无 seq），回退到原始顺序
   if (flat.length !== calls.length) {
     return calls.map(c => ({ ...c, children: [], _depth: 0 }));
