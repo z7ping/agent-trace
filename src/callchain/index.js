@@ -104,9 +104,9 @@ function renderSession(session) {
   const avgDur = session.calls.length > 0 ? session.totalDuration / session.calls.length : 0;
 
   const header = `
-    <div class="session-header" onclick="this.parentElement.querySelector('.session-body').classList.toggle('hidden')">
+    <div class="session-header" onclick="toggleSession(this)">
       <div class="flex items-center gap-2">
-        <svg class="w-3 h-3 text-neutral-400 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg class="session-arrow w-3 h-3 text-neutral-400 transition-transform duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M9 18l6-6-6-6"/>
         </svg>
         <span class="session-id font-mono text-xs font-semibold" style="color:${color}" title="会话ID: ${escapeHtml(session.id)}">${escapeHtml(shortId(session.id))}</span>

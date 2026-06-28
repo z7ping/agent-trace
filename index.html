@@ -85,18 +85,28 @@
 
     <!-- ── 调用链 Tab ── -->
     <section id="tab-callchain" class="tab-panel active">
-      <!-- 状态栏 -->
+      <!-- 状态栏 + 操作 -->
       <div class="border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
         <div class="max-w-screen-2xl mx-auto px-4 py-2 flex items-center gap-4 text-xs text-neutral-500">
+          <!-- LIVE 状态 -->
+          <button id="liveToggle" class="flex items-center gap-1.5 px-2 py-1 rounded-md bg-success-50 dark:bg-success-500/10 text-success-600 dark:text-success-400 font-medium cursor-pointer hover:bg-success-100 dark:hover:bg-success-500/20 transition-colors" onclick="toggleAutoRefresh()">
+            <span class="w-2 h-2 rounded-full bg-success-500 animate-pulse" id="liveDot"></span>
+            <span id="liveText">LIVE</span>
+          </button>
+          <span class="text-neutral-300 dark:text-neutral-700">·</span>
           <span class="flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-success-500" id="hookStatusDot"></span>
-            <span>Hook 状态</span>
+            <span class="w-2 h-2 rounded-full" id="hookStatusDot"></span>
+            <span>Hook</span>
           </span>
           <span id="hookStatusText">检测中...</span>
           <span class="text-neutral-300 dark:text-neutral-700">·</span>
-          <span>最近错误: <span id="lastError" class="text-danger-500" style="display:none">—</span><span id="lastErrorText" class="text-neutral-400">无</span></span>
+          <span>错误: <span id="lastError" class="text-danger-500" style="display:none">—</span><span id="lastErrorText" class="text-neutral-400">无</span></span>
           <span class="text-neutral-300 dark:text-neutral-700">·</span>
-          <span>慢调用: <span id="slowCount" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-warning-100 text-warning-700 dark:bg-warning-900/30 dark:text-warning-400">0</span></span>
+          <span>慢: <span id="slowCount" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-warning-100 text-warning-700 dark:bg-warning-900/30 dark:text-warning-400">0</span></span>
+          <!-- 展开/折叠全部 -->
+          <div class="ml-auto">
+            <button id="expandAllBtn" class="text-xs px-2.5 py-1 rounded-md border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors" onclick="toggleAllSessions()">展开全部</button>
+          </div>
         </div>
       </div>
 

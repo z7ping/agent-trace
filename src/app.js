@@ -112,11 +112,19 @@ function stopAutoRefresh() {
 
 window.toggleAutoRefresh = function () {
   autoRefresh = !autoRefresh;
-  const btn = document.getElementById('autoRefreshBtn');
-  if (btn) {
-    btn.innerHTML = autoRefresh
-      ? '<span class="text-success-500">●</span> 自动'
-      : '<span class="text-neutral-400">○</span> 暂停';
+  const liveDot = document.getElementById('liveDot');
+  const liveText = document.getElementById('liveText');
+  const liveToggle = document.getElementById('liveToggle');
+  if (liveDot) {
+    liveDot.className = autoRefresh
+      ? 'w-2 h-2 rounded-full bg-success-500 animate-pulse'
+      : 'w-2 h-2 rounded-full bg-neutral-400';
+  }
+  if (liveText) liveText.textContent = autoRefresh ? 'LIVE' : 'PAUSED';
+  if (liveToggle) {
+    liveToggle.className = autoRefresh
+      ? 'flex items-center gap-1.5 px-2 py-1 rounded-md bg-success-50 dark:bg-success-500/10 text-success-600 dark:text-success-400 font-medium cursor-pointer hover:bg-success-100 dark:hover:bg-success-500/20 transition-colors'
+      : 'flex items-center gap-1.5 px-2 py-1 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-500 font-medium cursor-pointer hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors';
   }
   autoRefresh ? startAutoRefresh() : stopAutoRefresh();
 };
@@ -209,4 +217,33 @@ window.setTimeRange = function (range) {
     btn.classList.toggle('active', btn.dataset.range === range);
   });
   loadDashboardData(currentProject, range);
+};
+
+// ─── 会话展开/折叠 ─────────────────────────────────
+window.toggleSession = function (header) {
+  const body = header.parentElement.querySelector('.session-body');
+  const arrow = header.querySelector('.session-arrow');
+  if (body) {
+    body.classList.toggle('hidden');
+    if (arrow) {
+      arrow.style.transform = body.classList.contains('hidden') ? '' : 'rotate(90deg)';
+    }
+  }
+};
+
+window.toggleAllSessions = function () {
+  const bodies = document.querySelectorAll('.session-body');
+  const arrows = document.querySelectorAll('.session-arrow');
+  // 判断当前状态：如果全部隐藏则展开，否则全部折叠
+  const allHidden = Array.from(bodies).every(b => b.classList.contains('hidden'));
+  bodies.forEach(b => {
+    if (allHidden) b.classList.remove('hidden');
+    else b.classList.add('hidden');
+  });
+  arrows.forEach(a => {
+    a.style.transform = allHidden ? 'rotate(90deg)' : '';
+  });
+  // 更新按钮文字
+  const btn = document.getElementById('expandAllBtn');
+  if (btn) btn.textContent = allHidden ? '折叠全部' : '展开全部';
 };
