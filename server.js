@@ -247,56 +247,45 @@ async function main() {
         }
 
         try {
-            const project = params.get('project');
+            const source = params.get('source');
             const since = params.get('since');
 
-            let whereClause = '';
+            let whereClause = 'WHERE 1=1';
             const queryParams = [];
-
-            if (project) {
-                whereClause = 'WHERE project_key = ?';
-                queryParams.push(project);
-            }
-
-            if (since) {
-                whereClause += whereClause ? ' AND' : 'WHERE';
-                whereClause += ' ts >= ?';
-                queryParams.push(since);
-            }
+            if (source) { whereClause += ' AND source = ?'; queryParams.push(source); }
+            if (since) { whereClause += ' AND date >= ?'; queryParams.push(since); }
 
             // 按工具聚合
             const byTool = database.prepare(`
-                SELECT tool_name, COUNT(*) as count, 
-                       SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END) as success_count,
-                       AVG(duration_ms) as avg_duration_ms
-                FROM tool_calls ${whereClause}
-                GROUP BY tool_name
-                ORDER BY count DESC
+                SELECT tool_name, SUM(call_count) as count, SUM(error_count) as errors, AVG(avg_duration_ms) as avg_duration_ms
+                FROM daily_stats ${whereClause}
+                GROUP BY tool_name ORDER BY count DESC
             `).all(...queryParams);
 
-            // 按项目聚合
-            const byProject = database.prepare(`
-                SELECT project_key, COUNT(*) as count,
-                       MIN(ts) as first_seen, MAX(ts) as last_seen
-                FROM tool_calls ${whereClause}
-                GROUP BY project_key
-                ORDER BY count DESC
+            // 按来源聚合
+            const bySource = database.prepare(`
+                SELECT source, SUM(call_count) as count, SUM(error_count) as errors
+                FROM daily_stats ${whereClause}
+                GROUP BY source ORDER BY count DESC
+            `).all(...queryParams);
+
+            // 按天趋势
+            const byDay = database.prepare(`
+                SELECT date, SUM(call_count) as count, SUM(error_count) as errors
+                FROM daily_stats ${whereClause}
+                GROUP BY date ORDER BY date ASC
             `).all(...queryParams);
 
             // 总体统计
             const totals = database.prepare(`
-                SELECT COUNT(*) as total_calls,
-                       SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END) as success_calls,
-                       COUNT(DISTINCT session_id) as session_count,
-                       COUNT(DISTINCT project_key) as project_count
-                FROM tool_calls ${whereClause}
+                SELECT
+                    SUM(call_count) as total_calls,
+                    SUM(error_count) as total_errors,
+                    (SELECT COUNT(*) FROM sessions) as session_count
+                FROM daily_stats ${whereClause}
             `).get(...queryParams);
 
-            sendJson(res, {
-                totals,
-                byTool,
-                byProject,
-            });
+            sendJson(res, { totals, byTool, bySource, byDay });
         } catch (e) {
             sendJson(res, { error: e.message }, 500);
         }
@@ -310,48 +299,13 @@ async function main() {
         }
 
         try {
-            const page = parseInt(params.get('page') || '1', 10);
-            const limit = Math.min(parseInt(params.get('limit') || '50', 10), 200);
-            const offset = (page - 1) * limit;
-            const project = params.get('project');
-            const tool = params.get('tool');
-            const session = params.get('session');
-
-            let whereClause = 'WHERE 1=1';
-            const queryParams = [];
-
-            if (project) {
-                whereClause += ' AND project_key = ?';
-                queryParams.push(project);
-            }
-            if (tool) {
-                whereClause += ' AND tool_name = ?';
-                queryParams.push(tool);
-            }
-            if (session) {
-                whereClause += ' AND session_id = ?';
-                queryParams.push(session);
-            }
-
-            const total = database.prepare(`
-                SELECT COUNT(*) as count FROM tool_calls ${whereClause}
-            `).get(...queryParams).count;
-
             const items = database.prepare(`
-                SELECT * FROM tool_calls ${whereClause}
-                ORDER BY ts DESC
-                LIMIT ? OFFSET ?
-            `).all(...queryParams, limit, offset);
+                SELECT tool_name, SUM(call_count) as count, SUM(error_count) as errors
+                FROM daily_stats
+                GROUP BY tool_name ORDER BY count DESC
+            `).all();
 
-            sendJson(res, {
-                items,
-                pagination: {
-                    page,
-                    limit,
-                    total,
-                    pages: Math.ceil(total / limit),
-                },
-            });
+            sendJson(res, { items });
         } catch (e) {
             sendJson(res, { error: e.message }, 500);
         }
@@ -365,81 +319,30 @@ async function main() {
         }
 
         try {
+            const source = params.get('source');
             const project = params.get('project');
-            const page = parseInt(params.get('page') || '1', 10);
             const limit = Math.min(parseInt(params.get('limit') || '50', 10), 200);
-            const offset = (page - 1) * limit;
 
             let whereClause = 'WHERE 1=1';
             const queryParams = [];
-
-            if (project) {
-                whereClause += ' AND s.project_key = ?';
-                queryParams.push(project);
-            }
-
-            const total = database.prepare(`
-                SELECT COUNT(*) as count FROM sessions s ${whereClause}
-            `).get(...queryParams).count;
+            if (source) { whereClause += ' AND source = ?'; queryParams.push(source); }
+            if (project) { whereClause += ' AND project_key = ?'; queryParams.push(project); }
 
             const items = database.prepare(`
-                SELECT s.*, p.name as project_name
-                FROM sessions s
-                LEFT JOIN projects p ON s.project_key = p.project_key
-                ${whereClause}
-                ORDER BY s.start_time DESC
-                LIMIT ? OFFSET ?
-            `).all(...queryParams, limit, offset);
-
-            sendJson(res, {
-                items,
-                pagination: {
-                    page,
-                    limit,
-                    total,
-                    pages: Math.ceil(total / limit),
-                },
-            });
-        } catch (e) {
-            sendJson(res, { error: e.message }, 500);
-        }
-    }
-
-    function handleApiTimeline(req, res, params) {
-        const database = getDb();
-        if (!database) {
-            sendJson(res, { error: 'SQLite 数据库不可用' }, 503);
-            return;
-        }
-
-        try {
-            const project = params.get('project');
-            const session = params.get('session');
-            const limit = Math.min(parseInt(params.get('limit') || '100', 10), 500);
-
-            let whereClause = 'WHERE 1=1';
-            const queryParams = [];
-
-            if (project) {
-                whereClause += ' AND project_key = ?';
-                queryParams.push(project);
-            }
-            if (session) {
-                whereClause += ' AND session_id = ?';
-                queryParams.push(session);
-            }
-
-            const items = database.prepare(`
-                SELECT ts, session_id, project_key, tool_name, source, input_summary, success, duration_ms, seq, parent_seq, error
-                FROM tool_calls ${whereClause}
-                ORDER BY ts DESC
-                LIMIT ?
+                SELECT * FROM sessions ${whereClause}
+                ORDER BY start_time DESC LIMIT ?
             `).all(...queryParams, limit);
 
             sendJson(res, { items });
         } catch (e) {
             sendJson(res, { error: e.message }, 500);
         }
+    }
+
+    function handleApiTimeline(req, res, params) {
+        // 原始调用链数据现在由适配器直接查各自的数据源 DB
+        // 此端点暂返回空，待前端适配后由适配器提供
+        sendJson(res, { items: [] });
     }
 
     // ─── Skills API ───────────────────────────────────────────
