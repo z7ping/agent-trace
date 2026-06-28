@@ -195,20 +195,71 @@ function renderSession(session) {
   `;
 }
 
-/** JSON 语法高亮（轻量版，仅添加 span class） */
+/** JSON 语法高亮（逐字符 token 化，避免正则误匹配） */
 function highlightJson(json) {
-  const escaped = escapeHtml(json);
-  return escaped
-    // 字符串值（冒号后面的字符串）
-    .replace(/(&quot;[^&]*?&quot;)\s*:/g, '<span class="jk">$1</span>:')
-    // 剩余字符串值
-    .replace(/:\s*(&quot;[^&]*?&quot;)/g, ': <span class="js">$1</span>')
-    // 数组中的字符串
-    .replace(/(?<=[\[,]\s*)(&quot;[^&]*?&quot;)/g, '<span class="js">$1</span>')
+  const out = [];
+  let i = 0;
+  const len = json.length;
+
+  while (i < len) {
+    const ch = json[i];
+
+    // 字符串
+    if (ch === '"') {
+      let j = i + 1;
+      while (j < len && json[j] !== '"') {
+        if (json[j] === '\\') j++;
+        j++;
+      }
+      j++;
+      const raw = json.slice(i, j);
+      const escaped = escapeHtml(raw);
+      // 后面紧跟 `:` 的是 key
+      let k = j;
+      while (k < len && json[k] === ' ') k++;
+      if (json[k] === ':') {
+        out.push(`<span class="jk">${escaped}</span>`);
+      } else {
+        out.push(`<span class="js">${escaped}</span>`);
+      }
+      i = j;
+      continue;
+    }
+
     // 数字
-    .replace(/:\s*(-?\d+\.?\d*)/g, ': <span class="jn">$1</span>')
-    // 布尔值
-    .replace(/:\s*(true|false|null)/g, ': <span class="jb">$1</span>');
+    if (ch === '-' || (ch >= '0' && ch <= '9')) {
+      let j = i;
+      if (json[j] === '-') j++;
+      while (j < len && json[j] >= '0' && json[j] <= '9') j++;
+      if (j < len && json[j] === '.') {
+        j++;
+        while (j < len && json[j] >= '0' && json[j] <= '9') j++;
+      }
+      out.push(`<span class="jn">${escapeHtml(json.slice(i, j))}</span>`);
+      i = j;
+      continue;
+    }
+
+    // 布尔/null
+    if (json.slice(i, i + 4) === 'true') {
+      out.push('<span class="jb">true</span>');
+      i += 4; continue;
+    }
+    if (json.slice(i, i + 5) === 'false') {
+      out.push('<span class="jb">false</span>');
+      i += 5; continue;
+    }
+    if (json.slice(i, i + 4) === 'null') {
+      out.push('<span class="jb">null</span>');
+      i += 4; continue;
+    }
+
+    // 其他字符
+    out.push(escapeHtml(ch));
+    i++;
+  }
+
+  return out.join('');
 }
 
 /** 渲染单个调用行 */
