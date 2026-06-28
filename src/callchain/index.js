@@ -145,10 +145,13 @@ function renderSession(session) {
   const calls = tree.map((call, i) => renderCall(call, i, session.project)).join('');
 
   return `
-    <div class="session-card${isActive ? ' active-session' : ''}" onclick="toggleSession(this)">
+    <div class="session-card${isActive ? ' active-session' : ''}"
+         data-session-id="${escapeHtml(session.id)}"
+         data-source="${escapeHtml(session.source)}"
+         onclick="toggleSession(this)">
       ${header}
       <div class="session-body hidden">
-        ${calls}
+        ${calls.length > 0 ? calls : '<div class="text-center py-4 text-neutral-400 text-sm">加载中...</div>'}
       </div>
     </div>
   `;
@@ -275,4 +278,11 @@ function getFilePath(call, projectPath) {
   }
 
   return { full, short };
+}
+
+/** 渲染调用列表（供外部懒加载使用） */
+export function renderCallChainCalls(calls) {
+  if (!calls || calls.length === 0) return '';
+  const tree = buildTree(calls);
+  return tree.map((call, i) => renderCall(call, i, '')).join('');
 }

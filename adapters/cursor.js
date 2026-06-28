@@ -20,7 +20,6 @@ const CURSOR_HOOKS_FILE = path.join(
 class CursorAdapter extends BaseAdapter {
     constructor() {
         super();
-        this._db = null;
     }
 
     get name() {
@@ -173,74 +172,36 @@ class CursorAdapter extends BaseAdapter {
     }
 
     /**
-     * 双写 SQLite 数据库（单例连接 + try/finally）
+     * 写入统计摘要到 a-beat.db
      * @private
      */
     _writeToSqlite(data, record, projectKey, projectName, cwd, toolName, callSeq, parentSeq, durationMs, success) {
-        const dbFile = path.join(BASE_DIR, 'tracker.db');
-        if (!fs.existsSync(dbFile)) return;
-
-        let Database;
         try {
-            Database = require('better-sqlite3');
-        } catch (_) {
-            return;
-        }
+            const abeatDb = require('../abeat-db');
+            const ts = record.ts || '';
 
-        if (!this._db) {
-            try {
-                this._db = new Database(dbFile);
-            } catch (_) {
-                return;
+            // 按天统计
+            abeatDb.updateDailyStats(ts.slice(0, 10), 'cursor', toolName, 1, success ? 0 : 1, durationMs || 0);
+
+            // 错误记录
+            if (!success && record.error) {
+                abeatDb.saveError(ts, data.session_id || '', 'cursor', toolName, record.error);
             }
-        }
 
-        try {
-            const upsertProject = this._db.prepare(`
-                INSERT OR IGNORE INTO projects (project_key, name, cwd, last_seen)
-                VALUES (?, ?, ?, ?)
-            `);
-            upsertProject.run(projectKey, projectName, cwd, new Date().toISOString());
-
-            this._db.prepare('UPDATE projects SET last_seen = ? WHERE project_key = ?')
-                .run(new Date().toISOString(), projectKey);
-
+            // session 摘要（累加）
             if (data.session_id) {
-                const upsertSession = this._db.prepare(`
-                    INSERT OR IGNORE INTO sessions (session_id, project_key, start_time, tool_count)
-                    VALUES (?, ?, ?, 0)
-                `);
-                upsertSession.run(data.session_id, projectKey, new Date().toISOString());
-
-                this._db.prepare('UPDATE sessions SET tool_count = tool_count + 1 WHERE session_id = ?')
-                    .run(data.session_id);
+                abeatDb.upsertSession({
+                    session_id: data.session_id,
+                    project_key: projectKey,
+                    source: 'cursor',
+                    start_time: ts,
+                    end_time: ts,
+                    tool_count: 1,
+                    error_count: success ? 0 : 1,
+                    total_duration_ms: durationMs || 0,
+                });
             }
-
-            const insertCall = this._db.prepare(`
-                INSERT INTO tool_calls (ts, session_id, project_key, tool_name, input_summary, success, seq, parent_seq, duration_ms, error)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `);
-            insertCall.run(
-                record.ts,
-                data.session_id || '',
-                projectKey,
-                toolName,
-                JSON.stringify(record.input_summary),
-                success ? 1 : 0,
-                callSeq || null,
-                parentSeq || null,
-                durationMs || null,
-                record.error || null
-            );
-        } catch (e) {
-            try {
-                const errorLog = path.join(BASE_DIR, 'trace_error.log');
-                const timestamp = new Date().toISOString();
-                fs.appendFileSync(errorLog, `[${timestamp}] SQLite error: ${e.message}\n`, 'utf-8');
-            } catch (_) {}
-        } finally {
-            // 连接保持复用
-        }
+        } catch (_) {}
     }
 }
 

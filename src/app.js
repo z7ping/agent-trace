@@ -250,8 +250,51 @@ window.toggleSession = function (el) {
     if (arrow) {
       arrow.style.transform = body.classList.contains('hidden') ? '' : 'rotate(90deg)';
     }
+    // 首次展开时加载调用详情
+    if (!body.classList.contains('hidden') && !body.dataset.loaded) {
+      loadSessionCalls(card);
+    }
   }
 };
+
+async function loadSessionCalls(card) {
+  const sessionId = card.dataset.sessionId;
+  const source = card.dataset.source;
+  if (!sessionId) return;
+
+  const body = card.querySelector('.session-body');
+  if (!body) return;
+
+  try {
+    const params = new URLSearchParams();
+    params.set('session', sessionId);
+    if (source) params.set('source', source);
+    params.set('limit', '5000');
+
+    const res = await fetch(`${CONFIG.API_BASE}/api/timeline?${params}`);
+    if (!res.ok) {
+      body.innerHTML = '<div class="text-center py-4 text-neutral-400 text-sm">加载失败</div>';
+      return;
+    }
+
+    const data = await res.json();
+    const calls = (data.items || []).map(item => ({
+      ...item,
+      input_summary: typeof item.input_summary === 'string' ? JSON.parse(item.input_summary) : (item.input_summary || {}),
+    }));
+
+    if (calls.length === 0) {
+      body.innerHTML = '<div class="text-center py-4 text-neutral-400 text-sm">暂无调用记录</div>';
+    } else {
+      // 动态导入 renderCallChain 中的 renderCall 函数
+      const { renderCallChainCalls } = await import('./callchain/index.js');
+      body.innerHTML = renderCallChainCalls(calls);
+    }
+    body.dataset.loaded = '1';
+  } catch {
+    body.innerHTML = '<div class="text-center py-4 text-neutral-400 text-sm">加载失败</div>';
+  }
+}
 
 window.toggleAllSessions = function () {
   const bodies = document.querySelectorAll('.session-body');

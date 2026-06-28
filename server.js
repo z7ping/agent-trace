@@ -340,9 +340,43 @@ async function main() {
     }
 
     function handleApiTimeline(req, res, params) {
-        // 原始调用链数据现在由适配器直接查各自的数据源 DB
-        // 此端点暂返回空，待前端适配后由适配器提供
-        sendJson(res, { items: [] });
+        const project = params.get('project');
+        const session = params.get('session');
+        const source = params.get('source');
+        const limit = Math.min(parseInt(params.get('limit') || '1000', 10), 10000);
+
+        try {
+            const logsDir = path.join(ROOT, 'logs');
+            const items = [];
+
+            if (fs.existsSync(logsDir)) {
+                const files = fs.readdirSync(logsDir).filter(f => f.endsWith('.jsonl'));
+                for (const file of files) {
+                    // 如果指定了 project，只读对应的日志文件
+                    if (project && file !== `${project}.jsonl`) continue;
+
+                    const logFile = path.join(logsDir, file);
+                    try {
+                        const content = fs.readFileSync(logFile, 'utf-8');
+                        const lines = content.split('\n').filter(line => line.trim());
+                        for (const line of lines) {
+                            try {
+                                const record = JSON.parse(line);
+                                if (session && record.session_id !== session) continue;
+                                if (source && record.source !== source) continue;
+                                items.push(record);
+                            } catch (_) {}
+                        }
+                    } catch (_) {}
+                }
+            }
+
+            // 按时间倒序，取最近的 limit 条
+            items.sort((a, b) => (b.ts || b.timestamp || '').localeCompare(a.ts || a.timestamp || ''));
+            sendJson(res, { items: items.slice(0, limit) });
+        } catch (e) {
+            sendJson(res, { error: e.message }, 500);
+        }
     }
 
     // ─── Skills API ───────────────────────────────────────────

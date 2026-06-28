@@ -179,22 +179,32 @@ class CodexAdapter extends BaseAdapter {
     }
 
     _writeToSqlite(data, record, projectKey, projectName, cwd, toolName, callSeq, parentSeq, durationMs, success) {
-        const dbFile = require('path').join(require('./base').BASE_DIR || require('path').join(__dirname, '..'), 'tracker.db');
-        if (!require('fs').existsSync(dbFile)) return;
-        let Database;
-        try { Database = require('better-sqlite3'); } catch (_) { return; }
-        if (!this._db) {
-            try { this._db = new Database(dbFile); } catch (_) { return; }
-        }
         try {
-            this._db.prepare('INSERT OR IGNORE INTO projects (project_key, name, cwd, last_seen) VALUES (?, ?, ?, ?)').run(projectKey, projectName, cwd, new Date().toISOString());
-            this._db.prepare('UPDATE projects SET last_seen = ? WHERE project_key = ?').run(new Date().toISOString(), projectKey);
-            if (data.session_id) {
-                this._db.prepare('INSERT OR IGNORE INTO sessions (session_id, project_key, start_time, tool_count) VALUES (?, ?, ?, 0)').run(data.session_id, projectKey, new Date().toISOString());
-                this._db.prepare('UPDATE sessions SET tool_count = tool_count + 1 WHERE session_id = ?').run(data.session_id);
+            const abeatDb = require('../abeat-db');
+            const ts = record.ts || '';
+
+            // 按天统计
+            abeatDb.updateDailyStats(ts.slice(0, 10), 'codex', toolName, 1, success ? 0 : 1, durationMs || 0);
+
+            // 错误记录
+            if (!success && record.error) {
+                abeatDb.saveError(ts, data.session_id || '', 'codex', toolName, record.error);
             }
-            this._db.prepare('INSERT INTO tool_calls (ts, session_id, project_key, tool_name, input_summary, success, seq, parent_seq, duration_ms, error) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').run(record.ts, data.session_id || '', projectKey, toolName, JSON.stringify(record.input_summary), success ? 1 : 0, callSeq || null, parentSeq || null, durationMs || null, record.error || null);
-        } catch (e) { try { require('fs').appendFileSync(require('path').join(require('./base').BASE_DIR || require('path').join(__dirname, '..'), 'trace_error.log'), '[' + new Date().toISOString() + '] SQLite error: ' + e.message + '\n'); } catch (_) {} }
+
+            // session 摘要（累加）
+            if (data.session_id) {
+                abeatDb.upsertSession({
+                    session_id: data.session_id,
+                    project_key: projectKey,
+                    source: 'codex',
+                    start_time: ts,
+                    end_time: ts,
+                    tool_count: 1,
+                    error_count: success ? 0 : 1,
+                    total_duration_ms: durationMs || 0,
+                });
+            }
+        } catch (_) {}
     }
 
     // ─── getRecords ────────────────────────────────────────
