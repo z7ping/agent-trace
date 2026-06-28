@@ -658,21 +658,12 @@ async function main() {
     // ─── 初始化数据库后端 ──────────────────────────────────────
 
     async function initDb() {
-        const backend = getAvailableBackend();
-        if (!backend) {
-            log('  ⚠️ 无可用 SQLite 后端，仪表盘 API 不可用', 'yellow');
-            return;
-        }
-        log(`  📦 SQLite 后端: ${backend}`, 'dim');
-        const d = getDb();
-        if (d) {
-            try {
-                await d.ready();
-                log(`  ✅ 数据库就绪 (${d.backend})`, 'green');
-            } catch (e) {
-                log(`  ⚠️ 数据库初始化失败: ${e.message}`, 'yellow');
-                db = null;
-            }
+        // tracker-db 已自动初始化，无需额外 ready()
+        try {
+            const d = getDb();
+            if (d) log(`  ✅ 数据库就绪 (better-sqlite3)`, 'green');
+        } catch (e) {
+            log(`  ⚠️ 数据库初始化失败: ${e.message}`, 'yellow');
         }
     }
 
