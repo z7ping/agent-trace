@@ -185,7 +185,7 @@ function renderSession(session) {
         </svg>
         <span class="session-id font-mono text-xs font-semibold" style="color:${color}" title="会话ID: ${escapeHtml(session.id)}">${escapeHtml(shortId(session.id))}</span>
         ${sourceLabel ? `<span class="text-[10px] px-1.5 py-0.5 rounded-md font-medium ${sourceColor}">${escapeHtml(sourceLabel)}</span>` : ''}
-        <span class="text-xs text-neutral-500 dark:text-neutral-400 font-medium">${escapeHtml(truncate(projectName, 30))}</span>
+        <span class="text-[10px] px-1.5 py-0.5 rounded-md font-medium bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">${escapeHtml(truncate(projectName, 30))}</span>
         <span class="text-xs text-neutral-400">${timeRange}</span>
       </div>
       <div class="flex items-center gap-3 text-xs text-neutral-500">
