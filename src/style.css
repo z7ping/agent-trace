@@ -29,7 +29,7 @@
 
   /* 紧凑筛选标签 */
   .filter-chip-sm {
-    @apply px-2.5 py-1 text-xs font-medium text-neutral-500 rounded-md transition-all;
+    @apply px-2.5 py-1.5 text-xs font-medium text-neutral-500 rounded-md transition-all;
   }
   .filter-chip-sm:hover {
     @apply text-neutral-700 dark:text-neutral-300;

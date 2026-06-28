@@ -69,14 +69,6 @@
         <button class="filter-chip-sm" data-filter="write" onclick="filterTool('write')">Write</button>
         <button class="filter-chip-sm" data-filter="mcp" onclick="filterTool('mcp')">MCP</button>
       </div>
-      <div class="flex items-center gap-2 ml-auto">
-        <button id="autoRefreshBtn" class="text-xs px-2.5 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors" onclick="toggleAutoRefresh()">
-          <span class="text-success-500">●</span> 自动
-        </button>
-        <button id="sortBtn" class="text-xs px-2.5 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors" onclick="toggleSort()">
-          ↓ 最新
-        </button>
-      </div>
     </div>
   </div>
 
@@ -103,8 +95,9 @@
           <span>错误: <span id="lastError" class="text-danger-500" style="display:none">—</span><span id="lastErrorText" class="text-neutral-400">无</span></span>
           <span class="text-neutral-300 dark:text-neutral-700">·</span>
           <span>慢: <span id="slowCount" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-bold bg-warning-100 text-warning-700 dark:bg-warning-900/30 dark:text-warning-400">0</span></span>
-          <!-- 展开/折叠全部 -->
-          <div class="ml-auto">
+          <!-- 展开/折叠 + 排序 -->
+          <div class="ml-auto flex items-center gap-2">
+            <button id="sortBtn" class="text-xs px-2.5 py-1 rounded-md border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors" onclick="toggleSort()">↓ 最新</button>
             <button id="expandAllBtn" class="text-xs px-2.5 py-1 rounded-md border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors" onclick="toggleAllSessions()">展开全部</button>
           </div>
         </div>
