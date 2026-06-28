@@ -8,7 +8,14 @@ export default defineConfig({
     emptyOutDir: true,
   },
   server: {
-    port: 37215,
+    port: 5173,
     open: false,
+    proxy: {
+      // API 请求代理到后端 server.js
+      '/api': 'http://localhost:37215',
+      '/projects.json': 'http://localhost:37215',
+      '/logs': 'http://localhost:37215',
+      '/states': 'http://localhost:37215',
+    },
   },
 });

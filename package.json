@@ -7,7 +7,9 @@
     "agent-beat": "./cli.js"
   },
   "scripts": {
-    "dev": "vite",
+    "dev": "node server.js 37215 & vite --port 5173",
+    "dev:frontend": "vite --port 5173",
+    "dev:backend": "node server.js 37215",
     "build": "vite build",
     "start": "node cli.js start",
     "stop": "node cli.js stop",
