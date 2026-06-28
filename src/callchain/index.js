@@ -233,8 +233,11 @@ function renderCall(call, index, projectPath) {
     ? `<span class="tree-indent" style="width:${depth * 20}px"></span>`
     : '';
 
+  // 原始 JSON（转义 HTML）
+  const rawJson = escapeHtml(JSON.stringify(call, null, 2));
+
   return `
-    <div class="${rowClass}" data-source="${escapeHtml(source)}" style="padding-left:${12 + depth * 20}px">
+    <div class="${rowClass}" data-source="${escapeHtml(source)}" style="padding-left:${12 + depth * 20}px" onclick="toggleCallDetail(this)">
       ${indent}
       ${statusIcon || '<div class="w-4"></div>'}
       <span class="tool-badge ${type}">${escapeHtml(toolName)}</span>
@@ -243,6 +246,7 @@ function renderCall(call, index, projectPath) {
       ${filePath ? `<span class="text-xs text-neutral-400 dark:text-neutral-500 truncate max-w-[300px] flex-shrink-0 font-mono" title="${escapeHtml(filePath.full)}">📂 ${escapeHtml(filePath.short)}</span>` : ''}
       <span class="text-xs text-neutral-400 flex-shrink-0">${duration}</span>
     </div>
+    <div class="call-detail hidden"><pre>${rawJson}</pre></div>
   `;
 }
 
@@ -327,3 +331,10 @@ export function renderCallChainCalls(calls) {
   const tree = buildTree(calls);
   return tree.map((call, i) => renderCall(call, i, '')).join('');
 }
+
+/** 切换调用行的 JSON 详情面板 */
+window.toggleCallDetail = function (rowEl) {
+  const detail = rowEl.nextElementSibling;
+  if (!detail || !detail.classList.contains('call-detail')) return;
+  detail.classList.toggle('hidden');
+};

@@ -110,6 +110,14 @@
     @apply border-l-info-500;
   }
 
+  /* 调用详情面板（原始 JSON） */
+  .call-detail {
+    @apply mx-4 mb-1 rounded-md border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50 overflow-hidden transition-all;
+  }
+  .call-detail pre {
+    @apply p-3 text-xs font-mono text-neutral-600 dark:text-neutral-400 overflow-x-auto max-h-[400px] whitespace-pre-wrap break-all m-0;
+  }
+
   /* 工具类型标签 */
   .tool-badge {
     @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md;
