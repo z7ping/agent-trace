@@ -79,15 +79,18 @@
     @apply bg-white dark:bg-neutral-900 rounded-card p-6 shadow-card;
   }
 
-  /* 会话卡片 */
+  /* ═══ 会话卡片 ═══ */
   .session-card {
-    @apply bg-white dark:bg-neutral-900 rounded-card shadow-card overflow-hidden;
+    @apply bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden mb-3 shadow-sm transition-all;
   }
   .session-header {
-    @apply px-5 py-3 flex items-center justify-between cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors;
+    @apply px-4 py-2.5 flex items-center justify-between cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors select-none border-b border-neutral-100 dark:border-neutral-800;
   }
   .session-body {
     @apply border-t border-neutral-100 dark:border-neutral-800;
+  }
+  .session-id {
+    letter-spacing: -0.02em;
   }
 
   /* 调用行 */

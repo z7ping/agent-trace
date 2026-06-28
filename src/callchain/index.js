@@ -5,9 +5,7 @@
 import { getToolType, getToolColor, formatDuration, formatTime, escapeHtml, truncate } from '../config.js';
 import { extractSessions } from '../utils.js';
 
-/**
- * 渲染调用链
- */
+/** 渲染调用链 */
 export function renderCallChain(logs) {
   const container = document.getElementById('sessionContainer');
   const emptyState = document.getElementById('emptyState');
@@ -25,34 +23,101 @@ export function renderCallChain(logs) {
   container.innerHTML = sessions.map(renderSession).join('');
 }
 
-/**
- * 渲染单个会话卡片
- */
+/** 根据字符串生成稳定颜色（用于 session ID） */
+function hashColor(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const hue = Math.abs(hash) % 360;
+  return `hsl(${hue}, 65%, 45%)`;
+}
+
+/** 短 session ID */
+function shortId(sid) {
+  if (!sid) return '—';
+  if (sid.length <= 12) return sid;
+  return sid.slice(0, 8) + '…';
+}
+
+/** 格式化时间范围 */
+function formatTimeRange(start, end) {
+  const s = formatTime(start);
+  const e = formatTime(end);
+  if (s === e) return s;
+  return `${s} ~ ${e}`;
+}
+
+/** 构建树形结构 */
+function buildTree(calls) {
+  // 按 seq 建索引
+  const seqMap = new Map();
+  for (const c of calls) {
+    if (c.seq != null) seqMap.set(c.seq, { ...c, children: [] });
+  }
+  // 建立父子关系
+  const roots = [];
+  for (const c of calls) {
+    const node = c.seq != null ? seqMap.get(c.seq) : null;
+    if (!node) { roots.push({ ...c, children: [], _depth: 0 }); continue; }
+    const parent = c.parent_seq != null ? seqMap.get(c.parent_seq) : null;
+    if (parent) {
+      node._depth = (parent._depth || 0) + 1;
+      parent.children.push(node);
+    } else {
+      node._depth = 0;
+      roots.push(node);
+    }
+  }
+  // 扁平化（保留树序）
+  const flat = [];
+  function walk(nodes) {
+    for (const n of nodes) {
+      flat.push(n);
+      if (n.children.length) walk(n.children);
+    }
+  }
+  walk(roots);
+  // 如果树构建失败（无 seq），回退到原始顺序
+  if (flat.length !== calls.length) {
+    return calls.map(c => ({ ...c, children: [], _depth: 0 }));
+  }
+  return flat;
+}
+
+/** 渲染单个会话卡片 */
 function renderSession(session) {
   const toolCount = session.tools.size;
   const duration = formatDuration(session.totalDuration);
-  const time = formatTime(session.startTime);
+  const timeRange = formatTimeRange(session.startTime, session.endTime);
   const hasError = session.errors > 0;
+  const okCount = session.calls.length - session.errors;
   const isActive = (Date.now() - new Date(session.endTime).getTime()) < 5 * 60 * 1000;
+  const color = hashColor(session.id);
+  const avgDur = session.calls.length > 0 ? session.totalDuration / session.calls.length : 0;
 
   const header = `
     <div class="session-header" onclick="this.parentElement.querySelector('.session-body').classList.toggle('hidden')">
-      <div class="flex items-center gap-3">
-        <svg class="w-4 h-4 text-neutral-400 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <div class="flex items-center gap-2">
+        <svg class="w-3 h-3 text-neutral-400 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M9 18l6-6-6-6"/>
         </svg>
-        <span class="text-sm font-medium">${escapeHtml(truncate(session.project, 40))}</span>
-        ${hasError ? '<span class="inline-flex items-center gap-1 text-xs text-danger-500"><svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>错误</span>' : ''}
+        <span class="session-id font-mono text-xs font-semibold" style="color:${color}" title="会话ID: ${escapeHtml(session.id)}">${escapeHtml(shortId(session.id))}</span>
+        <span class="text-xs text-neutral-500">${escapeHtml(truncate(session.project, 30))}</span>
+        <span class="text-xs text-neutral-400">${timeRange}</span>
       </div>
-      <div class="flex items-center gap-4 text-xs text-neutral-500">
-        <span>${toolCount} 次调用</span>
-        <span>${duration}</span>
-        <span>${time}</span>
+      <div class="flex items-center gap-3 text-xs text-neutral-500">
+        <span>📋 ${session.calls.length}</span>
+        <span class="text-success-600 dark:text-success-400">✅ ${okCount}</span>
+        ${hasError ? `<span class="text-danger-500">❌ ${session.errors}</span>` : ''}
+        <span class="text-neutral-400">⚡ ${formatDuration(avgDur)}</span>
       </div>
     </div>
   `;
 
-  const calls = session.calls.map((call, i) => renderCall(call, i)).join('');
+  // 树形渲染调用
+  const tree = buildTree(session.calls);
+  const calls = tree.map((call, i) => renderCall(call, i, session.project)).join('');
 
   return `
     <div class="session-card${isActive ? ' active-session' : ''}">
@@ -64,17 +129,15 @@ function renderSession(session) {
   `;
 }
 
-/**
- * 渲染单个调用行
- */
-function renderCall(call, index) {
+/** 渲染单个调用行 */
+function renderCall(call, index, projectPath) {
   const toolName = call.tool_name || call.name || '未知';
   const type = getToolType(toolName);
   const colors = getToolColor(toolName);
   const duration = formatDuration(call.duration_ms);
-  const time = formatTime(call.timestamp);
   const isError = call.error === true || call.success === false || (call.exit_code != null && call.exit_code !== 0);
   const isSlow = call.duration_ms > 5000;
+  const depth = call._depth || 0;
 
   // 状态类
   let rowClass = 'call-row';
@@ -82,8 +145,9 @@ function renderCall(call, index) {
   else if (isSlow) rowClass += ' slow';
   if (type === 'mcp') rowClass += ' mcp';
 
-  // 输入摘要
+  // 输入摘要 + 文件路径
   const summary = getCallSummary(call);
+  const filePath = getFilePath(call, projectPath);
 
   // 状态图标
   let statusIcon = '';
@@ -95,53 +159,95 @@ function renderCall(call, index) {
 
   // 来源标签
   const source = call.source || '';
-  const sourceLabels = {
-    'claude-code': 'Claude',
-    'hermes': 'Hermes',
-    'codex': 'Codex',
-    'opencode': 'OpenCode',
-    'cursor': 'Cursor',
-  };
+  const sourceLabels = { 'claude-code': 'Claude', 'hermes': 'Hermes', 'codex': 'Codex', 'opencode': 'OpenCode', 'cursor': 'Cursor' };
   const sourceLabel = sourceLabels[source] || source;
 
+  // 树形缩进
+  const indent = depth > 0
+    ? `<span class="tree-indent" style="width:${depth * 20}px"></span>`
+    : '';
+
   return `
-    <div class="${rowClass}" data-source="${escapeHtml(source)}" title="${escapeHtml(JSON.stringify(call).slice(0, 200))}">
+    <div class="${rowClass}" data-source="${escapeHtml(source)}" style="padding-left:${12 + depth * 20}px">
+      ${indent}
       ${statusIcon || '<div class="w-4"></div>'}
       <span class="tool-badge ${type}">${escapeHtml(toolName)}</span>
       ${sourceLabel ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 flex-shrink-0">${escapeHtml(sourceLabel)}</span>` : ''}
-      <span class="flex-1 text-sm text-neutral-600 dark:text-neutral-400 font-mono truncate">${escapeHtml(truncate(summary, 80))}</span>
+      <span class="flex-1 text-sm text-neutral-600 dark:text-neutral-400 truncate" title="${escapeHtml(summary)}">${escapeHtml(truncate(summary, 60))}</span>
+      ${filePath ? `<span class="text-[11px] text-neutral-400 dark:text-neutral-500 truncate max-w-[300px] flex-shrink-0 font-mono" title="${escapeHtml(filePath.full)}">📂 ${escapeHtml(filePath.short)}</span>` : ''}
       <span class="text-xs text-neutral-400 flex-shrink-0">${duration}</span>
     </div>
   `;
 }
 
-/**
- * 获取调用输入摘要
- */
+/** 获取调用输入摘要 */
 function getCallSummary(call) {
   const input = call.input || call.arguments || call.tool_input;
-  if (!input) return '';
+  const summary = call.input_summary || {};
 
-  if (typeof input === 'string') return input;
+  if (input && typeof input === 'string') return input;
 
   // Bash 命令
-  if (input.command) return input.command;
-  if (input.cmd) return input.cmd;
-
-  // 文件路径
-  if (input.path) return input.path;
-  if (input.file_path) return input.file_path;
-  if (input.filePath) return input.filePath;
+  if (input?.command) return input.command;
+  if (input?.cmd) return input.cmd;
+  if (summary.command) return summary.command;
 
   // 搜索
-  if (input.pattern) return `grep: ${input.pattern}`;
-  if (input.query) return input.query;
+  if (input?.pattern) return `grep: ${input.pattern}`;
+  if (input?.query) return input.query;
+  if (summary.pattern) return `grep: ${summary.pattern}`;
 
   // MCP
-  if (input.name) return input.name;
+  if (input?.name) return input.name;
+  if (summary.name) return summary.name;
+
+  // 文件路径（作为摘要的一部分）
+  const filePath = getFilePath(call);
+  if (filePath) return filePath.short;
+
+  // 描述
+  if (summary.description) return summary.description;
 
   // 通用
-  if (input.tool_name) return input.tool_name;
+  if (input?.tool_name) return input.tool_name;
 
-  return JSON.stringify(input).slice(0, 100);
+  // 回退：input_summary 的值
+  if (typeof summary === 'object' && Object.keys(summary).length > 0) {
+    const vals = Object.values(summary).filter(v => typeof v === 'string');
+    if (vals.length) return vals[0];
+  }
+
+  return JSON.stringify(input || summary).slice(0, 100);
+}
+
+/** 获取文件路径（省略共同前缀） */
+function getFilePath(call, projectPath) {
+  const input = call.input || call.arguments || call.tool_input;
+  const summary = call.input_summary || {};
+  // 检查所有可能的路径字段
+  const rawPath = (input && (input.path || input.file_path || input.filePath || input.new_path || input.old_path))
+    || summary.file_path || summary.path || summary.filePath;
+  if (!rawPath || typeof rawPath !== 'string') return null;
+
+  const full = rawPath;
+  // 省略项目路径前缀
+  let short = full;
+  if (projectPath && full.startsWith(projectPath)) {
+    short = full.slice(projectPath.length).replace(/^\//, '');
+  } else {
+    // 省略 home 目录前缀
+    const homeMatch = full.match(/^\/home\/[^/]+/);
+    if (homeMatch) {
+      short = '~' + full.slice(homeMatch[0].length);
+    }
+  }
+  // 如果还是太长，省略中间部分
+  if (short.length > 50) {
+    const parts = short.split('/');
+    if (parts.length > 3) {
+      short = parts[0] + '/…/' + parts.slice(-2).join('/');
+    }
+  }
+
+  return { full, short };
 }
