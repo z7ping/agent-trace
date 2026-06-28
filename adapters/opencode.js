@@ -11,7 +11,10 @@ const BaseAdapter = require('./base');
 
 const HOME_DIR = require('os').homedir();
 const OPENCODE_DB = path.join(HOME_DIR, '.local', 'share', 'opencode', 'opencode.db');
-const POLL_INTERVAL_MS = 5000;
+// 可配置：轮询间隔（毫秒），默认 30 分钟
+const POLL_INTERVAL_MS = parseInt(process.env.OPENCODE_POLL_INTERVAL_MS, 10) || 30 * 60 * 1000;
+// 可配置：每次轮询最大处理条数，默认 100
+const POLL_BATCH_SIZE = parseInt(process.env.OPENCODE_POLL_BATCH_SIZE, 10) || 100;
 
 class OpenCodeAdapter extends BaseAdapter {
     constructor() {
@@ -64,6 +67,7 @@ class OpenCodeAdapter extends BaseAdapter {
             WHERE p.data LIKE '%"type":"tool"%'
               AND p.time_created > ?
             ORDER BY p.time_created ASC
+            LIMIT ?
         `);
 
         // 标记已处理（使用时间戳水位线）
@@ -201,7 +205,7 @@ class OpenCodeAdapter extends BaseAdapter {
         if (!db || !this._prepared.fetchToolParts) return;
 
         try {
-            const toolParts = this._prepared.fetchToolParts.all(this._lastProcessedTs);
+            const toolParts = this._prepared.fetchToolParts.all(this._lastProcessedTs, POLL_BATCH_SIZE);
             if (toolParts.length === 0) return;
 
             // 按 session 分组处理

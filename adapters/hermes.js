@@ -10,7 +10,10 @@ const BaseAdapter = require('./base');
 
 const HOME_DIR = require('os').homedir();
 const STATE_DB = path.join(HOME_DIR, '.hermes', 'state.db');
-const POLL_INTERVAL_MS = 5000;
+// 可配置：轮询间隔（毫秒），默认 30 分钟
+const POLL_INTERVAL_MS = parseInt(process.env.HERMES_POLL_INTERVAL_MS, 10) || 30 * 60 * 1000;
+// 可配置：每次轮询最大处理条数，默认 100
+const POLL_BATCH_SIZE = parseInt(process.env.HERMES_POLL_BATCH_SIZE, 10) || 100;
 
 class HermesAdapter extends BaseAdapter {
     constructor() {
@@ -59,6 +62,7 @@ class HermesAdapter extends BaseAdapter {
             LEFT JOIN sessions s ON m.session_id = s.id
             WHERE m.role = 'tool' AND m.observed = 0
             ORDER BY m.id ASC
+            LIMIT ?
         `);
 
         this._prepared.markObserved = db.prepare(`
@@ -188,7 +192,7 @@ class HermesAdapter extends BaseAdapter {
         if (!db || !this._prepared.fetchToolMessages) return;
 
         try {
-            const toolMessages = this._prepared.fetchToolMessages.all();
+            const toolMessages = this._prepared.fetchToolMessages.all(POLL_BATCH_SIZE);
             if (toolMessages.length === 0) return;
 
             const abeatDb = require('../abeat-db');
