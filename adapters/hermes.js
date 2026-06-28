@@ -180,7 +180,7 @@ class HermesAdapter extends BaseAdapter {
     }
 
     /**
-     * 轮询一次：读取未处理的 tool 消息，转换并写入日志
+     * 轮询一次：读取未处理的 tool 消息，聚合后写入 a-beat.db
      */
     async _pollOnce() {
         this._ensurePrepared();
@@ -190,6 +190,8 @@ class HermesAdapter extends BaseAdapter {
         try {
             const toolMessages = this._prepared.fetchToolMessages.all();
             if (toolMessages.length === 0) return;
+
+            const abeatDb = require('../abeat-db');
 
             // 按 session 分组
             const bySession = new Map();
@@ -208,6 +210,13 @@ class HermesAdapter extends BaseAdapter {
 
                 this.updateProjectsFile(projectKey, cwd, projectName);
 
+                // 聚合 session 统计
+                let totalDuration = 0;
+                let errorCount = 0;
+                const toolCounts = {};
+                let firstTs = null;
+                let lastTs = null;
+
                 for (const msg of messages) {
                     const record = this._buildRecord(msg, sessionId, projectKey, projectName, cwd);
                     if (!record) {
@@ -215,17 +224,40 @@ class HermesAdapter extends BaseAdapter {
                         continue;
                     }
 
-                    // 写入 SQLite（优先）或 JSONL（回退）
-                    try {
-                        const trackerDb = require('../tracker-db');
-                        trackerDb.writeToolCall(record);
-                    } catch (_) {
-                        // 回退到 JSONL
-                        const logFile = this.getLogFile(projectKey);
-                        fs.appendFileSync(logFile, JSON.stringify(record) + '\n', 'utf-8');
+                    // 累加统计
+                    totalDuration += record.duration_ms || 0;
+                    if (!record.success) errorCount++;
+                    toolCounts[record.tool_name] = (toolCounts[record.tool_name] || 0) + 1;
+
+                    const ts = record.ts || record.timestamp;
+                    if (ts) {
+                        if (!firstTs || ts < firstTs) firstTs = ts;
+                        if (!lastTs || ts > lastTs) lastTs = ts;
+
+                        // 按天统计
+                        const date = ts.slice(0, 10);
+                        abeatDb.updateDailyStats(date, 'hermes', record.tool_name, 1, record.success ? 0 : 1, record.duration_ms || 0);
+
+                        // 错误记录
+                        if (!record.success && record.error) {
+                            abeatDb.saveError(ts, sessionId, 'hermes', record.tool_name, record.error);
+                        }
                     }
+
                     observedIds.push(msg.id);
                 }
+
+                // 写入 session 摘要
+                abeatDb.upsertSession({
+                    session_id: sessionId,
+                    project_key: projectKey,
+                    source: 'hermes',
+                    start_time: firstTs || '',
+                    end_time: lastTs || '',
+                    tool_count: messages.length,
+                    error_count: errorCount,
+                    total_duration_ms: totalDuration,
+                });
             }
 
             // 批量标记为已处理

@@ -222,9 +222,8 @@ class OpenCodeAdapter extends BaseAdapter {
                     const record = this._buildRecord(part);
                     if (!record) continue;
 
-                    const logFile = this.getLogFile(projectKey);
-                    fs.appendFileSync(logFile, JSON.stringify(record) + '\n', 'utf-8');
-                    this._writeToSqlite(record);
+                    // 聚合写入 a-beat.db
+                    this._aggregateToDb(record, sessionId, projectKey);
                 }
             }
 
@@ -238,23 +237,32 @@ class OpenCodeAdapter extends BaseAdapter {
         }
     }
 
-    _writeToSqlite(record) {
-        const dbFile = require('path').join(require('./base').BASE_DIR || require('path').join(__dirname, '..'), 'tracker.db');
-        if (!require('fs').existsSync(dbFile)) return;
-        let openDb;
-        try { ({ openDb } = require('../db')); } catch (_) { return; }
-        if (!this._db_sqlite) {
-            try { this._db_sqlite = openDb(dbFile); } catch (_) { return; }
-        }
+    _aggregateToDb(record, sessionId, projectKey) {
         try {
-            this._db_sqlite.prepare('INSERT OR IGNORE INTO projects (project_key, name, cwd, last_seen) VALUES (?, ?, ?, ?)').run(record.project_key, record.project_name, '', record.ts);
-            this._db_sqlite.prepare('UPDATE projects SET last_seen = ? WHERE project_key = ?').run(record.ts, record.project_key);
-            if (record.session_id) {
-                this._db_sqlite.prepare('INSERT OR IGNORE INTO sessions (session_id, project_key, start_time, tool_count) VALUES (?, ?, ?, 0)').run(record.session_id, record.project_key, record.ts);
-                this._db_sqlite.prepare('UPDATE sessions SET tool_count = tool_count + 1 WHERE session_id = ?').run(record.session_id);
+            const abeatDb = require('../abeat-db');
+            const ts = record.ts || '';
+            const date = ts.slice(0, 10);
+
+            // 按天统计
+            abeatDb.updateDailyStats(date, 'opencode', record.tool_name, 1, record.success ? 0 : 1, record.duration_ms || 0);
+
+            // 错误记录
+            if (!record.success && record.error) {
+                abeatDb.saveError(ts, sessionId, 'opencode', record.tool_name, record.error);
             }
-            this._db_sqlite.prepare('INSERT INTO tool_calls (ts, session_id, project_key, tool_name, input_summary, success, seq, parent_seq, duration_ms, error) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').run(record.ts, record.session_id || '', record.project_key, record.tool_name, JSON.stringify(record.input_summary), record.success ? 1 : 0, record.seq || null, record.parent_seq || null, record.duration_ms || null, record.error || null);
-        } catch (e) { try { require('fs').appendFileSync(require('path').join(require('./base').BASE_DIR || require('path').join(__dirname, '..'), 'trace_error.log'), '[' + new Date().toISOString() + '] SQLite error: ' + e.message + '\n'); } catch (_) {} }
+
+            // session 摘要（累加）
+            abeatDb.upsertSession({
+                session_id: sessionId,
+                project_key: projectKey,
+                source: 'opencode',
+                start_time: ts,
+                end_time: ts,
+                tool_count: 1,
+                error_count: record.success ? 0 : 1,
+                total_duration_ms: record.duration_ms || 0,
+            });
+        } catch (_) {}
     }
 
     // ─── 启动/停止轮询 ──────────────────────────────────────
