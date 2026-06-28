@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS tool_calls (
     parent_seq INTEGER,                    -- 父调用序号（调用链）
     duration_ms INTEGER,                   -- 耗时（毫秒）
     error TEXT,                            -- 错误信息
+    source TEXT,                           -- 数据来源（claude-code/hermes/opencode/codex）
     FOREIGN KEY (session_id) REFERENCES sessions(session_id),
     FOREIGN KEY (project_key) REFERENCES projects(project_key)
 );
