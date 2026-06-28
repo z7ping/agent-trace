@@ -91,9 +91,9 @@ window.switchTab = function (tab) {
   document.getElementById('callchainActions')?.classList.toggle('hidden', tab !== 'callchain');
   // 工具 Tab：仪表盘时隐藏
   document.querySelector('.fixed.top-\\[6rem\\]')?.classList.toggle('hidden', tab !== 'callchain');
-  // 切换到仪表盘时加载数据
+  // 切换到仪表盘时加载数据（带上当前工具来源过滤）
   if (tab === 'dashboard') {
-    loadDashboardData(currentProject);
+    loadDashboardData(currentProject, undefined, currentTool === 'all' ? '' : currentTool);
   }
 };
 
@@ -106,8 +106,7 @@ window.selectTool = function (tool) {
   loadCallChain();
   // 如果仪表盘激活，也刷新仪表盘数据（传递 source 参数）
   if (currentTab === 'dashboard') {
-    const source = tool === 'all' ? '' : tool;
-    loadDashboardData(currentProject, undefined, source);
+    loadDashboardData(currentProject, undefined, tool);
   }
 };
 
