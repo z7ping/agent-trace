@@ -38,3 +38,5 @@ Thumbs.db
 *~
 .vscode/
 .idea/
+tracker.db-shm
+tracker.db-wal
