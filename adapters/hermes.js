@@ -35,8 +35,9 @@ class HermesAdapter extends BaseAdapter {
         if (!fs.existsSync(STATE_DB)) return null;
 
         try {
-            const { openDb } = require('../db');
-            this._db = openDb(STATE_DB, { readonly: true });
+            // 直接用 better-sqlite3 连接（只读），跳过 db.js 的 LazyDb
+            const Database = require('better-sqlite3');
+            this._db = new Database(STATE_DB, { readonly: true, fileMustExist: true });
             return this._db;
         } catch (e) {
             this.logError(e, 'hermes:db');
