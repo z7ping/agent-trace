@@ -55,11 +55,15 @@ export async function loadDashboardData(project, timeRange, source) {
   // 工具调用排行：使用 byTool 数据（更丰富），回退到 tools 数据
   const toolRankData = stats?.byTool || tools || [];
   renderToolRankChart('toolRankChart', toolRankData);
-  // 技能调用频率：从 skills API 获取
-  const skillData = skills?.skillsSummary
-    ? Object.entries(skills.skillsSummary).map(([name, v]) => ({ name, count: v.count }))
-    : [];
-  renderSkillFreqChart('skillFreqChart', skillData);
+  // 技能调用频率：仅 Claude Code 支持，其他工具显示空状态
+  if (currentSource && currentSource !== 'claude-code') {
+    renderSkillFreqChart('skillFreqChart', []);
+  } else {
+    const skillData = skills?.skillsSummary
+      ? Object.entries(skills.skillsSummary).map(([name, v]) => ({ name, count: v.count }))
+      : [];
+    renderSkillFreqChart('skillFreqChart', skillData);
+  }
   renderTrendChart('trendChart', stats?.byDay || []);
 
   // 会话回顾
