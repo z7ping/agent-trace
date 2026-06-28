@@ -28,6 +28,13 @@ function main() {
 
                 const data = JSON.parse(input);
 
+                // 诊断：记录收到的 tool_name
+                const toolName = data.tool_name || data.name || '(empty)';
+                try {
+                    const logFile = path.join(BASE_DIR, 'trace_post.log');
+                    fs.appendFileSync(logFile, `[${new Date().toISOString()}] post: tool=${toolName}\n`, 'utf-8');
+                } catch (_) {}
+
                 if (Array.isArray(data)) {
                     for (const item of data) {
                         await adapter.post(item);

@@ -125,6 +125,14 @@ class ClaudeCodeAdapter extends BaseAdapter {
                         // 忽略错误
                     }
                 }
+            } else {
+                // 诊断：栈为空时记录警告
+                try {
+                    const fs = require('fs');
+                    const logFile = require('path').join(BASE_DIR, 'trace_error.log');
+                    const msg = `[${new Date().toISOString()}] post: stack empty for tool=${toolName}, project=${projectKey}\n`;
+                    fs.appendFileSync(logFile, msg, 'utf-8');
+                } catch (_) {}
             }
 
             this.writeState(stateFile, state);

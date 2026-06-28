@@ -230,6 +230,25 @@ class BaseAdapter {
         const stateFile = this.getStateFile(projectKey);
 
         const state = this.readState(stateFile);
+
+        // 清理残留的旧条目（超过 30 分钟未消费的视为残留）
+        const STALE_THRESHOLD_MS = 30 * 60 * 1000;
+        const now = Date.now();
+        if (state.stack.length > 0) {
+            const staleCount = state.stack.filter(entry => {
+                try {
+                    return (now - new Date(entry.ts_start).getTime()) > STALE_THRESHOLD_MS;
+                } catch (_) { return false; }
+            }).length;
+            if (staleCount > 0) {
+                state.stack = state.stack.filter(entry => {
+                    try {
+                        return (now - new Date(entry.ts_start).getTime()) <= STALE_THRESHOLD_MS;
+                    } catch (_) { return true; }
+                });
+            }
+        }
+
         state.seq += 1;
         const seq = state.seq;
 
