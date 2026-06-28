@@ -5,27 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>🧠 Agent Beat</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
-  <link rel="stylesheet" href="/src/style.css">
-</head>
-<body class="bg-gray-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 min-h-screen font-sans antialiased transition-colors duration-200">
-
-  <!-- ═══ 顶栏 ═══ -->
-  <nav class="fixed top-0 left-0 right-0 z-50 h-12 bg-white/80 dark:bg-neutral-950/80 backdrop-blur-md border-b border-neutral-200 dark:border-neutral-800">
-    <div class="h-full max-w-screen-2xl mx-auto px-4 flex items-center justify-between">
-      <a href="/" class="flex items-center gap-2 text-lg font-semibold tracking-tight">
-        <span class="text-xl">🧠</span>
+  <!-- ═══ 第一层：Logo + 功能Tab + 主题切换 ═══ -->
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800">
+    <div class="max-w-screen-2xl mx-auto px-4 h-12 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-2 font-bold text-lg">
+        🧠
         <span>Agent Beat</span>
       </a>
-      <button id="themeToggle" class="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors" title="切换主题">
-        <svg class="w-5 h-5 hidden dark:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-        <svg class="w-5 h-5 block dark:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-      </button>
-    </div>
-  </nav>
-
-  <!-- ═══ 第一层：功能 Tab ═══ -->
-  <div class="fixed top-12 left-0 right-0 z-40 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800">
-    <div class="max-w-screen-2xl mx-auto px-4 py-2">
       <div class="flex items-center gap-1" id="tabNav">
         <button class="tab-btn active" data-tab="callchain" onclick="switchTab('callchain')">
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
@@ -36,11 +22,15 @@
           仪表盘
         </button>
       </div>
+      <button id="themeToggle" class="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors" title="切换主题">
+        <svg class="w-5 h-5 hidden dark:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        <svg class="w-5 h-5 block dark:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
     </div>
-  </div>
+  </nav>
 
   <!-- ═══ 第二层：工具 Tab ═══ -->
-  <div class="fixed top-[6rem] left-0 right-0 z-30 bg-neutral-50 dark:bg-neutral-950 border-b border-neutral-200 dark:border-neutral-800">
+  <div class="fixed top-12 left-0 right-0 z-40 bg-neutral-50 dark:bg-neutral-950 border-b border-neutral-200 dark:border-neutral-800">
     <div class="max-w-screen-2xl mx-auto px-4 py-2">
       <div class="flex items-center gap-1 overflow-x-auto" id="toolTabs">
         <button class="tool-tab active" data-tool="all" onclick="selectTool('all')">全部</button>
@@ -52,15 +42,15 @@
     </div>
   </div>
 
-  <!-- ═══ 第三层：项目选择 + Agent 工具筛选 + 操作 ═══ -->
-  <div class="fixed top-[9rem] left-0 right-0 z-20 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800">
-    <div class="max-w-screen-2xl mx-auto px-4 py-2 flex items-center gap-3">
+  <!-- ═══ 第三层：项目 + 筛选 + 状态栏 ═══ -->
+  <div class="fixed top-[6rem] left-0 right-0 z-30 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800">
+    <div class="max-w-screen-2xl mx-auto px-4 py-2 flex items-center gap-3 text-sm">
       <!-- 项目选择 -->
-      <select id="projectSelect" class="text-sm bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500">
+      <select id="projectSelect" class="bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500">
         <option value="">全部项目</option>
       </select>
-      <div class="w-px h-5 bg-neutral-200 dark:bg-neutral-700"></div>
-      <!-- Agent 工具类型筛选 -->
+      <div class="w-px h-5 bg-neutral-200 dark:border-neutral-700"></div>
+      <!-- 工具类型筛选 -->
       <div class="flex items-center bg-neutral-100 dark:bg-neutral-800 rounded-lg p-0.5" id="toolFilters">
         <button class="filter-chip-sm active" data-filter="all" onclick="filterTool('all')">全部</button>
         <button class="filter-chip-sm" data-filter="bash" onclick="filterTool('bash')">Bash</button>
@@ -68,40 +58,31 @@
         <button class="filter-chip-sm" data-filter="write" onclick="filterTool('write')">Write</button>
         <button class="filter-chip-sm" data-filter="mcp" onclick="filterTool('mcp')">MCP</button>
       </div>
+      <div class="ml-auto flex items-center gap-4 text-xs text-neutral-500">
+        <!-- 状态 -->
+        <span id="liveIndicator" class="flex items-center gap-1.5 text-success-600 dark:text-success-400 cursor-pointer" onclick="toggleAutoRefresh()" title="点击切换">
+          <span class="w-2 h-2 rounded-full bg-success-500 animate-pulse"></span>
+          LIVE
+        </span>
+        <span class="text-neutral-300 dark:text-neutral-700">·</span>
+        <span>Hook</span>
+        <span id="hookStatusText">检测中...</span>
+        <span class="text-neutral-300 dark:text-neutral-700">·</span>
+        <span>错误: <span id="lastErrorCount" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-bold bg-danger-100 text-danger-700 dark:bg-danger-900/30 dark:text-danger-400">0</span></span>
+        <span class="text-neutral-300 dark:text-neutral-700">·</span>
+        <span>慢: <span id="slowCount" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-bold bg-warning-100 text-warning-700 dark:bg-warning-900/30 dark:text-warning-400">0</span></span>
+        <!-- 排序 + 展开 -->
+        <button id="sortBtn" class="px-2.5 py-1 rounded-md border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">↓ 最新</button>
+        <button id="expandAllBtn" class="px-2.5 py-1 rounded-md border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors" onclick="toggleAllSessions()">展开全部</button>
+      </div>
     </div>
   </div>
 
   <!-- ═══ 主内容区 ═══ -->
-  <main class="pt-[12rem] min-h-screen">
+  <main class="pt-[9rem] min-h-screen">
 
     <!-- ── 调用链 Tab ── -->
     <section id="tab-callchain" class="tab-panel active">
-      <!-- 状态栏 + 操作 -->
-      <div class="border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
-        <div class="max-w-screen-2xl mx-auto px-4 py-2 flex items-center gap-4 text-xs text-neutral-500">
-          <!-- LIVE 状态 -->
-          <button id="liveToggle" class="flex items-center gap-1.5 px-2 py-1 rounded-md bg-success-50 dark:bg-success-500/10 text-success-600 dark:text-success-400 font-medium cursor-pointer hover:bg-success-100 dark:hover:bg-success-500/20 transition-colors" onclick="toggleAutoRefresh()">
-            <span class="w-2 h-2 rounded-full bg-success-500 animate-pulse" id="liveDot"></span>
-            <span id="liveText">LIVE</span>
-          </button>
-          <span class="text-neutral-300 dark:text-neutral-700">·</span>
-          <span class="flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full" id="hookStatusDot"></span>
-            <span>Hook</span>
-          </span>
-          <span id="hookStatusText">检测中...</span>
-          <span class="text-neutral-300 dark:text-neutral-700">·</span>
-          <span>错误: <span id="lastErrorCount" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-bold bg-danger-100 text-danger-700 dark:bg-danger-900/30 dark:text-danger-400">0</span><span id="lastErrorTooltip" class="hidden" title=""></span></span>
-          <span class="text-neutral-300 dark:text-neutral-700">·</span>
-          <span>慢: <span id="slowCount" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-bold bg-warning-100 text-warning-700 dark:bg-warning-900/30 dark:text-warning-400">0</span></span>
-          <!-- 展开/折叠 + 排序 -->
-          <div class="ml-auto flex items-center gap-2">
-            <button id="sortBtn" class="text-xs px-2.5 py-1 rounded-md border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors" onclick="toggleSort()">↓ 最新</button>
-            <button id="expandAllBtn" class="text-xs px-2.5 py-1 rounded-md border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors" onclick="toggleAllSessions()">展开全部</button>
-          </div>
-        </div>
-      </div>
-
       <!-- 会话列表 -->
       <div class="max-w-screen-2xl mx-auto px-4 py-4">
         <div id="sessionContainer" class="space-y-4"></div>
