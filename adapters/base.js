@@ -30,14 +30,6 @@ class BaseAdapter {
     }
 
     /**
-     * 处理 PreToolUse 事件
-     * @param {Object} data - 从 stdin 读取的 JSON 数据
-     */
-    async pre(data) {
-        throw new Error('Subclass must implement pre()');
-    }
-
-    /**
      * 处理 PostToolUse 事件
      * @param {Object} data - 从 stdin 读取的 JSON 数据
      */

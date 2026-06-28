@@ -13,14 +13,14 @@ const Database = require('better-sqlite3');
 
 const BASE_DIR = path.join(__dirname, '..');
 const LOGS_DIR = path.join(BASE_DIR, 'logs');
-const DB_FILE = path.join(BASE_DIR, 'tracker.db');
+const DB_FILE = path.join(BASE_DIR, 'a-beat.db');
 
 function main() {
     console.log('🔍 数据完整性验证\n');
 
     // 检查文件
     if (!fs.existsSync(DB_FILE)) {
-        console.log('❌ tracker.db 不存在');
+        console.log('❌ a-beat.db 不存在');
         process.exit(1);
     }
 

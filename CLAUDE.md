@@ -49,9 +49,9 @@ node server.js --status        # 查看状态
 
 系统是一个**基于钩子的四阶段管道**：
 
-1. **PreToolUse 钩子** (`hooks/prelog.js` / `hooks/prelog.py`) -- 在每次 Claude Code 工具调用前触发。从 stdin 读取 JSON，将记录推入持久化调用栈 (`states/<projectKey>.json`)，附带顺序 `seq` 和 `parent_seq`（当前栈顶）。
+1. **PreToolUse 钩子** (`hooks/prelog.js`) -- 在每次 Claude Code 工具调用前触发。从 stdin 读取 JSON，将记录推入持久化调用栈 (`states/<projectKey>.json`)，附带顺序 `seq` 和 `parent_seq`（当前栈顶）。
 
-2. **PostToolUse 钩子** (`hooks/log.js` / `hooks/log.py`) -- 在每次工具调用后触发。从调用栈弹出，构建包含耗时/成功/错误的日志记录，以 JSONL 格式追加到 `logs/<projectKey>.jsonl`，并更新 `hooks/projects.json`。
+2. **PostToolUse 钩子** (`hooks/log.js`) -- 在每次工具调用后触发。从调用栈弹出，构建包含耗时/成功/错误的日志记录，以 JSONL 格式追加到 `logs/<projectKey>.jsonl`，并更新 `hooks/projects.json`。
 
 3. **HTTP 服务器** (`server.js`) -- 最小化静态文件服务器，端口 56789。支持守护进程模式（`--daemon`），通过 `.server.pid` 管理生命周期。提供 HTML 页面及运行时数据文件 (`logs/`, `states/`, `projects.json`)。
 
@@ -65,7 +65,7 @@ node server.js --status        # 查看状态
 - **调用链重建**：基于栈 -- `prelog` 推入 `seq`/`parent_seq`，`log` 弹出。构建将代理链接到其子工具的树形结构。
 - **输入摘要**：钩子按工具类型摘要工具输入（Bash -> 命令，文件工具 -> 路径，MCP -> 服务器名称）。保持日志文件小巧。
 - **增量渲染**：`index.html` 跟踪已渲染的 `seq` 值，自动刷新时仅追加新条目。
-- **双钩子实现**：Node.js 钩子为主/推荐；Python 钩子为备用。两者产生相同输出。
+- **双钩子实现**：Node.js 钩子为主/推荐。
 
 ## 运行时数据
 

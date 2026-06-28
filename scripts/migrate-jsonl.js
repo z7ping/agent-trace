@@ -15,7 +15,7 @@ const Database = require('better-sqlite3');
 
 const BASE_DIR = path.join(__dirname, '..');
 const LOGS_DIR = path.join(BASE_DIR, 'logs');
-const DB_FILE = path.join(BASE_DIR, 'tracker.db');
+const DB_FILE = path.join(BASE_DIR, 'a-beat.db');
 
 // 解析命令行参数
 const args = process.argv.slice(2);
@@ -43,7 +43,7 @@ function main() {
 
     // 检查数据库
     if (!fs.existsSync(DB_FILE)) {
-        console.log('❌ tracker.db 不存在，请先运行 schema.sql 创建数据库');
+        console.log('❌ a-beat.db 不存在，请先运行 schema.sql 创建数据库');
         process.exit(1);
     }
 

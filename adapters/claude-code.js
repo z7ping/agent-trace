@@ -169,7 +169,7 @@ class ClaudeCodeAdapter extends BaseAdapter {
      * @private
      */
     _writeToSqlite(data, record, projectKey, projectName, cwd, toolName, callSeq, parentSeq, durationMs, success) {
-        const dbFile = path.join(BASE_DIR, 'tracker.db');
+        const dbFile = path.join(BASE_DIR, 'a-beat.db');
         if (!fs.existsSync(dbFile)) return;
 
         let Database;

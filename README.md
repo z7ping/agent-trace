@@ -78,8 +78,6 @@ agent-beat/
 ├── hooks/                # Hook 脚本
 │   ├── prelog.js         # PreToolUse 钩子
 │   ├── log.js            # PostToolUse 钩子
-│   ├── prelog.py         # Python 版本（备选）
-│   ├── log.py            # Python 版本（备选）
 │   └── server-guard.js   # 服务守护模块
 ├── docs/                 # 文档
 │   └── adapter-architecture.md  # 架构设计文档

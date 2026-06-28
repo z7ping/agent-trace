@@ -153,7 +153,7 @@ async function cmdInstall() {
         log('复制文件...', 'cyan');
 
         // hooks/
-        const hooks = ['prelog.js', 'prelog.py', 'log.js', 'log.py', 'server-guard.js'];
+        const hooks = ['prelog.js', 'log.js', 'server-guard.js'];
         hooks.forEach(f => {
             copyFile(path.join(PROJECT_DIR, 'hooks', f), path.join(INSTALL_DIR, 'hooks', f));
         });
@@ -470,7 +470,7 @@ function cmdPackage() {
     // 复制文件
     log('复制文件...', 'cyan');
 
-    const hookFiles = ['prelog.js', 'prelog.py', 'log.js', 'log.py', 'server-guard.js'];
+    const hookFiles = ['prelog.js', 'log.js', 'server-guard.js'];
     hookFiles.forEach(f => copyFile(path.join(PROJECT_DIR, 'hooks', f), path.join(pkgDir, 'hooks', f)));
 
     const rootFiles = [

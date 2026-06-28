@@ -9,21 +9,9 @@
 const fs = require('fs');
 const path = require('path');
 const net = require('net');
-const { spawn, exec } = require('child_process');
+const { spawn } = require('child_process');
 
 const { DEFAULT_PORT } = require('../config');
-
-/**
- * 将路径转为 Windows 绝对路径（处理 Git Bash /c/... 格式）
- */
-function toWinPath(p) {
-    let abs = path.resolve(p);
-    // Git Bash: /c/Users/... → C:\Users\...
-    if (process.platform === 'win32' && abs.startsWith('/')) {
-        abs = abs.substring(1, 2).toUpperCase() + ':' + abs.substring(2);
-    }
-    return abs.replace(/\//g, '\\');
-}
 
 /**
  * 获取 PID 文件路径
