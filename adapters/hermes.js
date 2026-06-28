@@ -215,9 +215,15 @@ class HermesAdapter extends BaseAdapter {
                         continue;
                     }
 
-                    // 写入 JSONL 日志
-                    const logFile = this.getLogFile(projectKey);
-                    fs.appendFileSync(logFile, JSON.stringify(record) + '\n', 'utf-8');
+                    // 写入 SQLite（优先）或 JSONL（回退）
+                    try {
+                        const trackerDb = require('../tracker-db');
+                        trackerDb.writeToolCall(record);
+                    } catch (_) {
+                        // 回退到 JSONL
+                        const logFile = this.getLogFile(projectKey);
+                        fs.appendFileSync(logFile, JSON.stringify(record) + '\n', 'utf-8');
+                    }
                     observedIds.push(msg.id);
                 }
             }

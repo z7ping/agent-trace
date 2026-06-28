@@ -678,6 +678,14 @@ async function main() {
 
     // ─── 启动服务器 ────────────────────────────────────────────
 
+    // 启动时自动迁移 JSONL → SQLite
+    try {
+        const imported = trackerDb.migrateJsonlToSqlite();
+        if (imported > 0) log(`📦 迁移了 ${imported} 条 JSONL 记录到 SQLite`, 'cyan');
+    } catch (e) {
+        log(`⚠️  JSONL 迁移失败: ${e.message}`, 'yellow');
+    }
+
     initDb().then(() => {
         server.listen(PORT, () => {
             // 写入 PID 文件
