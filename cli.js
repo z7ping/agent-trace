@@ -78,6 +78,20 @@ function rimraf(dir) {
     }
 }
 
+function copyDir(src, dest) {
+    if (!fs.existsSync(src)) return;
+    mkdirp(dest);
+    for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+        const srcPath = path.join(src, entry.name);
+        const destPath = path.join(dest, entry.name);
+        if (entry.isDirectory()) {
+            copyDir(srcPath, destPath);
+        } else {
+            fs.copyFileSync(srcPath, destPath);
+        }
+    }
+}
+
 // ─── PID 管理 ────────────────────────────────────────────────────
 
 function getPidFile(baseDir) {
@@ -146,14 +160,26 @@ async function cmdInstall() {
 
         // 根目录文件
         const rootFiles = [
-            'index.html', 'server.js', 'install-hooks.js',
-            'cli.js', 'schema.sql', 'README.md'
+            'server.js', 'cli.js', 'db.js', 'config.js',
+            'install-hooks.js', 'schema.sql', 'README.md'
         ];
         rootFiles.forEach(f => {
             copyFile(path.join(PROJECT_DIR, f), path.join(INSTALL_DIR, f));
         });
 
-        log(`[OK] ${hooks.length + rootFiles.length} 个文件已复制`, 'green');
+        // adapters/
+        const adapters = fs.readdirSync(path.join(PROJECT_DIR, 'adapters')) || [];
+        adapters.forEach(f => {
+            copyFile(path.join(PROJECT_DIR, 'adapters', f), path.join(INSTALL_DIR, 'adapters', f));
+        });
+
+        // dist/ (Vite 构建产物)
+        if (fs.existsSync(path.join(PROJECT_DIR, 'dist'))) {
+            copyDir(path.join(PROJECT_DIR, 'dist'), path.join(INSTALL_DIR, 'dist'));
+            log(`  dist/ 已复制`, 'dim');
+        }
+
+        log(`[OK] 文件已复制`, 'green');
     }
 
     // 4. 安装依赖

@@ -9,12 +9,24 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "start": "vite build && node cli.js start",
+    "start": "node cli.js start",
     "stop": "node cli.js stop",
     "status": "node cli.js status",
     "install-hooks": "node cli.js install",
-    "package": "node cli.js package"
+    "package": "node cli.js package",
+    "prepublishOnly": "vite build"
   },
+  "files": [
+    "dist/",
+    "server.js",
+    "cli.js",
+    "db.js",
+    "config.js",
+    "install-hooks.js",
+    "hooks/",
+    "adapters/",
+    "README.md"
+  ],
   "repository": {
     "type": "git",
     "url": "https://gitea.7ping.site/ai-area/agent-beat.git"
