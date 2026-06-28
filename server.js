@@ -212,17 +212,13 @@ async function main() {
 
     // ─── SQLite 数据库 ──────────────────────────────────────────
 
-    const Database = require('better-sqlite3');
+    const { openDb, getAvailableBackend } = require('./db');
     const DB_FILE = path.join(DIR, 'tracker.db');
     let db = null;
 
     function getDb() {
         if (!db && fs.existsSync(DB_FILE)) {
-            try {
-                db = new Database(DB_FILE, { readonly: true });
-            } catch (e) {
-                log(`  ⚠️ SQLite 打开失败: ${e.message}`, 'yellow');
-            }
+            db = openDb(DB_FILE, { readonly: true });
         }
         return db;
     }
@@ -635,59 +631,82 @@ async function main() {
         });
     });
 
-    // ─── 启动服务器 ────────────────────────────────────────────
+    // ─── 初始化数据库后端 ──────────────────────────────────────
 
-    server.listen(PORT, () => {
-        // 写入 PID 文件
-        writePid();
-
-        if (!isDaemon) {
-            console.log('');
-            log('🧠 Agent Beat - HTTP 服务器', 'bright');
-            log('========================================', 'dim');
-            console.log('');
-            log(`✅ 服务器已启动`, 'green');
-            log(`📂 服务目录: ${DIR}`, 'cyan');
-            log(`🌐 访问地址: http://localhost:${PORT}/`, 'cyan');
-            log(`📋 PID: ${process.pid}`, 'dim');
-            console.log('');
-            log('📋 可用功能:', 'yellow');
-            log('   • 顶部下拉框切换项目', 'dim');
-            log('   • 点击"自动"按钮实时监控', 'dim');
-            log('   • 支持搜索、过滤、暗色主题', 'dim');
-            console.log('');
-            log('💡 管理命令:', 'dim');
-            log('   node server.js --stop    停止服务', 'dim');
-            log('   node server.js --status  查看状态', 'dim');
-            log('   按 Ctrl+C 停止服务器', 'dim');
-            log('========================================', 'dim');
-            console.log('');
+    async function initDb() {
+        const backend = getAvailableBackend();
+        if (!backend) {
+            log('  ⚠️ 无可用 SQLite 后端，仪表盘 API 不可用', 'yellow');
+            return;
         }
-
-        // 自动打开浏览器（仅前台模式或显式 --open）
-        if (shouldOpen || (!isDaemon && process.env.TRAKER_AUTO_OPEN !== '0')) {
-            const url = `http://localhost:${PORT}/`;
-            // 延迟 500ms 等服务器完全就绪
-            setTimeout(() => openBrowser(url), 500);
+        log(`  📦 SQLite 后端: ${backend}`, 'dim');
+        const d = getDb();
+        if (d) {
+            try {
+                await d.ready();
+                log(`  ✅ 数据库就绪 (${d.backend})`, 'green');
+            } catch (e) {
+                log(`  ⚠️ 数据库初始化失败: ${e.message}`, 'yellow');
+                db = null;
+            }
         }
-    });
-
-    // ─── 优雅关闭 ──────────────────────────────────────────────
-
-    function shutdown() {
-        removePid();
-        if (!isDaemon) {
-            console.log('');
-            log('👋 服务器已停止', 'yellow');
-        }
-        process.exit(0);
     }
 
-    process.on('SIGINT', shutdown);
-    process.on('SIGTERM', shutdown);
+    // ─── 启动服务器 ────────────────────────────────────────────
 
-    // 守护进程：退出时清理
-    process.on('exit', removePid);
+    initDb().then(() => {
+        server.listen(PORT, () => {
+            // 写入 PID 文件
+            writePid();
+
+            if (!isDaemon) {
+                console.log('');
+                log('🧠 Agent Beat - HTTP 服务器', 'bright');
+                log('========================================', 'dim');
+                console.log('');
+                log(`✅ 服务器已启动`, 'green');
+                log(`📂 服务目录: ${DIR}`, 'cyan');
+                log(`🌐 访问地址: http://localhost:${PORT}/`, 'cyan');
+                log(`📋 PID: ${process.pid}`, 'dim');
+                console.log('');
+                log('📋 可用功能:', 'yellow');
+                log('   • 顶部下拉框切换项目', 'dim');
+                log('   • 点击"自动"按钮实时监控', 'dim');
+                log('   • 支持搜索、过滤、暗色主题', 'dim');
+                console.log('');
+                log('💡 管理命令:', 'dim');
+                log('   node server.js --stop    停止服务', 'dim');
+                log('   node server.js --status  查看状态', 'dim');
+                log('   按 Ctrl+C 停止服务器', 'dim');
+                log('========================================', 'dim');
+                console.log('');
+            }
+
+            // 自动打开浏览器（仅前台模式或显式 --open）
+            if (shouldOpen || (!isDaemon && process.env.TRAKER_AUTO_OPEN !== '0')) {
+                const url = `http://localhost:${PORT}/`;
+                // 延迟 500ms 等服务器完全就绪
+                setTimeout(() => openBrowser(url), 500);
+            }
+        });
+
+        // ─── 优雅关闭 ──────────────────────────────────────────────
+
+        function shutdown() {
+            removePid();
+            if (!isDaemon) {
+                console.log('');
+                log('👋 服务器已停止', 'yellow');
+            }
+            process.exit(0);
+        }
+
+        process.on('SIGINT', shutdown);
+        process.on('SIGTERM', shutdown);
+
+        // 守护进程：退出时清理
+        process.on('exit', removePid);
+    });
 }
 
 main();

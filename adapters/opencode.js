@@ -37,8 +37,8 @@ class OpenCodeAdapter extends BaseAdapter {
         if (!fs.existsSync(OPENCODE_DB)) return null;
 
         try {
-            const Database = require('better-sqlite3');
-            this._db = new Database(OPENCODE_DB, { readonly: true });
+            const { openDb } = require('../db');
+            this._db = openDb(OPENCODE_DB, { readonly: true });
             return this._db;
         } catch (e) {
             this.logError(e, 'opencode:db');
@@ -241,10 +241,10 @@ class OpenCodeAdapter extends BaseAdapter {
     _writeToSqlite(record) {
         const dbFile = require('path').join(require('./base').BASE_DIR || require('path').join(__dirname, '..'), 'tracker.db');
         if (!require('fs').existsSync(dbFile)) return;
-        let Database;
-        try { Database = require('better-sqlite3'); } catch (_) { return; }
+        let openDb;
+        try { ({ openDb } = require('../db')); } catch (_) { return; }
         if (!this._db_sqlite) {
-            try { this._db_sqlite = new Database(dbFile); } catch (_) { return; }
+            try { this._db_sqlite = openDb(dbFile); } catch (_) { return; }
         }
         try {
             this._db_sqlite.prepare('INSERT OR IGNORE INTO projects (project_key, name, cwd, last_seen) VALUES (?, ?, ?, ?)').run(record.project_key, record.project_name, '', record.ts);

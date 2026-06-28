@@ -35,8 +35,8 @@ class HermesAdapter extends BaseAdapter {
         if (!fs.existsSync(STATE_DB)) return null;
 
         try {
-            const Database = require('better-sqlite3');
-            this._db = new Database(STATE_DB, { readonly: true });
+            const { openDb } = require('../db');
+            this._db = openDb(STATE_DB, { readonly: true });
             return this._db;
         } catch (e) {
             this.logError(e, 'hermes:db');
