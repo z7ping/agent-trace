@@ -112,7 +112,7 @@
 
   /* 调用详情面板（原始 JSON） */
   .call-detail {
-    @apply mx-4 mb-1.5 rounded-lg border border-neutral-200/60 dark:border-neutral-700/60 bg-neutral-50/80 dark:bg-neutral-800/40 overflow-hidden;
+    @apply ml-[28px] mr-4 mb-1.5 rounded-lg border border-neutral-200/60 dark:border-neutral-700/60 bg-neutral-50/80 dark:bg-neutral-800/40 overflow-hidden;
     backdrop-filter: blur(4px);
   }
   .call-detail pre {
