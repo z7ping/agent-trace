@@ -78,6 +78,9 @@
   .list-card {
     @apply bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5;
   }
+  .list-card .chart-title {
+    @apply pb-3 border-b border-neutral-100 dark:border-neutral-800 mb-3;
+  }
 
   /* ═══ 会话卡片 ═══ */
   .session-card {

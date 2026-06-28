@@ -40,18 +40,21 @@ export async function loadDashboardData(project, timeRange, source) {
   // 核心指标（兼容新旧格式）
   if (stats) {
     const totals = stats.totals || stats;
-    setTextIfExists('totalCalls', totals?.total_calls || totals?.total || 0);
+    setTextIfExists('totalCalls', (totals?.total_calls || totals?.total || 0).toLocaleString());
     const totalCalls = totals?.total_calls || 0;
     const errRate = totalCalls > 0
       ? ((totals?.total_errors || 0) / totalCalls * 100)
       : (totals?.error_rate || 0);
     setTextIfExists('errorRate', `${(errRate || 0).toFixed(1)}%`);
-    setTextIfExists('activeSkills', totals?.session_count || totals?.unique_tools || 0);
+    setTextIfExists('activeSessions', totals?.session_count || 0);
+    setTextIfExists('activeSkills', skills?.totalUniqueSkills || totals?.unique_tools || 0);
   }
 
   // 图表
   renderToolDistChart('toolDistChart', tools);
-  renderSkillFreqChart('skillFreqChart', skills?.skillsSummary ? Object.entries(skills.skillsSummary).map(([name, v]) => ({ name, count: v.count })) : []);
+  // 工具调用排行：使用 byTool 数据（更丰富），回退到 tools 数据
+  const toolRankData = stats?.byTool || tools || [];
+  renderSkillFreqChart('skillFreqChart', toolRankData);
   renderTrendChart('trendChart', stats?.byDay || []);
 
   // 会话回顾
@@ -82,14 +85,24 @@ function renderSessionReview(tools) {
   }
 
   const sorted = [...tools].sort((a, b) => (b.count || 0) - (a.count || 0));
+  const total = sorted.reduce((sum, t) => sum + (t.count || 0), 0);
+
   container.innerHTML = sorted.slice(0, 8).map(tool => {
     const toolName = tool.name || tool.tool_name || 'unknown';
     const type = getToolType(toolName);
     const colors = CONFIG.TOOL_COLORS[type] || CONFIG.TOOL_COLORS.other;
+    const count = tool.count || 0;
+    const pct = total > 0 ? ((count / total) * 100).toFixed(1) : 0;
     return `
-      <div class="flex items-center justify-between py-1.5">
-        <span class="text-sm font-medium">${escapeHtml(toolName)}</span>
-        <span class="text-sm text-neutral-500">${tool.count || 0} 次</span>
+      <div class="flex items-center justify-between py-2 px-2 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full ${colors.bg}"></span>
+          <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300">${escapeHtml(toolName)}</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-neutral-400">${pct}%</span>
+          <span class="text-sm font-semibold text-neutral-600 dark:text-neutral-400">${count.toLocaleString()}</span>
+        </div>
       </div>
     `;
   }).join('');
@@ -109,10 +122,17 @@ function renderErrorAnalysis(stats) {
   }
 
   const sorted = [...errors].sort((a, b) => (b.error_count || b.errors || 0) - (a.error_count || a.errors || 0));
-  container.innerHTML = sorted.slice(0, 5).map(err => `
-    <div class="flex items-center justify-between py-1.5">
-      <span class="text-sm text-danger-500">${escapeHtml(err.name || err.tool_name || err.tool || '未知')}</span>
-      <span class="text-sm font-medium">${err.error_count || err.errors || 0} 次</span>
-    </div>
-  `).join('');
+  container.innerHTML = sorted.slice(0, 5).map(err => {
+    const name = err.name || err.tool_name || err.tool || '未知';
+    const count = err.error_count || err.errors || 0;
+    return `
+      <div class="flex items-center justify-between py-2 px-2 rounded-lg hover:bg-danger-50/50 dark:hover:bg-danger-500/5 transition-colors">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-danger-500"></span>
+          <span class="text-sm font-medium text-danger-600 dark:text-danger-400">${escapeHtml(name)}</span>
+        </div>
+        <span class="text-sm font-semibold text-danger-600 dark:text-danger-400">${count} 次</span>
+      </div>
+    `;
+  }).join('');
 }

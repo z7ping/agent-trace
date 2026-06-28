@@ -51,11 +51,10 @@ export function renderToolDistChart(canvasId, tools) {
   }
   canvas.style.display = '';
 
-  if (!tools || tools.length === 0) return;
-
   const sorted = [...tools].sort((a, b) => (b.count || 0) - (a.count || 0));
   const top8 = sorted.slice(0, 8);
   const otherCount = sorted.slice(8).reduce((sum, t) => sum + (t.count || 0), 0);
+  const total = sorted.reduce((sum, t) => sum + (t.count || 0), 0);
 
   // Support both {name, count} and {tool_name, count} formats
   const labels = top8.map(t => t.name || t.tool_name || 'unknown');
@@ -94,10 +93,36 @@ export function renderToolDistChart(canvasId, tools) {
           position: 'right',
           labels: {
             color: getChartColors().text,
-            font: { size: 12 },
-            padding: 12,
+            font: { size: 11 },
+            padding: 10,
             usePointStyle: true,
             pointStyleWidth: 8,
+            generateLabels: (chart) => {
+              const data = chart.data;
+              if (data.labels.length && data.datasets.length) {
+                return data.labels.map((label, i) => {
+                  const ds = data.datasets[0];
+                  const value = ds.data[i];
+                  const pct = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                  return {
+                    text: `${label} (${pct}%)`,
+                    fillStyle: ds.backgroundColor[i],
+                    hidden: false,
+                    index: i,
+                  };
+                });
+              }
+              return [];
+            },
+          },
+        },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const v = ctx.parsed;
+              const pct = total > 0 ? ((v / total) * 100).toFixed(1) : 0;
+              return `${ctx.label}: ${v.toLocaleString()} 次 (${pct}%)`;
+            },
           },
         },
       },
@@ -106,18 +131,41 @@ export function renderToolDistChart(canvasId, tools) {
 }
 
 /**
- * 技能调用频率（横向柱状图）
+ * 工具调用排行（横向柱状图）
  */
-export function renderSkillFreqChart(canvasId, skills) {
+export function renderSkillFreqChart(canvasId, tools) {
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
   destroyChart(canvasId);
 
-  if (!skills || skills.length === 0) return;
+  // 空数据状态
+  if (!tools || tools.length === 0) {
+    const parent = canvas.parentElement;
+    if (!parent.querySelector('.empty-state')) {
+      canvas.style.display = 'none';
+      const empty = document.createElement('div');
+      empty.className = 'empty-state';
+      empty.innerHTML = '<div class="empty-state-icon">📊</div><div class="text-sm">暂无工具使用数据</div>';
+      parent.appendChild(empty);
+    }
+    return;
+  }
+  canvas.style.display = '';
 
-  const sorted = [...skills].sort((a, b) => (b.count || 0) - (a.count || 0)).slice(0, 10);
-  const labels = sorted.map(s => s.name || s.skill || '未知');
-  const data = sorted.map(s => s.count || 0);
+  const sorted = [...tools]
+    .sort((a, b) => (b.count || 0) - (a.count || 0))
+    .slice(0, 10);
+
+  const labels = sorted.map(t => t.name || t.tool_name || '未知');
+  const data = sorted.map(t => t.count || 0);
+  const total = data.reduce((sum, v) => sum + v, 0);
+
+  // 使用工具类型颜色
+  const barColors = labels.map(name => {
+    const type = getToolType(name);
+    const c = CONFIG.TOOL_COLORS[type] || CONFIG.TOOL_COLORS.other;
+    return getChartColors().text === '#a3a3a3' ? c.dark : c.light;
+  });
 
   const colors = getChartColors();
   const ctx = canvas.getContext('2d');
@@ -127,9 +175,9 @@ export function renderSkillFreqChart(canvasId, skills) {
       labels,
       datasets: [{
         data,
-        backgroundColor: '#6366f1',
+        backgroundColor: barColors,
         borderRadius: 4,
-        barThickness: 20,
+        barThickness: 18,
       }],
     },
     options: {
@@ -138,15 +186,31 @@ export function renderSkillFreqChart(canvasId, skills) {
       indexAxis: 'y',
       plugins: {
         legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const v = ctx.parsed.x;
+              const pct = total > 0 ? ((v / total) * 100).toFixed(1) : 0;
+              return `${v.toLocaleString()} 次 (${pct}%)`;
+            },
+          },
+        },
       },
       scales: {
         x: {
           grid: { color: colors.grid },
-          ticks: { color: colors.text, font: { size: 11 } },
+          ticks: {
+            color: colors.text,
+            font: { size: 11 },
+            callback: (v) => v >= 1000 ? `${(v/1000).toFixed(0)}k` : v,
+          },
         },
         y: {
           grid: { display: false },
-          ticks: { color: colors.text, font: { size: 12 } },
+          ticks: {
+            color: colors.text,
+            font: { size: 11 },
+          },
         },
       },
     },
