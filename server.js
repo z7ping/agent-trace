@@ -219,11 +219,17 @@ async function main() {
     const DB_FILE = path.join(ROOT, 'tracker.db');
     let db = null;
 
+    // ─── tracker-db 集成 ─────────────────────────────────────
+    const trackerDb = require('./tracker-db');
+
     function getDb() {
-        if (!db && fs.existsSync(DB_FILE)) {
-            db = openDb(DB_FILE, { readonly: true });
+        try {
+            const d = trackerDb.getDb();
+            return d;
+        } catch (e) {
+            console.error('[getDb] Error:', e.message);
+            return null;
         }
-        return db;
     }
 
     // ─── API 处理函数 ──────────────────────────────────────────
@@ -424,7 +430,7 @@ async function main() {
             }
 
             const items = database.prepare(`
-                SELECT ts, tool_name, success, duration_ms, seq, parent_seq
+                SELECT ts, session_id, project_key, tool_name, source, input_summary, success, duration_ms, seq, parent_seq, error
                 FROM tool_calls ${whereClause}
                 ORDER BY ts DESC
                 LIMIT ?

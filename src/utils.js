@@ -38,6 +38,39 @@ export async function fetchSessions(projectKey) {
  */
 export async function fetchSessionLogs(projectKey, sessionId) {
   try {
+    // 优先从 SQLite API 获取
+    const params = new URLSearchParams();
+    if (projectKey) params.set('project', projectKey);
+    if (sessionId) params.set('session', sessionId);
+    params.set('limit', '10000');
+
+    const res = await fetch(`${CONFIG.API_BASE}/api/timeline?${params}`);
+    if (!res.ok) {
+      // 回退到 JSONL 文件
+      return fetchJsonlLogs(projectKey, sessionId);
+    }
+    const data = await res.json();
+    return (data.items || []).map(item => ({
+      ts: item.ts,
+      session_id: item.session_id || '',
+      project_key: item.project_key || '',
+      tool_name: item.tool_name,
+      source: item.source || '',
+      duration_ms: item.duration_ms,
+      success: item.success === 1,
+      error: item.error,
+      seq: item.seq,
+      parent_seq: item.parent_seq,
+      input_summary: item.input_summary ? JSON.parse(item.input_summary) : {},
+    }));
+  } catch {
+    return fetchJsonlLogs(projectKey, sessionId);
+  }
+}
+
+/** 回退：从 JSONL 文件读取 */
+async function fetchJsonlLogs(projectKey, sessionId) {
+  try {
     const url = `${CONFIG.API_BASE}/logs/${projectKey}.jsonl`;
     const res = await fetch(url);
     if (!res.ok) return [];
