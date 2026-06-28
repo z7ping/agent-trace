@@ -5,7 +5,18 @@
 /* ═══ 自定义组件样式 ═══ */
 
 @layer components {
-  /* Tab 按钮 */
+  /* 工具 Tab */
+  .tool-tab {
+    @apply px-3 py-1.5 text-sm font-medium text-neutral-500 rounded-lg transition-all whitespace-nowrap;
+  }
+  .tool-tab:hover {
+    @apply text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800;
+  }
+  .tool-tab.active {
+    @apply text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-500/10;
+  }
+
+  /* 功能 Tab */
   .tab-btn {
     @apply flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-neutral-500 rounded-lg transition-all;
   }
@@ -13,12 +24,23 @@
     @apply text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800;
   }
   .tab-btn.active {
-    @apply text-primary-500 bg-primary-50 dark:bg-primary-500/10;
+    @apply text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-500/10;
+  }
+
+  /* 紧凑筛选标签 */
+  .filter-chip-sm {
+    @apply px-2.5 py-1 text-xs font-medium text-neutral-500 rounded-md transition-all;
+  }
+  .filter-chip-sm:hover {
+    @apply text-neutral-700 dark:text-neutral-300;
+  }
+  .filter-chip-sm.active {
+    @apply text-primary-600 dark:text-primary-400 bg-white dark:bg-neutral-700 shadow-sm;
   }
 
   /* 时间范围按钮 */
   .time-btn {
-    @apply px-3 py-1.5 text-sm font-medium text-neutral-500 rounded-md transition-all;
+    @apply px-3 py-1 text-xs font-medium text-neutral-500 rounded-md transition-all;
   }
   .time-btn:hover {
     @apply text-neutral-700 dark:text-neutral-300;
@@ -27,42 +49,20 @@
     @apply text-neutral-900 dark:text-white bg-white dark:bg-neutral-700 shadow-sm;
   }
 
-  /* 筛选标签 */
-  .filter-chip {
-    @apply px-3 py-1 text-xs font-medium text-neutral-500 rounded-full border border-neutral-200 dark:border-neutral-700 transition-all;
-  }
-  .filter-chip:hover {
-    @apply text-neutral-700 dark:text-neutral-300 border-neutral-300 dark:border-neutral-600;
-  }
-  .filter-chip.active {
-    @apply text-primary-600 dark:text-primary-400 border-primary-300 dark:border-primary-600 bg-primary-50 dark:bg-primary-500/10;
-  }
-
-  /* 来源筛选标签 */
-  .source-chip {
-    @apply px-2.5 py-0.5 text-xs font-medium text-neutral-500 rounded-md transition-all;
-  }
-  .source-chip:hover {
-    @apply text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800;
-  }
-  .source-chip.active {
-    @apply text-neutral-900 dark:text-white bg-neutral-200 dark:bg-neutral-700;
-  }
-
   /* 统计卡片 */
   .stat-card {
-    @apply bg-white dark:bg-neutral-900 rounded-card p-6 shadow-card;
+    @apply bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 text-center;
   }
   .stat-value {
-    @apply text-3xl font-bold tracking-tight mb-1;
+    @apply text-3xl font-bold tracking-tight;
   }
   .stat-label {
-    @apply text-sm text-neutral-500;
+    @apply text-xs text-neutral-500 mt-1;
   }
 
   /* 图表卡片 */
   .chart-card {
-    @apply bg-white dark:bg-neutral-900 rounded-card p-6 shadow-card;
+    @apply bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5;
   }
   .chart-title {
     @apply text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-4;
@@ -76,7 +76,7 @@
 
   /* 列表卡片 */
   .list-card {
-    @apply bg-white dark:bg-neutral-900 rounded-card p-6 shadow-card;
+    @apply bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5;
   }
 
   /* ═══ 会话卡片 ═══ */
@@ -95,7 +95,7 @@
 
   /* 调用行 */
   .call-row {
-    @apply flex items-center gap-3 px-5 py-2.5 border-l-3 border-transparent hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors cursor-pointer;
+    @apply flex items-center gap-2 px-4 py-2 border-l-[3px] border-transparent hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors cursor-pointer text-sm;
   }
   .call-row:hover {
     @apply bg-neutral-50 dark:bg-neutral-800/30;
@@ -115,23 +115,13 @@
     @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md;
   }
   .tool-badge.bash { @apply bg-warning-50 text-warning-600 dark:bg-warning-500/10 dark:text-warning-400; }
-  .tool-badge.read { @apply bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400; }
+  .tool-badge.read { @apply bg-info-50 text-info-600 dark:bg-info-500/10 dark:text-info-400; }
   .tool-badge.write { @apply bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-400; }
-  .tool-badge.mcp { @apply bg-info-50 text-info-600 dark:bg-info-500/10 dark:text-info-400; }
-  .tool-badge.agent { @apply bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400; }
-
-  /* 项目选择器 */
-  .project-select {
-    @apply text-sm bg-transparent border border-neutral-200 dark:border-neutral-700 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500;
-  }
+  .tool-badge.mcp { @apply bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400; }
+  .tool-badge.agent { @apply bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-400; }
 }
 
-/* ═══ 自定义边框宽度 ═══ */
-.border-l-3 {
-  border-left-width: 3px;
-}
-
-/* ═══ 滚动条美化 ═══ */
+/* ═══ 滚动条 ═══ */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;

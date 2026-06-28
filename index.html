@@ -10,41 +10,73 @@
 </head>
 <body class="bg-gray-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 min-h-screen font-sans antialiased transition-colors duration-200">
 
-  <!-- ═══ 顶部导航栏 ═══ -->
-  <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 h-14 bg-white/80 dark:bg-neutral-950/80 backdrop-blur-md border-b border-neutral-200 dark:border-neutral-800">
+  <!-- ═══ 顶栏：Logo + 主题 ═══ -->
+  <nav class="fixed top-0 left-0 right-0 z-50 h-12 bg-white/80 dark:bg-neutral-950/80 backdrop-blur-md border-b border-neutral-200 dark:border-neutral-800">
     <div class="h-full max-w-screen-2xl mx-auto px-4 flex items-center justify-between">
-      <!-- 左侧：Logo + Tab -->
-      <div class="flex items-center gap-6">
-        <a href="/" class="flex items-center gap-2 text-lg font-semibold tracking-tight">
-          <span class="text-xl">🧠</span>
-          <span>Agent Beat</span>
-        </a>
-        <div class="flex items-center gap-1" id="tabNav">
-          <button class="tab-btn active" data-tab="callchain" onclick="switchTab('callchain')">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-            调用链
-          </button>
-          <button class="tab-btn" data-tab="dashboard" onclick="switchTab('dashboard')">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-            仪表盘
-          </button>
-        </div>
-      </div>
-      <!-- 右侧：工具 -->
-      <div class="flex items-center gap-3">
-        <select id="projectSelect" class="text-sm bg-transparent border border-neutral-200 dark:border-neutral-700 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500">
-          <option value="">全部项目</option>
-        </select>
-        <button id="themeToggle" class="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors" title="切换主题">
-          <svg class="w-5 h-5 hidden dark:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-          <svg class="w-5 h-5 block dark:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-        </button>
-      </div>
+      <a href="/" class="flex items-center gap-2 text-lg font-semibold tracking-tight">
+        <span class="text-xl">🧠</span>
+        <span>Agent Beat</span>
+      </a>
+      <button id="themeToggle" class="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors" title="切换主题">
+        <svg class="w-5 h-5 hidden dark:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        <svg class="w-5 h-5 block dark:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
     </div>
   </nav>
 
+  <!-- ═══ 工具 Tab ═══ -->
+  <div class="fixed top-12 left-0 right-0 z-40 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800">
+    <div class="max-w-screen-2xl mx-auto px-4">
+      <div class="flex items-center gap-1 overflow-x-auto py-2" id="toolTabs">
+        <button class="tool-tab active" data-tool="all" onclick="selectTool('all')">全部</button>
+        <button class="tool-tab" data-tool="claude-code" onclick="selectTool('claude-code')">Claude Code</button>
+        <button class="tool-tab" data-tool="hermes" onclick="selectTool('hermes')">Hermes</button>
+        <button class="tool-tab" data-tool="codex" onclick="selectTool('codex')">Codex</button>
+        <button class="tool-tab" data-tool="opencode" onclick="selectTool('opencode')">OpenCode</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ 功能 Tab + 项目选择 + 操作 ═══ -->
+  <div class="fixed top-[7rem] left-0 right-0 z-30 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800">
+    <div class="max-w-screen-2xl mx-auto px-4 py-2 flex items-center gap-4">
+      <!-- 功能 Tab -->
+      <div class="flex items-center gap-1" id="tabNav">
+        <button class="tab-btn active" data-tab="callchain" onclick="switchTab('callchain')">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+          调用链
+        </button>
+        <button class="tab-btn" data-tab="dashboard" onclick="switchTab('dashboard')">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          仪表盘
+        </button>
+      </div>
+      <div class="w-px h-5 bg-neutral-200 dark:bg-neutral-700"></div>
+      <!-- 项目选择 -->
+      <select id="projectSelect" class="text-sm bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500">
+        <option value="">全部项目</option>
+      </select>
+      <!-- 操作按钮 -->
+      <div class="flex items-center gap-2 ml-auto" id="callchainActions">
+        <div class="flex items-center bg-neutral-100 dark:bg-neutral-800 rounded-lg p-0.5" id="toolFilters">
+          <button class="filter-chip-sm active" data-filter="all" onclick="filterTool('all')">全部</button>
+          <button class="filter-chip-sm" data-filter="bash" onclick="filterTool('bash')">Bash</button>
+          <button class="filter-chip-sm" data-filter="read" onclick="filterTool('read')">Read</button>
+          <button class="filter-chip-sm" data-filter="write" onclick="filterTool('write')">Write</button>
+          <button class="filter-chip-sm" data-filter="mcp" onclick="filterTool('mcp')">MCP</button>
+        </div>
+        <button id="autoRefreshBtn" class="text-xs px-2.5 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors" onclick="toggleAutoRefresh()">
+          <span class="text-success-500">●</span> 自动
+        </button>
+        <button id="sortBtn" class="text-xs px-2.5 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors" onclick="toggleSort()">
+          ↓ 最新
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ═══ 主内容区 ═══ -->
-  <main class="pt-14 min-h-screen">
+  <main class="pt-[10rem] min-h-screen">
 
     <!-- ── 调用链 Tab ── -->
     <section id="tab-callchain" class="tab-panel active">
@@ -60,44 +92,6 @@
           <span>最近错误: <span id="lastError" class="text-danger-500" style="display:none">—</span><span id="lastErrorText" class="text-neutral-400">无</span></span>
           <span class="text-neutral-300 dark:text-neutral-700">·</span>
           <span>慢调用: <span id="slowCount" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-warning-100 text-warning-700 dark:bg-warning-900/30 dark:text-warning-400">0</span></span>
-        </div>
-      </div>
-
-      <!-- 搜索与筛选 -->
-      <div class="border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
-        <div class="max-w-screen-2xl mx-auto px-4 py-3 flex items-center gap-3">
-          <div class="relative flex-1 max-w-md">
-            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-            <input type="text" id="searchInput" placeholder="搜索工具、命令、路径..." class="w-full pl-9 pr-8 py-2 text-sm bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent" oninput="window._searchInputHandler && window._searchInputHandler(this.value)">
-            <button id="searchClear" class="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 hidden" onclick="clearSearch()">×</button>
-          </div>
-          <span id="searchCount" class="text-xs text-neutral-400 hidden"></span>
-          <div class="flex items-center gap-2" id="sourceFilters">
-            <span class="text-xs text-neutral-400 mr-1">来源:</span>
-            <select id="sourceSelect" class="text-xs px-2 py-1 bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" onchange="filterSource(this.value)">
-              <option value="all">全部</option>
-              <option value="claude-code">Claude Code</option>
-              <option value="hermes">Hermes</option>
-              <option value="codex">Codex</option>
-              <option value="opencode">OpenCode</option>
-            </select>
-          </div>
-          <div class="w-px h-4 bg-neutral-200 dark:bg-neutral-700"></div>
-          <div class="flex items-center gap-2" id="toolFilters">
-            <button class="filter-chip active" data-filter="all" onclick="filterTool('all')">全部</button>
-            <button class="filter-chip" data-filter="bash" onclick="filterTool('bash')">Bash</button>
-            <button class="filter-chip" data-filter="read" onclick="filterTool('read')">Read</button>
-            <button class="filter-chip" data-filter="write" onclick="filterTool('write')">Write</button>
-            <button class="filter-chip" data-filter="mcp" onclick="filterTool('mcp')">MCP</button>
-          </div>
-          <div class="flex items-center gap-2 ml-auto">
-            <button id="autoRefreshBtn" class="text-xs px-3 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors" onclick="toggleAutoRefresh()">
-              <span class="text-success-500">●</span> 自动
-            </button>
-            <button id="sortBtn" class="text-xs px-3 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors" onclick="toggleSort()">
-              ↓ 最新优先
-            </button>
-          </div>
         </div>
       </div>
 
@@ -123,9 +117,6 @@
             <button class="time-btn" data-range="month" onclick="setTimeRange('month')">本月</button>
             <button class="time-btn" data-range="all" onclick="setTimeRange('all')">全部</button>
           </div>
-          <select id="dashProjectSelect" class="text-sm bg-transparent border border-neutral-200 dark:border-neutral-700 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500">
-            <option value="">全部项目</option>
-          </select>
         </div>
 
         <!-- 核心指标卡片 -->

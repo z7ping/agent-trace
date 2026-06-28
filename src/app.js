@@ -9,6 +9,7 @@ import { initDashboard, loadDashboardData } from './dashboard/index.js';
 
 // ─── 全局状态 ───────────────────────────────────────
 let currentTab = 'callchain';
+let currentTool = 'all';
 let currentProject = '';
 let autoRefresh = true;
 let refreshTimer = null;
@@ -28,94 +29,69 @@ document.addEventListener('DOMContentLoaded', async () => {
 // ─── 主题 ───────────────────────────────────────────
 function initTheme() {
   const saved = localStorage.getItem('agent-beat-theme');
-  isDark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
-  applyTheme();
-}
-
-function toggleTheme() {
-  isDark = !isDark;
-  localStorage.setItem('agent-beat-theme', isDark ? 'dark' : 'light');
-  applyTheme();
-}
-
-function applyTheme() {
-  document.documentElement.classList.toggle('dark', isDark);
-}
-
-// ─── Tab 切换 ───────────────────────────────────────
-window.switchTab = function (tab) {
-  currentTab = tab;
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.tab === tab);
-  });
-  document.querySelectorAll('.tab-panel').forEach(panel => {
-    panel.classList.toggle('hidden', panel.id !== `tab-${tab}`);
-    panel.classList.toggle('active', panel.id === `tab-${tab}`);
-  });
-  if (tab === 'dashboard') {
-    loadDashboardData(currentProject);
+  if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.documentElement.classList.add('dark');
+    isDark = true;
   }
-};
+  document.getElementById('themeToggle')?.addEventListener('click', () => {
+    isDark = !isDark;
+    document.documentElement.classList.toggle('dark', isDark);
+    localStorage.setItem('agent-beat-theme', isDark ? 'dark' : 'light');
+  });
+}
 
-// ─── 项目列表 ───────────────────────────────────────
+// ─── 项目选择 ───────────────────────────────────────
 async function initProjects() {
   const projects = await fetchProjects();
   const select = document.getElementById('projectSelect');
-  const dashSelect = document.getElementById('dashProjectSelect');
-  const projectList = Object.entries(projects);
-
-  [select, dashSelect].forEach(el => {
-    if (!el) return;
-    el.innerHTML = '<option value="">全部项目</option>';
-    projectList.forEach(([key, info]) => {
-      const opt = document.createElement('option');
-      opt.value = key;
-      opt.textContent = info.name || key;
-      el.appendChild(opt);
-    });
+  if (!select) return;
+  Object.entries(projects).forEach(([key, p]) => {
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = p.name || key;
+    select.appendChild(opt);
+  });
+  select.addEventListener('change', () => {
+    currentProject = select.value;
+    loadCallChain();
+    loadDashboardData(currentProject);
   });
 }
 
 // ─── 事件监听 ───────────────────────────────────────
 function initEventListeners() {
-  // 主题切换
-  document.getElementById('themeToggle')?.addEventListener('click', toggleTheme);
-
-  // 项目切换
-  document.getElementById('projectSelect')?.addEventListener('change', (e) => {
-    currentProject = e.target.value;
-    document.getElementById('dashProjectSelect').value = currentProject;
-    loadCallChain();
-  });
-
-  document.getElementById('dashProjectSelect')?.addEventListener('change', (e) => {
-    currentProject = e.target.value;
-    document.getElementById('projectSelect').value = currentProject;
-    loadDashboardData(currentProject);
-  });
-
-  // 搜索
-  const searchInput = document.getElementById('searchInput');
-  const searchClear = document.getElementById('searchClear');
-  if (searchInput) {
-    let debounceTimer;
-    const doSearch = (query) => {
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => {
-        searchClear?.classList.toggle('hidden', !query);
-        filterCallsBySearch(query);
-      }, CONFIG.SEARCH_DEBOUNCE);
-    };
-    searchInput.addEventListener('input', () => doSearch(searchInput.value.trim()));
-    // 全局 handler（HTML oninput 备用）
-    window._searchInputHandler = doSearch;
-  }
-  searchClear?.addEventListener('click', () => {
-    searchInput.value = '';
-    searchClear.classList.add('hidden');
-    filterCallsBySearch('');
-  });
+  // 自动刷新
+  document.getElementById('autoRefreshBtn')?.addEventListener('click', toggleAutoRefresh);
 }
+
+// ─── Tab 切换 ───────────────────────────────────────
+window.switchTab = function (tab) {
+  currentTab = tab;
+  // 更新 tab 按钮样式
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tab);
+  });
+  // 显示/隐藏内容
+  document.getElementById('tab-callchain')?.classList.toggle('hidden', tab !== 'callchain');
+  document.getElementById('tab-callchain')?.classList.toggle('active', tab === 'callchain');
+  document.getElementById('tab-dashboard')?.classList.toggle('hidden', tab !== 'dashboard');
+  document.getElementById('tab-dashboard')?.classList.toggle('active', tab === 'dashboard');
+  // 调用链操作区
+  document.getElementById('callchainActions')?.classList.toggle('hidden', tab !== 'callchain');
+  // 切换到仪表盘时加载数据
+  if (tab === 'dashboard') {
+    loadDashboardData(currentProject);
+  }
+};
+
+// ─── 工具 Tab 选择 ──────────────────────────────────
+window.selectTool = function (tool) {
+  currentTool = tool;
+  document.querySelectorAll('.tool-tab').forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.tool === tool);
+  });
+  loadCallChain();
+};
 
 // ─── 自动刷新 ───────────────────────────────────────
 function startAutoRefresh() {
@@ -149,7 +125,7 @@ window.toggleSort = function () {
   const btn = document.getElementById('sortBtn');
   if (btn) {
     const isLatest = btn.textContent.includes('最新');
-    btn.textContent = isLatest ? '↑ 最早优先' : '↓ 最新优先';
+    btn.textContent = isLatest ? '↑ 最早' : '↓ 最新';
   }
   loadCallChain();
 };
@@ -165,67 +141,32 @@ async function loadCallChain() {
     allLogs.push(...logs);
   }
 
-  renderCallChain(allLogs);
-  updateStatusFromLogs(allLogs);
-}
+  // 按工具 Tab 过滤
+  const filtered = currentTool === 'all'
+    ? allLogs
+    : allLogs.filter(log => log.source === currentTool);
 
-// ─── 搜索过滤 ───────────────────────────────────────
-function filterCallsBySearch(query) {
-  const rows = document.querySelectorAll('.call-row');
-  const countEl = document.getElementById('searchCount');
-  let visible = 0;
-  rows.forEach(row => {
-    if (!query) {
-      row.style.display = '';
-      visible++;
-      return;
-    }
-    const text = row.textContent.toLowerCase();
-    const match = text.includes(query.toLowerCase());
-    row.style.display = match ? '' : 'none';
-    if (match) visible++;
-  });
-  // 搜索计数
-  if (countEl) {
-    if (query) {
-      countEl.textContent = `${visible} / ${rows.length}`;
-      countEl.classList.remove('hidden');
-    } else {
-      countEl.classList.add('hidden');
-    }
-  }
+  renderCallChain(filtered);
+  updateStatusFromLogs(filtered);
 }
 
 // ─── 工具类型过滤 ───────────────────────────────────
 window.filterTool = function (type) {
-  document.querySelectorAll('.filter-chip').forEach(chip => {
+  document.querySelectorAll('.filter-chip-sm').forEach(chip => {
     chip.classList.toggle('active', chip.dataset.filter === type);
   });
   applyFilters();
 };
 
-// ─── 来源过滤 ───────────────────────────────────────
-window.filterSource = function (source) {
-  document.querySelectorAll('.source-chip').forEach(chip => {
-    chip.classList.toggle('active', chip.dataset.source === source);
-  });
-  applyFilters();
-};
-
-// ─── 组合过滤 ───────────────────────────────────────
+// ─── 组合过滤（仅工具类型）──────────────────────────
 function applyFilters() {
-  const activeSource = document.querySelector('.source-chip.active')?.dataset.source || 'all';
-  const activeTool = document.querySelector('.filter-chip.active')?.dataset.filter || 'all';
+  const activeTool = document.querySelector('.filter-chip-sm.active')?.dataset.filter || 'all';
 
   document.querySelectorAll('.call-row').forEach(row => {
-    const rowSource = row.dataset.source || '';
     const rowBadge = row.querySelector('.tool-badge');
     const rowType = rowBadge ? [...rowBadge.classList].find(c => ['bash', 'read', 'write', 'mcp', 'agent'].includes(c)) || '' : '';
-
-    const matchSource = activeSource === 'all' || rowSource === activeSource;
     const matchTool = activeTool === 'all' || rowType === activeTool;
-
-    row.style.display = (matchSource && matchTool) ? '' : 'none';
+    row.style.display = matchTool ? '' : 'none';
   });
 }
 
@@ -263,14 +204,6 @@ function updateStatusFromLogs(logs) {
 }
 
 // ─── 全局函数（HTML onclick 用）─────────────────────
-window.clearSearch = function () {
-  const input = document.getElementById('searchInput');
-  const clear = document.getElementById('searchClear');
-  if (input) input.value = '';
-  if (clear) clear.classList.add('hidden');
-  filterCallsBySearch('');
-};
-
 window.setTimeRange = function (range) {
   document.querySelectorAll('.time-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.range === range);
