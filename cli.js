@@ -160,7 +160,7 @@ async function cmdInstall() {
 
         // 根目录文件
         const rootFiles = [
-            'server.js', 'cli.js', 'db.js', 'config.js',
+            'server.js', 'cli.js', 'db.js', 'config.js', 'abeat-db.js',
             'install-hooks.js', 'schema.sql', 'README.md'
         ];
         rootFiles.forEach(f => {
@@ -475,7 +475,8 @@ function cmdPackage() {
 
     const rootFiles = [
         'index.html', 'server.js', 'install-hooks.js',
-        'cli.js', 'schema.sql', 'README.md', '.gitignore'
+        'cli.js', 'db.js', 'config.js', 'abeat-db.js',
+        'schema.sql', 'README.md', '.gitignore'
     ];
     rootFiles.forEach(f => copyFile(path.join(PROJECT_DIR, f), path.join(pkgDir, f)));
 

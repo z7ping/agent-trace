@@ -11,11 +11,11 @@ export default defineConfig({
     port: 5173,
     open: false,
     proxy: {
-      // API 请求代理到后端 server.js
-      '/api': 'http://localhost:37215',
-      '/projects.json': 'http://localhost:37215',
-      '/logs': 'http://localhost:37215',
-      '/states': 'http://localhost:37215',
+      // API 请求代理到生产服务器（安装目录，端口 56789）
+      '/api': 'http://localhost:56789',
+      '/projects.json': 'http://localhost:56789',
+      '/logs': 'http://localhost:56789',
+      '/states': 'http://localhost:56789',
     },
   },
 });
