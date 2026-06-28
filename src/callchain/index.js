@@ -92,10 +92,22 @@ function renderCall(call, index) {
     statusIcon = '<svg class="w-4 h-4 text-warning-500 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>';
   }
 
+  // 来源标签
+  const source = call.source || '';
+  const sourceLabels = {
+    'claude-code': 'Claude',
+    'hermes': 'Hermes',
+    'codex': 'Codex',
+    'opencode': 'OpenCode',
+    'cursor': 'Cursor',
+  };
+  const sourceLabel = sourceLabels[source] || source;
+
   return `
-    <div class="${rowClass}" title="${escapeHtml(JSON.stringify(call).slice(0, 200))}">
+    <div class="${rowClass}" data-source="${escapeHtml(source)}" title="${escapeHtml(JSON.stringify(call).slice(0, 200))}">
       ${statusIcon || '<div class="w-4"></div>'}
       <span class="tool-badge ${type}">${escapeHtml(toolName)}</span>
+      ${sourceLabel ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 flex-shrink-0">${escapeHtml(sourceLabel)}</span>` : ''}
       <span class="flex-1 text-sm text-neutral-600 dark:text-neutral-400 font-mono truncate">${escapeHtml(truncate(summary, 80))}</span>
       <span class="text-xs text-neutral-400 flex-shrink-0">${duration}</span>
     </div>

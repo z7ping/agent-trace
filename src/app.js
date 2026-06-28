@@ -185,16 +185,33 @@ window.filterTool = function (type) {
   document.querySelectorAll('.filter-chip').forEach(chip => {
     chip.classList.toggle('active', chip.dataset.filter === type);
   });
-  const rows = document.querySelectorAll('.call-row');
-  rows.forEach(row => {
-    if (type === 'all') {
-      row.style.display = '';
-    } else {
-      const badge = row.querySelector('.tool-badge');
-      row.style.display = badge?.classList.contains(type) ? '' : 'none';
-    }
-  });
+  applyFilters();
 };
+
+// ─── 来源过滤 ───────────────────────────────────────
+window.filterSource = function (source) {
+  document.querySelectorAll('.source-chip').forEach(chip => {
+    chip.classList.toggle('active', chip.dataset.source === source);
+  });
+  applyFilters();
+};
+
+// ─── 组合过滤 ───────────────────────────────────────
+function applyFilters() {
+  const activeSource = document.querySelector('.source-chip.active')?.dataset.source || 'all';
+  const activeTool = document.querySelector('.filter-chip.active')?.dataset.filter || 'all';
+
+  document.querySelectorAll('.call-row').forEach(row => {
+    const rowSource = row.dataset.source || '';
+    const rowBadge = row.querySelector('.tool-badge');
+    const rowType = rowBadge ? [...rowBadge.classList].find(c => ['bash', 'read', 'write', 'mcp', 'agent'].includes(c)) || '' : '';
+
+    const matchSource = activeSource === 'all' || rowSource === activeSource;
+    const matchTool = activeTool === 'all' || rowType === activeTool;
+
+    row.style.display = (matchSource && matchTool) ? '' : 'none';
+  });
+}
 
 // ─── 状态更新 ───────────────────────────────────────
 async function checkStatus() {
