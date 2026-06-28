@@ -114,7 +114,8 @@ export async function fetchTools(project) {
     const url = `${CONFIG.API_BASE}/api/tools?${params}`;
     const res = await fetch(url);
     if (!res.ok) return [];
-    return await res.json();
+    const data = await res.json();
+    return data.items || data || [];
   } catch {
     return [];
   }
@@ -131,7 +132,8 @@ export async function fetchTimeline(project, timeRange) {
     const url = `${CONFIG.API_BASE}/api/timeline?${params}`;
     const res = await fetch(url);
     if (!res.ok) return [];
-    return await res.json();
+    const data = await res.json();
+    return data.items || data || [];
   } catch {
     return [];
   }

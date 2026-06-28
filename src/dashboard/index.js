@@ -23,24 +23,25 @@ export async function loadDashboardData(project, timeRange) {
   if (project !== undefined) currentProject = project;
   if (timeRange) currentTimeRange = timeRange;
 
-  const [stats, tools, timeline, skills] = await Promise.all([
+  const [stats, tools] = await Promise.all([
     fetchStats(currentProject, currentTimeRange),
     fetchTools(currentProject),
-    fetchTimeline(currentProject, currentTimeRange),
-    fetchSkills(),
   ]);
 
-  // 核心指标
+  // 核心指标（兼容新旧格式）
   if (stats) {
-    setTextIfExists('totalCalls', stats.total_calls || stats.total || 0);
-    setTextIfExists('errorRate', `${(stats.error_rate || 0).toFixed(1)}%`);
-    setTextIfExists('activeSkills', stats.unique_tools || stats.tools || 0);
+    const totals = stats.totals || stats;
+    setTextIfExists('totalCalls', totals.total_calls || totals.total || 0);
+    const errRate = totals.total_calls > 0
+      ? ((totals.total_errors || 0) / totals.total_calls * 100)
+      : (totals.error_rate || 0);
+    setTextIfExists('errorRate', `${errRate.toFixed(1)}%`);
+    setTextIfExists('activeSkills', totals.session_count || totals.unique_tools || 0);
   }
 
   // 图表
   renderToolDistChart('toolDistChart', tools);
-  renderSkillFreqChart('skillFreqChart', skills);
-  renderTrendChart('trendChart', timeline);
+  renderTrendChart('trendChart', stats?.byDay || []);
 
   // 会话回顾
   renderSessionReview(tools);
@@ -86,7 +87,7 @@ function renderErrorAnalysis(stats) {
   const container = document.getElementById('errorTop5');
   if (!container) return;
 
-  const errors = stats?.errors || stats?.by_tool?.filter(t => t.errors > 0) || [];
+  const errors = stats?.errors || stats?.byTool?.filter(t => t.errors > 0) || stats?.by_tool?.filter(t => t.errors > 0) || [];
   if (errors.length === 0) {
     container.innerHTML = '<div class="text-sm text-success-500 py-4 text-center">🎉 暂无错误</div>';
     return;
