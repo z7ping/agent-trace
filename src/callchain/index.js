@@ -195,6 +195,22 @@ function renderSession(session) {
   `;
 }
 
+/** JSON 语法高亮（轻量版，仅添加 span class） */
+function highlightJson(json) {
+  const escaped = escapeHtml(json);
+  return escaped
+    // 字符串值（冒号后面的字符串）
+    .replace(/(&quot;[^&]*?&quot;)\s*:/g, '<span class="jk">$1</span>:')
+    // 剩余字符串值
+    .replace(/:\s*(&quot;[^&]*?&quot;)/g, ': <span class="js">$1</span>')
+    // 数组中的字符串
+    .replace(/(?<=[\[,]\s*)(&quot;[^&]*?&quot;)/g, '<span class="js">$1</span>')
+    // 数字
+    .replace(/:\s*(-?\d+\.?\d*)/g, ': <span class="jn">$1</span>')
+    // 布尔值
+    .replace(/:\s*(true|false|null)/g, ': <span class="jb">$1</span>');
+}
+
 /** 渲染单个调用行 */
 function renderCall(call, index, projectPath) {
   const toolName = call.tool_name || call.name || '未知';
@@ -233,8 +249,8 @@ function renderCall(call, index, projectPath) {
     ? `<span class="tree-indent" style="width:${depth * 20}px"></span>`
     : '';
 
-  // 原始 JSON（转义 HTML）
-  const rawJson = escapeHtml(JSON.stringify(call, null, 2));
+  // 原始 JSON（转义 HTML + 语法高亮）
+  const rawJson = highlightJson(JSON.stringify(call, null, 2));
 
   return `
     <div class="${rowClass}" data-source="${escapeHtml(source)}" style="padding-left:${12 + depth * 20}px" onclick="toggleCallDetail(this)">

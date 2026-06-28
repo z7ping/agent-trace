@@ -112,11 +112,26 @@
 
   /* 调用详情面板（原始 JSON） */
   .call-detail {
-    @apply mx-4 mb-1 rounded-md border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50 overflow-hidden transition-all;
+    @apply mx-4 mb-1.5 rounded-lg border border-neutral-200/60 dark:border-neutral-700/60 bg-neutral-50/80 dark:bg-neutral-800/40 overflow-hidden;
+    backdrop-filter: blur(4px);
   }
   .call-detail pre {
-    @apply p-3 text-xs font-mono text-neutral-600 dark:text-neutral-400 overflow-x-auto max-h-[400px] whitespace-pre-wrap break-all m-0;
+    @apply p-4 text-[11px] leading-relaxed font-mono overflow-x-auto max-h-[320px] m-0;
+    color: var(--call-detail-fg, #6b7280);
+    tab-size: 2;
   }
+  .dark .call-detail pre {
+    --call-detail-fg: #9ca3af;
+  }
+  /* JSON 语法高亮 */
+  .call-detail pre .jk { color: #7c3aed; }
+  .call-detail pre .js { color: #059669; }
+  .call-detail pre .jn { color: #d97706; }
+  .call-detail pre .jb { color: #dc2626; }
+  .dark .call-detail pre .jk { color: #a78bfa; }
+  .dark .call-detail pre .js { color: #34d399; }
+  .dark .call-detail pre .jn { color: #fbbf24; }
+  .dark .call-detail pre .jb { color: #f87171; }
 
   /* 工具类型标签 */
   .tool-badge {
