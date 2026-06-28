@@ -5,11 +5,24 @@
 import { getToolType, getToolColor, formatDuration, formatTime, escapeHtml, truncate } from '../config.js';
 import { extractSessions } from '../utils.js';
 
+/** 记录当前展开的 session ID */
+let expandedSessionIds = new Set();
+
 /** 渲染调用链 */
 export function renderCallChain(data) {
   const container = document.getElementById('sessionContainer');
   const emptyState = document.getElementById('emptyState');
   if (!container) return;
+
+  // 渲染前保存当前展开状态
+  expandedSessionIds = new Set(
+    Array.from(container.querySelectorAll('.session-card'))
+      .filter(card => {
+        const body = card.querySelector('.session-body');
+        return body && !body.classList.contains('hidden');
+      })
+      .map(card => card.dataset.sessionId)
+  );
 
   // 兼容两种格式：原始 log 条目 or session 摘要
   let sessions;
@@ -39,6 +52,19 @@ export function renderCallChain(data) {
 
   emptyState?.classList.add('hidden');
   container.innerHTML = sessions.map(renderSession).join('');
+
+  // 渲染后恢复展开状态
+  for (const sessionId of expandedSessionIds) {
+    const card = container.querySelector(`.session-card[data-session-id="${sessionId}"]`);
+    if (card) {
+      const body = card.querySelector('.session-body');
+      const arrow = card.querySelector('.session-arrow');
+      if (body) {
+        body.classList.remove('hidden');
+        if (arrow) arrow.style.transform = 'rotate(90deg)';
+      }
+    }
+  }
 }
 
 /** 根据字符串生成稳定颜色（用于 session ID） */
@@ -245,7 +271,10 @@ function getCallSummary(call) {
     if (vals.length) return vals[0];
   }
 
-  return JSON.stringify(input || summary).slice(0, 100);
+  // 最终回退：避免显示空对象
+  const fallback = input || summary;
+  if (fallback && typeof fallback === 'object' && Object.keys(fallback).length === 0) return '';
+  return JSON.stringify(fallback).slice(0, 100);
 }
 
 /** 获取文件路径（省略共同前缀） */

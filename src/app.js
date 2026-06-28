@@ -11,7 +11,7 @@ import { initDashboard, loadDashboardData } from './dashboard/index.js';
 let currentTab = 'callchain';
 let currentTool = 'all';
 let currentProject = '';
-let autoRefresh = true;
+let autoRefresh = false;
 let refreshTimer = null;
 let isDark = false;
 
@@ -24,6 +24,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   initDashboard();
   startAutoRefresh();
   checkStatus();
+  // 初始化自动刷新按钮状态（反映默认关闭）
+  if (!autoRefresh) {
+    const liveDot = document.getElementById('liveDot');
+    const liveText = document.getElementById('liveText');
+    const liveToggle = document.getElementById('liveToggle');
+    if (liveDot) liveDot.className = 'w-2 h-2 rounded-full bg-neutral-400';
+    if (liveText) liveText.textContent = 'PAUSED';
+    if (liveToggle) {
+      liveToggle.className = 'flex items-center gap-1.5 px-2 py-1 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-500 font-medium cursor-pointer hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors';
+    }
+  }
 });
 
 // ─── 主题 ───────────────────────────────────────────
@@ -297,16 +308,26 @@ async function loadSessionCalls(card) {
 }
 
 window.toggleAllSessions = function () {
-  const bodies = document.querySelectorAll('.session-body');
-  const arrows = document.querySelectorAll('.session-arrow');
-  // 判断当前状态：如果全部隐藏则展开，否则全部折叠
-  const allHidden = Array.from(bodies).every(b => b.classList.contains('hidden'));
-  bodies.forEach(b => {
-    if (allHidden) b.classList.remove('hidden');
-    else b.classList.add('hidden');
+  const cards = document.querySelectorAll('.session-card');
+  const allHidden = Array.from(cards).every(card => {
+    const body = card.querySelector('.session-body');
+    return body && body.classList.contains('hidden');
   });
-  arrows.forEach(a => {
-    a.style.transform = allHidden ? 'rotate(90deg)' : '';
+  cards.forEach(card => {
+    const body = card.querySelector('.session-body');
+    const arrow = card.querySelector('.session-arrow');
+    if (body) {
+      if (allHidden) {
+        body.classList.remove('hidden');
+        // 首次展开时加载调用详情
+        if (!body.dataset.loaded) loadSessionCalls(card);
+      } else {
+        body.classList.add('hidden');
+      }
+    }
+    if (arrow) {
+      arrow.style.transform = allHidden ? 'rotate(90deg)' : '';
+    }
   });
   // 更新按钮文字
   const btn = document.getElementById('expandAllBtn');

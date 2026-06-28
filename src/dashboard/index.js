@@ -35,12 +35,13 @@ export async function loadDashboardData(project, timeRange) {
   // 核心指标（兼容新旧格式）
   if (stats) {
     const totals = stats.totals || stats;
-    setTextIfExists('totalCalls', totals.total_calls || totals.total || 0);
-    const errRate = totals.total_calls > 0
-      ? ((totals.total_errors || 0) / totals.total_calls * 100)
-      : (totals.error_rate || 0);
-    setTextIfExists('errorRate', `${errRate.toFixed(1)}%`);
-    setTextIfExists('activeSkills', totals.session_count || totals.unique_tools || 0);
+    setTextIfExists('totalCalls', totals?.total_calls || totals?.total || 0);
+    const totalCalls = totals?.total_calls || 0;
+    const errRate = totalCalls > 0
+      ? ((totals?.total_errors || 0) / totalCalls * 100)
+      : (totals?.error_rate || 0);
+    setTextIfExists('errorRate', `${(errRate || 0).toFixed(1)}%`);
+    setTextIfExists('activeSkills', totals?.session_count || totals?.unique_tools || 0);
   }
 
   // 图表
