@@ -99,14 +99,16 @@ function initEventListeners() {
   const searchClear = document.getElementById('searchClear');
   if (searchInput) {
     let debounceTimer;
-    searchInput.addEventListener('input', () => {
+    const doSearch = (query) => {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
-        const query = searchInput.value.trim();
-        searchClear.classList.toggle('hidden', !query);
+        searchClear?.classList.toggle('hidden', !query);
         filterCallsBySearch(query);
       }, CONFIG.SEARCH_DEBOUNCE);
-    });
+    };
+    searchInput.addEventListener('input', () => doSearch(searchInput.value.trim()));
+    // 全局 handler（HTML oninput 备用）
+    window._searchInputHandler = doSearch;
   }
   searchClear?.addEventListener('click', () => {
     searchInput.value = '';

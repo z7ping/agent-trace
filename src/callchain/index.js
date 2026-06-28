@@ -72,7 +72,7 @@ function renderCall(call, index) {
   const colors = getToolColor(toolName);
   const duration = formatDuration(call.duration_ms);
   const time = formatTime(call.timestamp);
-  const isError = call.error || call.exit_code !== 0;
+  const isError = call.error === true || call.success === false || (call.exit_code != null && call.exit_code !== 0);
   const isSlow = call.duration_ms > 5000;
 
   // 状态类
