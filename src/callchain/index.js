@@ -33,6 +33,7 @@ function renderSession(session) {
   const duration = formatDuration(session.totalDuration);
   const time = formatTime(session.startTime);
   const hasError = session.errors > 0;
+  const isActive = (Date.now() - new Date(session.endTime).getTime()) < 5 * 60 * 1000;
 
   const header = `
     <div class="session-header" onclick="this.parentElement.querySelector('.session-body').classList.toggle('hidden')">
@@ -54,7 +55,7 @@ function renderSession(session) {
   const calls = session.calls.map((call, i) => renderCall(call, i)).join('');
 
   return `
-    <div class="session-card">
+    <div class="session-card${isActive ? ' active-session' : ''}">
       ${header}
       <div class="session-body">
         ${calls}

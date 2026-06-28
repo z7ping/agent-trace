@@ -151,3 +151,22 @@
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* ═══ 暗色模式卡片边框 ═══ */
+.dark .card,
+.dark .session-card {
+  border-color: #262626;
+}
+
+/* ═══ 活跃 session 左侧彩色条 ═══ */
+.session-card.active-session {
+  border-left: 3px solid #3b82f6;
+}
+
+/* ═══ 空状态 ═══ */
+.empty-state {
+  @apply flex flex-col items-center justify-center py-16 text-neutral-400 dark:text-neutral-600;
+}
+.empty-state-icon {
+  @apply text-4xl mb-3;
+}

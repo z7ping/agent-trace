@@ -172,14 +172,28 @@ async function loadCallChain() {
 // ─── 搜索过滤 ───────────────────────────────────────
 function filterCallsBySearch(query) {
   const rows = document.querySelectorAll('.call-row');
+  const countEl = document.getElementById('searchCount');
+  let visible = 0;
   rows.forEach(row => {
     if (!query) {
       row.style.display = '';
+      visible++;
       return;
     }
     const text = row.textContent.toLowerCase();
-    row.style.display = text.includes(query.toLowerCase()) ? '' : 'none';
+    const match = text.includes(query.toLowerCase());
+    row.style.display = match ? '' : 'none';
+    if (match) visible++;
   });
+  // 搜索计数
+  if (countEl) {
+    if (query) {
+      countEl.textContent = `${visible} / ${rows.length}`;
+      countEl.classList.remove('hidden');
+    } else {
+      countEl.classList.add('hidden');
+    }
+  }
 }
 
 // ─── 工具类型过滤 ───────────────────────────────────

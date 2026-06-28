@@ -59,7 +59,7 @@
           <span class="text-neutral-300 dark:text-neutral-700">·</span>
           <span>最近错误: <span id="lastError" class="text-danger-500" style="display:none">—</span><span id="lastErrorText" class="text-neutral-400">无</span></span>
           <span class="text-neutral-300 dark:text-neutral-700">·</span>
-          <span>慢调用: <span id="slowCount" class="font-medium">0</span></span>
+          <span>慢调用: <span id="slowCount" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-warning-100 text-warning-700 dark:bg-warning-900/30 dark:text-warning-400">0</span></span>
         </div>
       </div>
 
@@ -71,13 +71,16 @@
             <input type="text" id="searchInput" placeholder="搜索工具、命令、路径..." class="w-full pl-9 pr-8 py-2 text-sm bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent" oninput="window._searchInputHandler && window._searchInputHandler(this.value)">
             <button id="searchClear" class="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 hidden" onclick="clearSearch()">×</button>
           </div>
+          <span id="searchCount" class="text-xs text-neutral-400 hidden"></span>
           <div class="flex items-center gap-2" id="sourceFilters">
             <span class="text-xs text-neutral-400 mr-1">来源:</span>
-            <button class="source-chip active" data-source="all" onclick="filterSource('all')">全部</button>
-            <button class="source-chip" data-source="claude-code" onclick="filterSource('claude-code')">Claude Code</button>
-            <button class="source-chip" data-source="hermes" onclick="filterSource('hermes')">Hermes</button>
-            <button class="source-chip" data-source="codex" onclick="filterSource('codex')">Codex</button>
-            <button class="source-chip" data-source="opencode" onclick="filterSource('opencode')">OpenCode</button>
+            <select id="sourceSelect" class="text-xs px-2 py-1 bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" onchange="filterSource(this.value)">
+              <option value="all">全部</option>
+              <option value="claude-code">Claude Code</option>
+              <option value="hermes">Hermes</option>
+              <option value="codex">Codex</option>
+              <option value="opencode">OpenCode</option>
+            </select>
           </div>
           <div class="w-px h-4 bg-neutral-200 dark:bg-neutral-700"></div>
           <div class="flex items-center gap-2" id="toolFilters">

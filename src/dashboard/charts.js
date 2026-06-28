@@ -36,6 +36,20 @@ export function renderToolDistChart(canvasId, tools) {
   if (!canvas) return;
   destroyChart(canvasId);
 
+  // 空数据状态
+  if (!tools || tools.length === 0) {
+    const parent = canvas.parentElement;
+    if (!parent.querySelector('.empty-state')) {
+      canvas.style.display = 'none';
+      const empty = document.createElement('div');
+      empty.className = 'empty-state';
+      empty.innerHTML = '<div class="empty-state-icon">📊</div><div class="text-sm">暂无工具使用数据</div>';
+      parent.appendChild(empty);
+    }
+    return;
+  }
+  canvas.style.display = '';
+
   if (!tools || tools.length === 0) return;
 
   const sorted = [...tools].sort((a, b) => (b.count || 0) - (a.count || 0));
