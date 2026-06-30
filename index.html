@@ -34,10 +34,12 @@
   <div class="fixed top-12 left-0 right-0 z-40 bg-neutral-50 dark:bg-neutral-950 border-b border-neutral-200 dark:border-neutral-800">
     <div class="max-w-screen-2xl mx-auto px-4 py-2">
       <div class="flex items-center gap-1 overflow-x-auto" id="toolTabs">
+        <button class="tool-tab active" data-tool="all" onclick="selectTool('all')">全部</button>
         <button class="tool-tab" data-tool="claude-code" onclick="selectTool('claude-code')">Claude Code</button>
         <button class="tool-tab" data-tool="hermes" onclick="selectTool('hermes')">Hermes</button>
         <button class="tool-tab" data-tool="codex" onclick="selectTool('codex')">Codex</button>
         <button class="tool-tab" data-tool="opencode" onclick="selectTool('opencode')">OpenCode</button>
+        <button class="tool-tab" data-tool="pi" onclick="selectTool('pi')">Pi</button>
       </div>
     </div>
   </div>
