@@ -11,6 +11,7 @@ import { initDashboard, loadDashboardData } from './dashboard/index.js';
 let currentTab = 'callchain';
 let currentTool = 'all';
 let currentProject = '';
+let sortOrder = 'desc'; // 'desc' = 最新在前, 'asc' = 最早在前
 let autoRefresh = false;
 let refreshTimer = null;
 let isDark = false;
@@ -53,8 +54,18 @@ async function initProjects() {
   });
   select.addEventListener('change', () => {
     currentProject = select.value;
+    // 重置来源过滤
+    currentTool = 'all';
+    document.querySelectorAll('.tool-tab').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.tool === 'all');
+    });
+    // 重置工具类型过滤
+    document.querySelectorAll('.filter-chip-sm').forEach(chip => {
+      chip.classList.toggle('active', chip.dataset.filter === 'all');
+    });
+    updateFilterSummary();
     loadCallChain();
-    loadDashboardData(currentProject);
+    loadDashboardData(currentProject, undefined, '');
   });
 }
 
@@ -135,10 +146,10 @@ window.toggleAutoRefresh = function () {
 };
 
 window.toggleSort = function () {
+  sortOrder = sortOrder === 'desc' ? 'asc' : 'desc';
   const btn = document.getElementById('sortBtn');
   if (btn) {
-    const isLatest = btn.textContent.includes('最新');
-    btn.textContent = isLatest ? '↑ 最早' : '↓ 最新';
+    btn.textContent = sortOrder === 'desc' ? '↓ 最新' : '↑ 最早';
   }
   loadCallChain();
 };
@@ -149,6 +160,7 @@ async function loadCallChain() {
     const params = new URLSearchParams();
     if (currentTool !== 'all') params.set('source', currentTool);
     if (currentProject) params.set('project', currentProject);
+    params.set('sort', sortOrder);
     params.set('limit', '100');
 
     const res = await fetch(`${CONFIG.API_BASE}/api/sessions?${params}`);
@@ -249,7 +261,7 @@ window.setTimeRange = function (range) {
   document.querySelectorAll('.time-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.range === range);
   });
-  loadDashboardData(currentProject, range);
+  loadDashboardData(currentProject, range, currentTool === 'all' ? '' : currentTool);
 };
 
 // ─── 会话展开/折叠 ─────────────────────────────────
