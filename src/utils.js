@@ -157,24 +157,6 @@ export async function fetchTools(project, source) {
 }
 
 /**
- * 获取时间线数据
- */
-export async function fetchTimeline(project, timeRange) {
-  try {
-    const params = new URLSearchParams();
-    if (project) params.set('project', project);
-    if (timeRange) params.set('since', timeRange);
-    const url = `${CONFIG.API_BASE}/api/timeline?${params}`;
-    const res = await fetch(url);
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.items || data || [];
-  } catch {
-    return [];
-  }
-}
-
-/**
  * 获取技能列表
  */
 export async function fetchSkills() {
@@ -226,22 +208,4 @@ export function extractSessions(logs) {
     if (log.duration_ms) session.totalDuration += log.duration_ms;
   }
   return Array.from(sessionMap.values()).sort((a, b) => b.startTime - a.startTime);
-}
-
-/**
- * 获取时间范围的起始时间
- */
-export function getTimeRangeStart(range) {
-  const now = new Date();
-  switch (range) {
-    case 'today':
-      return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    case 'week':
-      return now.getTime() - 7 * 24 * 60 * 60 * 1000;
-    case 'month':
-      return now.getTime() - 30 * 24 * 60 * 60 * 1000;
-    case 'all':
-    default:
-      return 0;
-  }
 }

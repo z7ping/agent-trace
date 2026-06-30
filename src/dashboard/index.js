@@ -3,7 +3,7 @@
  */
 
 import { CONFIG, getToolType, escapeHtml } from '../config.js';
-import { fetchStats, fetchTools, fetchTimeline, fetchSkills, getTimeRangeStart } from '../utils.js';
+import { fetchStats, fetchTools, fetchSkills } from '../utils.js';
 import { renderToolDistChart, renderToolRankChart, renderSkillFreqChart, renderTrendChart } from './charts.js';
 
 let currentTimeRange = 'week';

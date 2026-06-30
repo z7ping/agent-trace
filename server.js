@@ -213,12 +213,6 @@ async function main() {
         '.woff2': 'font/woff2',
     };
 
-    // ─── SQLite 数据库 ──────────────────────────────────────────
-
-    const { openDb, getAvailableBackend } = require('./db');
-    const DB_FILE = path.join(ROOT, 'a-beat.db');
-    let db = null;
-
     // ─── a-beat.db 集成 ─────────────────────────────────────
     const trackerDb = require('./abeat-db');
 
