@@ -9,7 +9,7 @@ const fs = require('fs');
 const path = require('path');
 const Database = require('better-sqlite3');
 
-const DB_PATH = path.join(__dirname, 'a-beat.db');
+const DB_PATH = path.join(__dirname, '..', 'a-beat.db');
 const SCHEMA_PATH = path.join(__dirname, 'schema.sql');
 
 let _db = null;

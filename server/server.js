@@ -38,7 +38,7 @@ const shouldStatus = flags.includes('--status');
 
 // 端口：第一个非 flag 参数，或环境变量，或默认 56789
 const PORT = parseInt(positional[0], 10) || parseInt(process.env.TRACKER_PORT, 10) || require('./config').DEFAULT_PORT;
-const ROOT = __dirname;
+const ROOT = path.join(__dirname, '..');
 const DIR = fs.existsSync(path.join(ROOT, 'dist'))
     ? path.join(ROOT, 'dist')
     : ROOT;

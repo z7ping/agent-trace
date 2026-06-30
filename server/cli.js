@@ -21,11 +21,11 @@ const { spawn, execSync } = require('child_process');
 
 // ─── 配置 ────────────────────────────────────────────────────────
 
-const PROJECT_DIR = __dirname;
+const PROJECT_DIR = path.join(__dirname, '..');
 const INSTALL_DIR = path.join(os.homedir(), '.claude', 'agent-beat');
 const SETTINGS_FILE = path.join(os.homedir(), '.claude', 'settings.json');
 const { DEFAULT_PORT } = require('./config');
-const VERSION = require('./package.json').version;
+const VERSION = require('../package.json').version;
 
 // ─── 彩色输出 ────────────────────────────────────────────────────
 
@@ -155,22 +155,22 @@ async function cmdInstall() {
         // hooks/
         const hooks = ['prelog.js', 'log.js', 'server-guard.js'];
         hooks.forEach(f => {
-            copyFile(path.join(PROJECT_DIR, 'hooks', f), path.join(INSTALL_DIR, 'hooks', f));
+            copyFile(path.join(PROJECT_DIR, 'server', 'hooks', f), path.join(INSTALL_DIR, 'hooks', f));
         });
 
-        // 根目录文件
+        // server/ 根目录文件
         const rootFiles = [
             'server.js', 'cli.js', 'db.js', 'config.js', 'abeat-db.js',
-            'install-hooks.js', 'schema.sql', 'README.md'
+            'install-hooks.js', 'schema.sql'
         ];
         rootFiles.forEach(f => {
-            copyFile(path.join(PROJECT_DIR, f), path.join(INSTALL_DIR, f));
+            copyFile(path.join(PROJECT_DIR, 'server', f), path.join(INSTALL_DIR, f));
         });
 
         // adapters/
-        const adapters = fs.readdirSync(path.join(PROJECT_DIR, 'adapters')) || [];
+        const adapters = fs.readdirSync(path.join(PROJECT_DIR, 'server', 'adapters')) || [];
         adapters.forEach(f => {
-            copyFile(path.join(PROJECT_DIR, 'adapters', f), path.join(INSTALL_DIR, 'adapters', f));
+            copyFile(path.join(PROJECT_DIR, 'server', 'adapters', f), path.join(INSTALL_DIR, 'adapters', f));
         });
 
         // dist/ (Vite 构建产物)
@@ -271,7 +271,7 @@ function cmdStart(argv) {
             const vbsContent = [
                 'Set objShell = CreateObject("WScript.Shell")',
                 `objShell.CurrentDirectory = "${PROJECT_DIR}"`,
-                `objShell.Run "cmd.exe /c start /b node server.js ${port} --daemon", 0, False`,
+                `objShell.Run "cmd.exe /c start /b node server/server.js ${port} --daemon", 0, False`,
             ].join('\r\n');
             const vbsPath = path.join(os.tmpdir(), 'agent-beat-daemon.vbs');
             fs.writeFileSync(vbsPath, vbsContent, 'utf-8');
@@ -282,7 +282,7 @@ function cmdStart(argv) {
             }
         } else {
             // Unix: detached + unref
-            const child = spawn('node', ['server.js', ...serverArgs], {
+            const child = spawn('node', ['server/server.js', ...serverArgs], {
                 cwd: PROJECT_DIR,
                 detached: true,
                 stdio: ['ignore', 'ignore', 'ignore'],
@@ -471,14 +471,14 @@ function cmdPackage() {
     log('复制文件...', 'cyan');
 
     const hookFiles = ['prelog.js', 'log.js', 'server-guard.js'];
-    hookFiles.forEach(f => copyFile(path.join(PROJECT_DIR, 'hooks', f), path.join(pkgDir, 'hooks', f)));
+    hookFiles.forEach(f => copyFile(path.join(PROJECT_DIR, 'server', 'hooks', f), path.join(pkgDir, 'hooks', f)));
 
     const rootFiles = [
-        'index.html', 'server.js', 'install-hooks.js',
-        'cli.js', 'db.js', 'config.js', 'abeat-db.js',
-        'schema.sql', 'README.md', '.gitignore'
+        'index.html', 'README.md', '.gitignore',
+        'server.js', 'cli.js', 'db.js', 'config.js', 'abeat-db.js',
+        'install-hooks.js', 'schema.sql'
     ];
-    rootFiles.forEach(f => copyFile(path.join(PROJECT_DIR, f), path.join(pkgDir, f)));
+    rootFiles.forEach(f => copyFile(path.join(PROJECT_DIR, 'server', f), path.join(pkgDir, f)));
 
     log(`[OK] ${hookFiles.length + rootFiles.length} 个文件已复制`, 'green');
 

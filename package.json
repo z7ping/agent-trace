@@ -2,31 +2,24 @@
   "name": "agent-beat",
   "version": "1.8.1",
   "description": "实时监控和可视化 Claude Code、Hermes、Codex、OpenCode 等 AI 编码工具的调用记录，多工具统一追踪，按会话分组展示。",
-  "main": "cli.js",
+  "main": "server/cli.js",
   "bin": {
-    "agent-beat": "./cli.js"
+    "agent-beat": "./server/cli.js"
   },
   "scripts": {
     "dev": "vite --port 5173",
     "dev:frontend": "vite --port 5173",
     "build": "vite build",
-    "start": "node cli.js start",
-    "stop": "node cli.js stop",
-    "status": "node cli.js status",
-    "install-hooks": "node cli.js install",
-    "package": "node cli.js package",
+    "start": "node server/cli.js start",
+    "stop": "node server/cli.js stop",
+    "status": "node server/cli.js status",
+    "install-hooks": "node server/cli.js install",
+    "package": "node server/cli.js package",
     "prepublishOnly": "vite build"
   },
   "files": [
     "dist/",
-    "server.js",
-    "cli.js",
-    "db.js",
-    "config.js",
-    "abeat-db.js",
-    "install-hooks.js",
-    "hooks/",
-    "adapters/",
+    "server/",
     "README.md"
   ],
   "repository": {
