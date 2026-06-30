@@ -19,6 +19,7 @@ let isDark = false;
 document.addEventListener('DOMContentLoaded', async () => {
   initTheme();
   initProjects();
+  initSourceSelect();
   initEventListeners();
   await loadCallChain();
   initDashboard();
@@ -78,26 +79,26 @@ window.switchTab = function (tab) {
   document.getElementById('tab-dashboard')?.classList.toggle('active', tab === 'dashboard');
   // 调用链操作区
   document.getElementById('callchainActions')?.classList.toggle('hidden', tab !== 'callchain');
-  // 工具 Tab：仪表盘时隐藏
-  document.querySelector('.fixed.top-\\[6rem\\]')?.classList.toggle('hidden', tab !== 'callchain');
+
   // 切换到仪表盘时加载数据（带上当前工具来源过滤）
   if (tab === 'dashboard') {
     loadDashboardData(currentProject, undefined, currentTool === 'all' ? '' : currentTool);
   }
 };
 
-// ─── 工具 Tab 选择 ──────────────────────────────────
-window.selectTool = function (tool) {
-  currentTool = tool;
-  document.querySelectorAll('.tool-tab').forEach(tab => {
-    tab.classList.toggle('active', tab.dataset.tool === tool);
+// ─── 来源选择 ───────────────────────────────────────
+function initSourceSelect() {
+  const select = document.getElementById('sourceSelect');
+  if (!select) return;
+  select.addEventListener('change', () => {
+    currentTool = select.value;
+    loadCallChain();
+    updateFilterSummary();
+    if (currentTab === 'dashboard') {
+      loadDashboardData(currentProject, undefined, currentTool === 'all' ? '' : currentTool);
+    }
   });
-  loadCallChain();
-  // 如果仪表盘激活，也刷新仪表盘数据（传递 source 参数）
-  if (currentTab === 'dashboard') {
-    loadDashboardData(currentProject, undefined, tool);
-  }
-};
+}
 
 // ─── 自动刷新 ───────────────────────────────────────
 function startAutoRefresh() {
@@ -173,6 +174,7 @@ window.filterTool = function (type) {
     chip.classList.toggle('active', chip.dataset.filter === type);
   });
   applyFilters();
+  updateFilterSummary();
 };
 
 // ─── 组合过滤（仅工具类型）──────────────────────────
@@ -185,6 +187,16 @@ function applyFilters() {
     const matchTool = activeTool === 'all' || rowType === activeTool;
     row.style.display = matchTool ? '' : 'none';
   });
+}
+
+function updateFilterSummary() {
+  const el = document.getElementById('filterSummary');
+  if (!el) return;
+  const activeFilter = document.querySelector('.filter-chip-sm.active')?.dataset.filter || 'all';
+  const parts = [];
+  if (currentTool !== 'all') parts.push(`来源: ${currentTool}`);
+  if (activeFilter !== 'all') parts.push(`类型: ${activeFilter}`);
+  el.textContent = parts.length ? parts.join(' · ') : '';
 }
 
 // ─── 状态更新 ───────────────────────────────────────
