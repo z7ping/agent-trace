@@ -19,7 +19,6 @@ let isDark = false;
 document.addEventListener('DOMContentLoaded', async () => {
   initTheme();
   initProjects();
-  initSourceSelect();
   initEventListeners();
   await loadCallChain();
   initDashboard();
@@ -86,19 +85,18 @@ window.switchTab = function (tab) {
   }
 };
 
-// ─── 来源选择 ───────────────────────────────────────
-function initSourceSelect() {
-  const select = document.getElementById('sourceSelect');
-  if (!select) return;
-  select.addEventListener('change', () => {
-    currentTool = select.value;
-    loadCallChain();
-    updateFilterSummary();
-    if (currentTab === 'dashboard') {
-      loadDashboardData(currentProject, undefined, currentTool === 'all' ? '' : currentTool);
-    }
+// ─── 来源 Tab 选择 ──────────────────────────────────
+window.selectTool = function (tool) {
+  currentTool = tool;
+  document.querySelectorAll('.tool-tab').forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.tool === tool);
   });
-}
+  loadCallChain();
+  updateFilterSummary();
+  if (currentTab === 'dashboard') {
+    loadDashboardData(currentProject, undefined, tool === 'all' ? '' : tool);
+  }
+};
 
 // ─── 自动刷新 ───────────────────────────────────────
 function startAutoRefresh() {

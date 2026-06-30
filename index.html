@@ -34,15 +34,15 @@
   <div class="fixed top-12 left-0 right-0 z-40 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800">
     <div class="max-w-screen-2xl mx-auto px-4 py-2 flex items-center gap-3 text-sm flex-wrap">
       <!-- 来源选择 -->
-      <select id="sourceSelect" class="bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
-        <option value="all">全部来源</option>
-        <option value="claude-code">Claude Code</option>
-        <option value="hermes">Hermes</option>
-        <option value="codex">Codex</option>
-        <option value="opencode">OpenCode</option>
-        <option value="pi">Pi</option>
-        <option value="openclaw">OpenClaw</option>
-      </select>
+      <div class="flex items-center gap-1 overflow-x-auto" id="toolTabs">
+        <button class="tool-tab active" data-tool="all" onclick="selectTool('all')">全部</button>
+        <button class="tool-tab" data-tool="claude-code" onclick="selectTool('claude-code')">Claude Code</button>
+        <button class="tool-tab" data-tool="hermes" onclick="selectTool('hermes')">Hermes</button>
+        <button class="tool-tab" data-tool="codex" onclick="selectTool('codex')">Codex</button>
+        <button class="tool-tab" data-tool="opencode" onclick="selectTool('opencode')">OpenCode</button>
+        <button class="tool-tab" data-tool="pi" onclick="selectTool('pi')">Pi</button>
+        <button class="tool-tab" data-tool="openclaw" onclick="selectTool('openclaw')">OpenClaw</button>
+      </div>
       <!-- 项目选择 -->
       <select id="projectSelect" class="bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
         <option value="">全部项目</option>
