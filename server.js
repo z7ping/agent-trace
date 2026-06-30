@@ -667,16 +667,19 @@ async function main() {
             log(`  ⚠️ 数据库初始化失败: ${e.message}`, 'yellow');
         }
 
-        // 启动 Claude Code JSONL 轮询
+        // 启动需要轮询的适配器
         try {
             const { getAdapter } = require('./adapters');
-            const ccAdapter = getAdapter('claude-code');
-            if (ccAdapter && ccAdapter.startPolling) {
-                ccAdapter.startPolling();
-                log(`  ✅ Claude Code JSONL 轮询已启动`, 'green');
+            const pollingAdapters = ['claude-code', 'opencode'];
+            for (const name of pollingAdapters) {
+                const adapter = getAdapter(name);
+                if (adapter && adapter.startPolling) {
+                    adapter.startPolling();
+                    log(`  ✅ ${name} 轮询已启动`, 'green');
+                }
             }
         } catch (e) {
-            log(`  ⚠️ Claude Code 轮询启动失败: ${e.message}`, 'yellow');
+            log(`  ⚠️ 轮询启动失败: ${e.message}`, 'yellow');
         }
     }
 
