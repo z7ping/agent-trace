@@ -24,17 +24,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   initDashboard();
   startAutoRefresh();
   checkStatus();
-  // 初始化自动刷新按钮状态（反映默认关闭）
-  if (!autoRefresh) {
-    const liveDot = document.getElementById('liveDot');
-    const liveText = document.getElementById('liveText');
-    const liveToggle = document.getElementById('liveToggle');
-    if (liveDot) liveDot.className = 'w-2 h-2 rounded-full bg-neutral-400';
-    if (liveText) liveText.textContent = 'PAUSED';
-    if (liveToggle) {
-      liveToggle.className = 'flex items-center gap-1.5 px-2 py-1 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-500 font-medium cursor-pointer hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors';
-    }
-  }
 });
 
 // ─── 主题 ───────────────────────────────────────────

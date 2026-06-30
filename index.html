@@ -63,9 +63,9 @@
       </div>
       <div class="ml-auto flex items-center gap-4 text-xs text-neutral-500">
         <!-- 状态 -->
-        <span id="liveIndicator" class="flex items-center gap-1.5 text-success-600 dark:text-success-400 cursor-pointer" onclick="toggleAutoRefresh()" title="点击切换">
-          <span class="w-2 h-2 rounded-full bg-success-500 animate-pulse"></span>
-          LIVE
+        <span id="liveToggle" class="flex items-center gap-1.5 px-2 py-1 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-500 font-medium cursor-pointer hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors" onclick="toggleAutoRefresh()" title="点击切换自动刷新">
+          <span id="liveDot" class="w-2 h-2 rounded-full bg-neutral-400"></span>
+          <span id="liveText">PAUSED</span>
         </span>
         <span class="text-neutral-300 dark:text-neutral-700">·</span>
         <span>Hook</span>
