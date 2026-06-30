@@ -163,7 +163,7 @@ function renderSession(session) {
 
   // 来源标签样式
   const source = session.source || '';
-  const sourceLabels = { 'claude-code': 'Claude', 'hermes': 'Hermes', 'codex': 'Codex', 'opencode': 'OpenCode', 'cursor': 'Cursor', 'pi': 'Pi' };
+  const sourceLabels = { 'claude-code': 'Claude', 'hermes': 'Hermes', 'codex': 'Codex', 'opencode': 'OpenCode', 'cursor': 'Cursor', 'pi': 'Pi', 'openclaw': 'OpenClaw' };
   const sourceColors = {
     'claude-code': 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
     'hermes': 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
@@ -171,6 +171,7 @@ function renderSession(session) {
     'opencode': 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
     'cursor': 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',
     'pi': 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
+    'openclaw': 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',
   };
   const sourceLabel = sourceLabels[source] || source;
   const sourceColor = sourceColors[source] || 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400';
@@ -210,6 +211,7 @@ function renderSession(session) {
     'opencode': 'border-l-orange-500 dark:border-l-orange-400',
     'cursor': 'border-l-cyan-500 dark:border-l-cyan-400',
     'pi': 'border-l-rose-500 dark:border-l-rose-400',
+    'openclaw': 'border-l-teal-500 dark:border-l-teal-400',
   };
   const borderClass = sourceBorderColors[source] || 'border-l-neutral-300 dark:border-l-neutral-600';
 
@@ -322,7 +324,7 @@ function renderCall(call, index, projectPath) {
 
   // 来源标签
   const source = call.source || '';
-  const sourceLabels = { 'claude-code': 'Claude', 'hermes': 'Hermes', 'codex': 'Codex', 'opencode': 'OpenCode', 'cursor': 'Cursor', 'pi': 'Pi' };
+  const sourceLabels = { 'claude-code': 'Claude', 'hermes': 'Hermes', 'codex': 'Codex', 'opencode': 'OpenCode', 'cursor': 'Cursor', 'pi': 'Pi', 'openclaw': 'OpenClaw' };
   const sourceLabel = sourceLabels[source] || source;
 
   // 树形缩进
