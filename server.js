@@ -670,7 +670,7 @@ async function main() {
         // 启动需要轮询的适配器
         try {
             const { getAdapter } = require('./adapters');
-            const pollingAdapters = ['claude-code', 'opencode'];
+            const pollingAdapters = ['claude-code', 'opencode', 'pi'];
             for (const name of pollingAdapters) {
                 const adapter = getAdapter(name);
                 if (adapter && adapter.startPolling) {

@@ -10,6 +10,7 @@ const CodexAdapter = require('./codex');
 const OpenCodeAdapter = require('./opencode');
 const OpenClawAdapter = require('./openclaw');
 const CursorAdapter = require('./cursor');
+const PiAdapter = require('./pi');
 
 // ─── 适配器注册 ──────────────────────────────────────────
 
@@ -22,6 +23,7 @@ adapters.set('codex', new CodexAdapter());
 adapters.set('opencode', new OpenCodeAdapter());
 adapters.set('openclaw', new OpenClawAdapter());
 adapters.set('cursor', new CursorAdapter());
+adapters.set('pi', new PiAdapter());
 
 // 未来适配器在这里注册：
 
