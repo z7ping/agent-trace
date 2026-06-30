@@ -159,8 +159,7 @@ export function renderToolRankChart(canvasId, tools) {
   canvas.style.display = '';
 
   const sorted = [...tools]
-    .sort((a, b) => (b.count || 0) - (a.count || 0))
-    .slice(0, 10);
+    .sort((a, b) => (b.count || 0) - (a.count || 0));
 
   const labels = sorted.map(t => t.name || t.tool_name || '未知');
   const data = sorted.map(t => t.count || 0);

@@ -66,7 +66,15 @@ export async function loadDashboardData(project, timeRange, source) {
   // 图表
   renderToolDistChart('toolDistChart', tools);
   // 工具调用排行：使用 byTool 数据（更丰富），回退到 tools 数据
-  const toolRankData = stats?.byTool || tools || [];
+  let toolRankData = stats?.byTool || tools || [];
+  // 合并 MCP 工具为单一类别
+  const mcpAgg = toolRankData.filter(t => (t.name || t.tool_name || '').startsWith('mcp_'));
+  const nonMcp = toolRankData.filter(t => !(t.name || t.tool_name || '').startsWith('mcp_'));
+  if (mcpAgg.length > 0) {
+    const mcpTotal = mcpAgg.reduce((sum, t) => sum + (t.count || 0), 0);
+    nonMcp.push({ name: 'MCP', tool_name: 'mcp', count: mcpTotal });
+  }
+  toolRankData = nonMcp;
   renderToolRankChart('toolRankChart', toolRankData);
   // 技能调用频率：仅 Claude Code 支持，其他工具显示空状态
   if (currentSource && currentSource !== 'claude-code') {
