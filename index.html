@@ -97,6 +97,19 @@
     <!-- ── 仪表盘 Tab ── -->
     <section id="tab-dashboard" class="tab-panel hidden">
       <div class="max-w-screen-2xl mx-auto px-4 py-6">
+        <!-- 整体空状态 -->
+        <div id="dashboardEmpty" class="hidden">
+          <div class="flex flex-col items-center justify-center py-20">
+            <div class="text-5xl mb-4">🧠</div>
+            <h3 class="text-lg font-semibold text-neutral-700 dark:text-neutral-300 mb-2">暂无监控数据</h3>
+            <p class="text-sm text-neutral-500 mb-4">安装 Hook 后，AI 工具的调用记录会自动捕获到这里</p>
+            <div class="bg-neutral-100 dark:bg-neutral-800 rounded-lg px-4 py-3 font-mono text-sm text-neutral-700 dark:text-neutral-300 select-all">
+              npx agent-beat install
+            </div>
+          </div>
+        </div>
+        <!-- 仪表盘内容 -->
+        <div id="dashboardContent">
         <!-- 时间范围选择 -->
         <div class="flex items-center gap-3 mb-6">
           <div class="flex items-center bg-neutral-100 dark:bg-neutral-800 rounded-lg p-1">
@@ -180,6 +193,7 @@
             <div id="errorTop5" class="space-y-2"></div>
           </div>
         </div>
+        </div><!-- /dashboardContent -->
       </div>
     </section>
   </main>

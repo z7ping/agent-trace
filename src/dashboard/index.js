@@ -37,6 +37,19 @@ export async function loadDashboardData(project, timeRange, source) {
 
   console.log('[Dashboard] stats:', !!stats, 'tools:', tools?.length, 'skills:', skills?.totalUniqueSkills);
 
+  // 判断是否有数据
+  const hasData = stats && (
+    (stats.totals?.total_calls || stats.totals?.total || stats.total_calls || 0) > 0
+    || (tools && tools.length > 0)
+  );
+
+  const dashboardEmpty = document.getElementById('dashboardEmpty');
+  const dashboardContent = document.getElementById('dashboardContent');
+  if (dashboardEmpty) dashboardEmpty.classList.toggle('hidden', hasData);
+  if (dashboardContent) dashboardContent.classList.toggle('hidden', !hasData);
+
+  if (!hasData) return;
+
   // 核心指标（兼容新旧格式）
   if (stats) {
     const totals = stats.totals || stats;

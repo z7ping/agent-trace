@@ -40,15 +40,18 @@ export function renderToolDistChart(canvasId, tools) {
   // 空数据状态
   if (!tools || tools.length === 0) {
     const parent = canvas.parentElement;
-    if (!parent.querySelector('.empty-state')) {
+    if (!parent.querySelector('.chart-empty')) {
       canvas.style.display = 'none';
       const empty = document.createElement('div');
-      empty.className = 'empty-state';
-      empty.innerHTML = '<div class="empty-state-icon">📊</div><div class="text-sm">暂无工具使用数据</div>';
+      empty.className = 'chart-empty flex flex-col items-center justify-center h-full text-neutral-400 dark:text-neutral-600';
+      empty.innerHTML = '<span class="text-2xl mb-1">📊</span><span class="text-xs">暂无数据</span>';
       parent.appendChild(empty);
     }
     return;
   }
+  // 渲染时移除旧空状态
+  const oldEmpty = canvas.parentElement?.querySelector('.chart-empty');
+  if (oldEmpty) oldEmpty.remove();
   canvas.style.display = '';
 
   const sorted = [...tools].sort((a, b) => (b.count || 0) - (a.count || 0));
@@ -141,15 +144,18 @@ export function renderToolRankChart(canvasId, tools) {
   // 空数据状态
   if (!tools || tools.length === 0) {
     const parent = canvas.parentElement;
-    if (!parent.querySelector('.empty-state')) {
+    if (!parent.querySelector('.chart-empty')) {
       canvas.style.display = 'none';
       const empty = document.createElement('div');
-      empty.className = 'empty-state';
-      empty.innerHTML = '<div class="empty-state-icon">📊</div><div class="text-sm">暂无工具使用数据</div>';
+      empty.className = 'chart-empty flex flex-col items-center justify-center h-full text-neutral-400 dark:text-neutral-600';
+      empty.innerHTML = '<span class="text-2xl mb-1">📊</span><span class="text-xs">暂无数据</span>';
       parent.appendChild(empty);
     }
     return;
   }
+  // 渲染时移除旧空状态
+  const oldEmpty = canvas.parentElement?.querySelector('.chart-empty');
+  if (oldEmpty) oldEmpty.remove();
   canvas.style.display = '';
 
   const sorted = [...tools]
@@ -228,15 +234,18 @@ export function renderSkillFreqChart(canvasId, skills) {
   // 空数据状态
   if (!skills || skills.length === 0) {
     const parent = canvas.parentElement;
-    if (!parent.querySelector('.empty-state')) {
+    if (!parent.querySelector('.chart-empty')) {
       canvas.style.display = 'none';
       const empty = document.createElement('div');
-      empty.className = 'empty-state';
-      empty.innerHTML = '<div class="empty-state-icon">🎯</div><div class="text-sm">暂无技能调用数据</div>';
+      empty.className = 'chart-empty flex flex-col items-center justify-center h-full text-neutral-400 dark:text-neutral-600';
+      empty.innerHTML = '<span class="text-2xl mb-1">🎯</span><span class="text-xs">暂无数据</span>';
       parent.appendChild(empty);
     }
     return;
   }
+  // 渲染时移除旧空状态
+  const oldEmpty = canvas.parentElement?.querySelector('.chart-empty');
+  if (oldEmpty) oldEmpty.remove();
   canvas.style.display = '';
 
   const sorted = [...skills]
