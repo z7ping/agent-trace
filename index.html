@@ -32,8 +32,8 @@
 
   <!-- ═══ 第二层：来源 + 项目 + 工具类型 + 状态栏 ═══ -->
   <div class="fixed top-12 left-0 right-0 z-40 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800">
-    <div class="max-w-screen-2xl mx-auto px-4 py-2 flex items-center gap-3 text-sm flex-wrap">
-      <!-- 来源选择 -->
+    <div class="max-w-screen-2xl mx-auto px-4 pt-2">
+      <!-- 来源 Tab -->
       <div class="flex items-center gap-1 overflow-x-auto" id="toolTabs">
         <button class="tool-tab active" data-tool="all" onclick="selectTool('all')">全部</button>
         <button class="tool-tab" data-tool="claude-code" onclick="selectTool('claude-code')">Claude Code</button>
@@ -43,6 +43,8 @@
         <button class="tool-tab" data-tool="pi" onclick="selectTool('pi')">Pi</button>
         <button class="tool-tab" data-tool="openclaw" onclick="selectTool('openclaw')">OpenClaw</button>
       </div>
+    </div>
+    <div class="max-w-screen-2xl mx-auto px-4 pb-1.5 flex items-center gap-3 text-sm flex-wrap">
       <!-- 项目选择 -->
       <select id="projectSelect" class="bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
         <option value="">全部项目</option>
@@ -79,7 +81,7 @@
   </div>
 
   <!-- ═══ 主内容区 ═══ -->
-  <main class="pt-[6rem] min-h-screen">
+  <main class="pt-[8rem] min-h-screen">
 
     <!-- ── 调用链 Tab ── -->
     <section id="tab-callchain" class="tab-panel active">
