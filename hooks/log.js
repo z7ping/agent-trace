@@ -5,17 +5,20 @@
  *
  * 委托给适配器处理具体逻辑，本文件负责：
  * 1. 读取 stdin
- * 2. 分发给默认适配器的 post() 方法
+ * 2. 根据数据格式分发给对应适配器的 post() 方法
  */
 
 const path = require('path');
 const fs = require('fs');
-const { getDefaultAdapter } = require('../adapters');
+const { getDefaultAdapter, getAdapter } = require('../adapters');
 
-// 上级目录（agent-beat 根目录）
 const BASE_DIR = path.join(__dirname, '..');
 
-const adapter = getDefaultAdapter();
+// Codex 数据有 hook_event_name 字段，Claude Code 没有
+function pickAdapter(data) {
+    if (data.hook_event_name) return getAdapter('codex') || getDefaultAdapter();
+    return getDefaultAdapter();
+}
 
 function main() {
     try {
@@ -28,7 +31,6 @@ function main() {
 
                 const data = JSON.parse(input);
 
-                // 诊断：记录收到的 tool_name
                 const toolName = data.tool_name || data.name || '(empty)';
                 try {
                     const logFile = path.join(BASE_DIR, 'trace_post.log');
@@ -37,32 +39,25 @@ function main() {
 
                 if (Array.isArray(data)) {
                     for (const item of data) {
-                        await adapter.post(item);
+                        await pickAdapter(item).post(item);
                     }
                 } else {
-                    await adapter.post(data);
+                    await pickAdapter(data).post(data);
                 }
             } catch (e) {
-                // 记录错误日志
                 try {
                     const errorLog = path.join(BASE_DIR, 'trace_error.log');
-                    const timestamp = new Date().toISOString();
-                    fs.appendFileSync(errorLog, `[${timestamp}] ${e.message}\n${e.stack}\n`, 'utf-8');
-                } catch (logError) {
-                    // 忽略日志错误
-                }
+                    fs.appendFileSync(errorLog, `[${new Date().toISOString()}] ${e.message}\n${e.stack}\n`, 'utf-8');
+                } catch (_) {}
             }
         });
         process.stdin.on('error', (e) => {
             try {
                 const errorLog = path.join(BASE_DIR, 'trace_error.log');
-                const timestamp = new Date().toISOString();
-                fs.appendFileSync(errorLog, `[${timestamp}] stdin error: ${e.message}\n`, 'utf-8');
+                fs.appendFileSync(errorLog, `[${new Date().toISOString()}] stdin error: ${e.message}\n`, 'utf-8');
             } catch (_) {}
         });
-    } catch (e) {
-        // 静默失败
-    }
+    } catch (e) {}
 }
 
 main();

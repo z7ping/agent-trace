@@ -6,35 +6,33 @@
  * 委托给适配器处理具体逻辑，本文件负责：
  * 1. 自动拉起 HTTP 服务
  * 2. 读取 stdin
- * 3. 分发给默认适配器的 pre() 方法
+ * 3. 根据数据格式分发给对应适配器的 pre() 方法
  */
 
 const path = require('path');
-const { getDefaultAdapter } = require('../adapters');
+const { getDefaultAdapter, getAdapter } = require('../adapters');
 
-// 上级目录（agent-beat 根目录）
 const BASE_DIR = path.join(__dirname, '..');
-
-const adapter = getDefaultAdapter();
 
 function logError(e) {
     try {
         const fs = require('fs');
-        const logFile = require('path').join(BASE_DIR, 'trace_error.log');
-        const msg = `[${new Date().toISOString()}] PreToolUse prelog.js: ${e.message || e}\n`;
-        fs.appendFileSync(logFile, msg, 'utf-8');
-    } catch (_) {
-        // 写日志本身失败时静默
-    }
+        const logFile = path.join(BASE_DIR, 'trace_error.log');
+        fs.appendFileSync(logFile, `[${new Date().toISOString()}] PreToolUse prelog.js: ${e.message || e}\n`, 'utf-8');
+    } catch (_) {}
+}
+
+// Codex 数据有 hook_event_name 字段，Claude Code 没有
+function pickAdapter(data) {
+    if (data.hook_event_name) return getAdapter('codex') || getDefaultAdapter();
+    return getDefaultAdapter();
 }
 
 function main() {
-    // ─── 自动拉起 HTTP 服务（非阻塞）─────────────────────────
     try {
         const guard = require('./server-guard');
         guard.ensureServerRunning(BASE_DIR);
     } catch (_) {}
-    // ─────────────────────────────────────────────────────────
 
     try {
         const chunks = [];
@@ -46,31 +44,26 @@ function main() {
 
                 const data = JSON.parse(input);
 
-                // 诊断：记录收到的 tool_name
                 const toolName = data.tool_name || data.name || '(empty)';
                 try {
                     const fs = require('fs');
-                    const logFile = require('path').join(BASE_DIR, 'trace_pre.log');
+                    const logFile = path.join(BASE_DIR, 'trace_pre.log');
                     fs.appendFileSync(logFile, `[${new Date().toISOString()}] pre: tool=${toolName}\n`, 'utf-8');
                 } catch (_) {}
 
                 if (Array.isArray(data)) {
                     for (const item of data) {
-                        await adapter.pre(item);
+                        await pickAdapter(item).pre(item);
                     }
                 } else {
-                    await adapter.pre(data);
+                    await pickAdapter(data).pre(data);
                 }
             } catch (e) {
                 logError(e);
             }
         });
-        process.stdin.on('error', (e) => {
-            logError(e);
-        });
-    } catch (e) {
-        logError(e);
-    }
+        process.stdin.on('error', (e) => { logError(e); });
+    } catch (e) { logError(e); }
 }
 
 main();
