@@ -170,6 +170,40 @@ export async function fetchSkills() {
 }
 
 /**
+ * 获取错误列表
+ * 先尝试 /api/errors，回退到 /api/stats 的 recentErrors
+ */
+export async function fetchErrors(project, source, limit = 20) {
+  try {
+    const params = new URLSearchParams();
+    if (project) params.set('project', project);
+    if (source) params.set('source', source);
+    params.set('limit', String(limit));
+    const res = await fetch(`${CONFIG.API_BASE}/api/errors?${params}`);
+    if (res.ok) {
+      const data = await res.json();
+      return data.items || data || [];
+    }
+  } catch {
+    // fallback
+  }
+  // 回退到 stats.recentErrors
+  try {
+    const params = new URLSearchParams();
+    if (project) params.set('project', project);
+    if (source) params.set('source', source);
+    const res = await fetch(`${CONFIG.API_BASE}/api/stats?${params}`);
+    if (res.ok) {
+      const data = await res.json();
+      return (data.recentErrors || data.errors || []).slice(0, limit);
+    }
+  } catch {
+    // ignore
+  }
+  return [];
+}
+
+/**
  * 检查 Hook 状态
  */
 export async function checkHookStatus() {

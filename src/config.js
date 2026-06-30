@@ -50,6 +50,21 @@ export const CONFIG = {
 };
 
 /**
+ * 从 MCP 工具名中提取服务器名
+ * mcp_chrome_devtools_list_pages → chrome-devtools
+ * mcp_playwright_mcp_browser_navigate → playwright
+ * 非 MCP 工具返回原名
+ */
+export function getMcpServerName(toolName) {
+  if (!toolName) return toolName || 'unknown';
+  const parts = toolName.split('_');
+  if (parts.length >= 3 && parts[0] === 'mcp') {
+    return parts[1];
+  }
+  return toolName;
+}
+
+/**
  * 获取工具类型
  */
 export function getToolType(toolName) {

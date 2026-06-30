@@ -2,9 +2,9 @@
  * dashboard/index.js - 仪表盘模块
  */
 
-import { CONFIG, getToolType, escapeHtml } from '../config.js';
-import { fetchStats, fetchTools, fetchSkills } from '../utils.js';
-import { renderToolDistChart, renderToolRankChart, renderSkillFreqChart, renderTrendChart } from './charts.js';
+import { CONFIG, getToolType, getMcpServerName, escapeHtml, truncate, formatTime } from '../config.js';
+import { fetchStats, fetchTools, fetchSkills, fetchErrors } from '../utils.js';
+import { renderToolRankChart } from './charts.js';
 
 let currentTimeRange = 'week';
 let currentProject = '';
@@ -25,73 +25,77 @@ export function initDashboard() {
  */
 export async function loadDashboardData(project, timeRange, source) {
   try {
-  if (project !== undefined) currentProject = project;
-  if (timeRange) currentTimeRange = timeRange;
-  if (source !== undefined) currentSource = source;
+    if (project !== undefined) currentProject = project;
+    if (timeRange) currentTimeRange = timeRange;
+    if (source !== undefined) currentSource = source;
 
-  const [stats, tools, skills] = await Promise.all([
-    fetchStats(currentProject, currentTimeRange, currentSource),
-    fetchTools(currentProject, currentSource),
-    fetchSkills(),
-  ]);
+    const [stats, tools, skills, errors] = await Promise.all([
+      fetchStats(currentProject, currentTimeRange, currentSource),
+      fetchTools(currentProject, currentSource),
+      fetchSkills(),
+      fetchErrors(currentProject, currentSource, 20),
+    ]);
 
-  console.log('[Dashboard] stats:', !!stats, 'tools:', tools?.length, 'skills:', skills?.totalUniqueSkills);
+    console.log('[Dashboard] stats:', !!stats, 'tools:', tools?.length, 'skills:', skills?.totalUniqueSkills);
 
-  // 判断是否有数据
-  const hasData = stats && (
-    (stats.totals?.total_calls || stats.totals?.total || stats.total_calls || 0) > 0
-    || (tools && tools.length > 0)
-  );
+    // 判断是否有数据
+    const hasData = stats && (
+      (stats.totals?.total_calls || stats.totals?.total || stats.total_calls || 0) > 0
+      || (tools && tools.length > 0)
+    );
 
-  const dashboardEmpty = document.getElementById('dashboardEmpty');
-  const dashboardContent = document.getElementById('dashboardContent');
-  if (dashboardEmpty) dashboardEmpty.classList.toggle('hidden', hasData);
-  if (dashboardContent) dashboardContent.classList.toggle('hidden', !hasData);
+    const dashboardEmpty = document.getElementById('dashboardEmpty');
+    const dashboardContent = document.getElementById('dashboardContent');
+    if (dashboardEmpty) dashboardEmpty.classList.toggle('hidden', hasData);
+    if (dashboardContent) dashboardContent.classList.toggle('hidden', !hasData);
 
-  if (!hasData) return;
+    if (!hasData) return;
 
-  // 核心指标（兼容新旧格式）
-  if (stats) {
-    const totals = stats.totals || stats;
-    setTextIfExists('totalCalls', (totals?.total_calls || totals?.total || 0).toLocaleString());
-    const totalCalls = totals?.total_calls || 0;
-    const errRate = totalCalls > 0
-      ? ((totals?.total_errors || 0) / totalCalls * 100)
-      : (totals?.error_rate || 0);
-    setTextIfExists('errorRate', `${(errRate || 0).toFixed(1)}%`);
-    setTextIfExists('activeSessions', totals?.session_count || 0);
-    setTextIfExists('activeSkills', skills?.totalUniqueSkills || totals?.unique_tools || 0);
-  }
+    // ═══ 1. 核心指标卡片 ═══
+    if (stats) {
+      const totals = stats.totals || stats;
+      setTextIfExists('totalCalls', (totals?.total_calls || totals?.total || 0).toLocaleString());
 
-  // 图表
-  renderToolDistChart('toolDistChart', tools);
-  // 工具调用排行：使用 byTool 数据（更丰富），回退到 tools 数据
-  let toolRankData = stats?.byTool || tools || [];
-  // 合并 MCP 工具为单一类别
-  const mcpAgg = toolRankData.filter(t => (t.name || t.tool_name || '').startsWith('mcp_'));
-  const nonMcp = toolRankData.filter(t => !(t.name || t.tool_name || '').startsWith('mcp_'));
-  if (mcpAgg.length > 0) {
-    const mcpTotal = mcpAgg.reduce((sum, t) => sum + (t.count || 0), 0);
-    nonMcp.push({ name: 'MCP', tool_name: 'mcp', count: mcpTotal });
-  }
-  toolRankData = nonMcp;
-  renderToolRankChart('toolRankChart', toolRankData);
-  // 技能调用频率：仅 Claude Code 支持，其他工具显示空状态
-  if (currentSource && currentSource !== 'claude-code') {
-    renderSkillFreqChart('skillFreqChart', []);
-  } else {
-    const skillData = skills?.skillsSummary
-      ? Object.entries(skills.skillsSummary).map(([name, v]) => ({ name, count: v.count }))
-      : [];
-    renderSkillFreqChart('skillFreqChart', skillData);
-  }
-  renderTrendChart('trendChart', stats?.byDay || []);
+      // 技能数
+      setTextIfExists('totalSkills', (skills?.totalUniqueSkills || totals?.unique_tools || 0).toString());
 
-  // 会话回顾
-  renderSessionReview(tools);
+      // MCP 数：统计 byTool 中 mcp_ 开头的工具种类数
+      const byTool = stats?.byTool || tools || [];
+      const mcpToolCount = byTool.filter(t => (t.name || t.tool_name || '').startsWith('mcp_')).length;
+      setTextIfExists('totalMcp', mcpToolCount.toString());
 
-  // 错误分析
-  renderErrorAnalysis(stats);
+      // 错误率
+      const totalCalls = totals?.total_calls || 0;
+      const errRate = totalCalls > 0
+        ? ((totals?.total_errors || 0) / totalCalls * 100)
+        : (totals?.error_rate || 0);
+      setTextIfExists('errorRate', `${(errRate || 0).toFixed(1)}%`);
+    }
+
+    // ═══ 2. 工具使用排行（MCP 按服务器分组） ═══
+    let toolRankData = stats?.byTool || tools || [];
+    // MCP 分组：mcp_xxx_yyy → xxx，合并同一服务器的调用次数
+    const mcpMap = new Map();
+    const nonMcp = [];
+    for (const t of toolRankData) {
+      const name = t.name || t.tool_name || '';
+      if (name.startsWith('mcp_')) {
+        const server = getMcpServerName(name);
+        mcpMap.set(server, (mcpMap.get(server) || 0) + (t.count || 0));
+      } else {
+        nonMcp.push({ name, count: t.count || 0 });
+      }
+    }
+    for (const [server, count] of mcpMap) {
+      nonMcp.push({ name: server, count });
+    }
+    renderToolRankChart('toolRankChart', nonMcp);
+
+    // ═══ 3. 最近会话 ═══
+    renderRecentSessions(errors);
+
+    // ═══ 4. 错误列表 ═══
+    renderRecentErrors(errors);
   } catch (e) {
     console.error('[Dashboard] loadDashboardData error:', e);
   }
@@ -103,65 +107,74 @@ function setTextIfExists(id, value) {
 }
 
 /**
- * 渲染会话回顾
+ * 渲染最近会话
  */
-function renderSessionReview(tools) {
-  const container = document.getElementById('sessionReview');
+function renderRecentSessions(errors) {
+  const container = document.getElementById('recentSessions');
   if (!container) return;
 
-  if (!tools || tools.length === 0) {
-    container.innerHTML = '<div class="text-sm text-neutral-400 py-4 text-center">暂无数据</div>';
-    return;
-  }
-
-  const sorted = [...tools].sort((a, b) => (b.count || 0) - (a.count || 0));
-  const total = sorted.reduce((sum, t) => sum + (t.count || 0), 0);
-
-  container.innerHTML = sorted.slice(0, 8).map(tool => {
-    const toolName = tool.name || tool.tool_name || 'unknown';
-    const type = getToolType(toolName);
-    const colors = CONFIG.TOOL_COLORS[type] || CONFIG.TOOL_COLORS.other;
-    const count = tool.count || 0;
-    const pct = total > 0 ? ((count / total) * 100).toFixed(1) : 0;
-    return `
-      <div class="flex items-center justify-between py-2 px-2 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
-        <div class="flex items-center gap-2">
-          <span class="w-2 h-2 rounded-full ${colors.bg}"></span>
-          <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300">${escapeHtml(toolName)}</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="text-xs text-neutral-400">${pct}%</span>
-          <span class="text-sm font-semibold text-neutral-600 dark:text-neutral-400">${count.toLocaleString()}</span>
-        </div>
-      </div>
-    `;
-  }).join('');
+  // 会话数据通过 fetchSessions 获取
+  fetch(`${CONFIG.API_BASE}/api/sessions?limit=5${currentProject ? '&project=' + encodeURIComponent(currentProject) : ''}${currentSource ? '&source=' + encodeURIComponent(currentSource) : ''}`)
+    .then(r => r.ok ? r.json() : [])
+    .then(data => {
+      const sessions = data.items || data || [];
+      if (!sessions.length) {
+        container.innerHTML = '<div class="text-sm text-neutral-400 py-4 text-center">暂无会话</div>';
+        return;
+      }
+      container.innerHTML = sessions.map(s => {
+        const source = s.source || s.project_key || '—';
+        const toolCount = s.tool_count || s.tools_count || s.call_count || 0;
+        const ts = s.last_ts || s.last_timestamp || s.end_time || s.timestamp || '';
+        return `
+          <div class="flex items-center justify-between py-2 px-2 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="w-2 h-2 rounded-full bg-primary-500 shrink-0"></span>
+              <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300 truncate">${escapeHtml(source)}</span>
+            </div>
+            <div class="flex items-center gap-3 shrink-0">
+              <span class="text-xs text-neutral-400">${toolCount} 工具</span>
+              <span class="text-xs text-neutral-500">${formatTime(ts)}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    })
+    .catch(() => {
+      container.innerHTML = '<div class="text-sm text-neutral-400 py-4 text-center">加载失败</div>';
+    });
 }
 
 /**
- * 渲染错误分析
+ * 渲染最近错误列表
  */
-function renderErrorAnalysis(stats) {
-  const container = document.getElementById('errorTop5');
+function renderRecentErrors(errors) {
+  const container = document.getElementById('recentErrors');
   if (!container) return;
 
-  const errors = stats?.errors || stats?.byTool?.filter(t => t.errors > 0) || stats?.by_tool?.filter(t => t.errors > 0) || [];
-  if (errors.length === 0) {
+  if (!errors || errors.length === 0) {
     container.innerHTML = '<div class="text-sm text-success-500 py-4 text-center">🎉 暂无错误</div>';
     return;
   }
 
-  const sorted = [...errors].sort((a, b) => (b.error_count || b.errors || 0) - (a.error_count || a.errors || 0));
-  container.innerHTML = sorted.slice(0, 5).map(err => {
-    const name = err.name || err.tool_name || err.tool || '未知';
-    const count = err.error_count || err.errors || 0;
+  // 倒序（最新在前）
+  const sorted = [...errors].reverse().slice(0, 20);
+  container.innerHTML = sorted.map(err => {
+    const source = err.source || err.project_key || '—';
+    const toolName = err.tool_name || err.name || err.tool || '—';
+    const msg = err.error || err.message || err.error_message || '';
+    const ts = err.timestamp || err.ts || err.time || '';
     return `
-      <div class="flex items-center justify-between py-2 px-2 rounded-lg hover:bg-danger-50/50 dark:hover:bg-danger-500/5 transition-colors">
-        <div class="flex items-center gap-2">
-          <span class="w-2 h-2 rounded-full bg-danger-500"></span>
-          <span class="text-sm font-medium text-danger-600 dark:text-danger-400">${escapeHtml(name)}</span>
+      <div class="flex flex-col gap-1 py-2 px-2 rounded-lg hover:bg-danger-50/30 dark:hover:bg-danger-500/5 transition-colors">
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="w-2 h-2 rounded-full bg-danger-500 shrink-0"></span>
+            <span class="text-xs font-medium text-neutral-500 dark:text-neutral-400 truncate">${escapeHtml(source)}</span>
+            <span class="text-xs text-danger-600 dark:text-danger-400 font-medium truncate">${escapeHtml(toolName)}</span>
+          </div>
+          <span class="text-xs text-neutral-500 shrink-0">${formatTime(ts)}</span>
         </div>
-        <span class="text-sm font-semibold text-danger-600 dark:text-danger-400">${count} 次</span>
+        <div class="text-xs text-neutral-500 dark:text-neutral-400 pl-4 leading-relaxed break-all">${escapeHtml(truncate(msg, 100))}</div>
       </div>
     `;
   }).join('');
