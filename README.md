@@ -118,7 +118,6 @@ MCP 调用排序：Vikunja（474）、Chrome DevTools（288）、Playwright（10
 
 ## TODO
 
-- [ ] package.json `name` 改为 `agent-trace`
 - [ ] 补充 CHANGELOG
 - [ ] 推送到 GitHub Registry 或 npm
 
