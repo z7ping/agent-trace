@@ -1,10 +1,9 @@
-# 🧠 Agent Beat
+# Agent Trace
 
-实时记录并可视化 AI 编码工具的每次工具调用，按会话分组展示，方便调试和回溯。
+—— 多 Agent 调用的全链路可观测性工具。统计 SKILL / Tool / MCP 调用次数，实时还原每一次会话的完整执行路径。
 
-支持工具：Claude Code、Hermes、Codex、OpenCode、Cursor
-
-> Gitea: http://192.168.31.239:53000/ai-area/agent-beat
+AgentTrace – End-to-end observability for multi‑agent invocations.
+Aggregates call counts for SKILLs, Tools, and MCPs, and reconstructs the complete execution path of every session in real time.
 
 ## ✨ 特性
 
