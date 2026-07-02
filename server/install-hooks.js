@@ -8,7 +8,7 @@ const path = require('path');
 const os = require('os');
 
 const settingsFile = path.join(os.homedir(), '.claude', 'settings.json');
-const toolTrackerDir = path.join(os.homedir(), '.claude', 'agent-beat');
+const toolTrackerDir = path.join(os.homedir(), '.claude', 'agent-trace');
 const prelogPath = path.join(toolTrackerDir, 'hooks', 'prelog.js').replace(/\\/g, '/');
 const logPath = path.join(toolTrackerDir, 'hooks', 'log.js').replace(/\\/g, '/');
 
@@ -21,10 +21,10 @@ try {
     settings = {};
 }
 
-// 合并 hooks：移除旧的 agent-beat hooks，再添加新的
+// 合并 hooks：移除旧的 agent-trace hooks，再添加新的
 if (!settings.hooks) settings.hooks = {};
 
-const agentBeatMarker = 'agent-beat';
+const agentBeatMarker = 'agent-trace';
 
 function removeAgentBeatHooks(hookArray) {
     if (!Array.isArray(hookArray)) return [];

@@ -3,13 +3,13 @@
  * Agent Beat - 统一 CLI 入口
  *
  * 用法:
- *   agent-beat install              安装 hooks 到 Claude Code 配置
- *   agent-beat start [port]         前台启动服务器
- *   agent-beat start --daemon       后台守护进程模式
- *   agent-beat stop                 停止后台服务
- *   agent-beat status               查看服务状态
- *   agent-beat package              打包分发
- *   agent-beat uninstall            卸载并清理所有配置和数据
+ *   agent-trace install              安装 hooks 到 Claude Code 配置
+ *   agent-trace start [port]         前台启动服务器
+ *   agent-trace start --daemon       后台守护进程模式
+ *   agent-trace stop                 停止后台服务
+ *   agent-trace status               查看服务状态
+ *   agent-trace package              打包分发
+ *   agent-trace uninstall            卸载并清理所有配置和数据
  *
  * 替代: install.sh, install.bat, start.sh, start.bat, package.sh
  */
@@ -22,7 +22,7 @@ const { spawn, execSync } = require('child_process');
 // ─── 配置 ────────────────────────────────────────────────────────
 
 const PROJECT_DIR = path.join(__dirname, '..');
-const INSTALL_DIR = path.join(os.homedir(), '.claude', 'agent-beat');
+const INSTALL_DIR = path.join(os.homedir(), '.claude', 'agent-trace');
 const SETTINGS_FILE = path.join(os.homedir(), '.claude', 'settings.json');
 const { DEFAULT_PORT } = require('./config');
 const VERSION = require('../package.json').version;
@@ -219,11 +219,11 @@ async function cmdInstall() {
             log(`[OK] 服务已启动 → http://localhost:${DEFAULT_PORT}/`, 'green');
         } else {
             log('[WARN] 服务未启动，请手动运行:', 'yellow');
-            log(`  agent-beat start`, 'dim');
+            log(`  agent-trace start`, 'dim');
         }
     } catch (_) {
         log('[WARN] 自动启动失败，请手动运行:', 'yellow');
-        log(`  agent-beat start`, 'dim');
+        log(`  agent-trace start`, 'dim');
     }
 
     // 7. 完成提示
@@ -235,9 +235,9 @@ async function cmdInstall() {
     log('  服务会在首次使用 Claude Code 工具时自动拉起', 'dim');
     log(`  浏览器打开: http://localhost:${DEFAULT_PORT}/`, 'dim');
     log('  管理命令:', 'dim');
-    log('    agent-beat start    启动服务', 'dim');
-    log('    agent-beat stop     停止服务', 'dim');
-    log('    agent-beat status   查看状态', 'dim');
+    log('    agent-trace start    启动服务', 'dim');
+    log('    agent-trace stop     停止服务', 'dim');
+    log('    agent-trace status   查看状态', 'dim');
     log('  向后兼容: node server.js 仍然可用', 'dim');
     console.log('');
     log(`文档: ${INSTALL_DIR}/README.md`, 'dim');
@@ -273,7 +273,7 @@ function cmdStart(argv) {
                 `objShell.CurrentDirectory = "${PROJECT_DIR}"`,
                 `objShell.Run "cmd.exe /c start /b node server/server.js ${port} --daemon", 0, False`,
             ].join('\r\n');
-            const vbsPath = path.join(os.tmpdir(), 'agent-beat-daemon.vbs');
+            const vbsPath = path.join(os.tmpdir(), 'agent-trace-daemon.vbs');
             fs.writeFileSync(vbsPath, vbsContent, 'utf-8');
             try {
                 execSync(`wscript "${vbsPath}"`, { stdio: 'ignore' });
@@ -383,7 +383,7 @@ async function cmdUninstall() {
         if (fs.existsSync(SETTINGS_FILE)) {
             const settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf-8'));
             if (settings.hooks) {
-                const agentBeatMarker = 'agent-beat';
+                const agentBeatMarker = 'agent-trace';
                 function removeAgentBeatHooks(hookArray) {
                     if (!Array.isArray(hookArray)) return [];
                     return hookArray.filter(entry => {
@@ -399,7 +399,7 @@ async function cmdUninstall() {
                     delete settings.hooks;
                 }
                 fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
-                log('[OK] agent-beat hooks 配置已移除', 'green');
+                log('[OK] agent-trace hooks 配置已移除', 'green');
             } else {
                 log('[SKIP] 未找到 hooks 配置', 'dim');
             }
@@ -410,7 +410,7 @@ async function cmdUninstall() {
         log(`[WARN] 清理配置失败: ${e.message}`, 'yellow');
     }
 
-    // 3. 删除 ~/.claude/agent-beat/ 目录
+    // 3. 删除 ~/.claude/agent-trace/ 目录
     log(`删除目录: ${INSTALL_DIR}`, 'cyan');
     if (fs.existsSync(INSTALL_DIR)) {
         rimraf(INSTALL_DIR);
@@ -420,9 +420,9 @@ async function cmdUninstall() {
     }
 
     // 4. npm unlink -g
-    log('执行 npm unlink -g agent-beat ...', 'cyan');
+    log('执行 npm unlink -g agent-trace ...', 'cyan');
     try {
-        execSync('npm unlink -g agent-beat', { stdio: 'ignore' });
+        execSync('npm unlink -g agent-trace', { stdio: 'ignore' });
         log('[OK] 全局链接已移除', 'green');
     } catch (_) {
         log('[SKIP] 未找到全局链接', 'dim');
@@ -452,7 +452,7 @@ function cmdStatus(baseDir) {
 // ─── package 命令 ────────────────────────────────────────────────
 
 function cmdPackage() {
-    const pkgName = `agent-beat-v${VERSION}`;
+    const pkgName = `agent-trace-v${VERSION}`;
     const distDir = path.join(PROJECT_DIR, 'dist');
 
     log(`📦 打包 Agent Beat v${VERSION}`, 'bright');
@@ -463,7 +463,7 @@ function cmdPackage() {
     mkdirp(distDir);
 
     // 创建临时目录
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-beat-'));
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-trace-'));
     const pkgDir = path.join(tmpDir, pkgName);
     mkdirp(path.join(pkgDir, 'hooks'));
 
@@ -522,7 +522,7 @@ function cmdPackage() {
     log('分发方式:', 'yellow');
     log('  1. 上传到 GitHub Releases', 'dim');
     log('  2. 直接分享归档文件', 'dim');
-    log('  3. 用户运行: agent-beat install', 'dim');
+    log('  3. 用户运行: agent-trace install', 'dim');
     log('═'.repeat(45), 'dim');
 }
 
@@ -532,7 +532,7 @@ function showHelp() {
     log('🧠 Agent Beat CLI', 'bright');
     console.log('');
     log('用法:', 'yellow');
-    log('  agent-beat <command> [options]', 'cyan');
+    log('  agent-trace <command> [options]', 'cyan');
     console.log('');
     log('命令:', 'yellow');
     log('  install              安装 hooks 到 Claude Code 配置', 'dim');
@@ -548,12 +548,12 @@ function showHelp() {
     log('  --open               自动打开浏览器（仅 start）', 'dim');
     console.log('');
     log('示例:', 'yellow');
-    log('  agent-beat install           # 首次安装', 'dim');
-    log('  agent-beat start             # 前台启动', 'dim');
-    log('  agent-beat start --daemon    # 后台启动', 'dim');
-    log('  agent-beat stop              # 停止服务', 'dim');
-    log('  agent-beat status            # 查看状态', 'dim');
-    log('  agent-beat package           # 打包分发', 'dim');
+    log('  agent-trace install           # 首次安装', 'dim');
+    log('  agent-trace start             # 前台启动', 'dim');
+    log('  agent-trace start --daemon    # 后台启动', 'dim');
+    log('  agent-trace stop              # 停止服务', 'dim');
+    log('  agent-trace status            # 查看状态', 'dim');
+    log('  agent-trace package           # 打包分发', 'dim');
     console.log('');
     log('向后兼容:', 'yellow');
     log('  node server.js [port]         # 仍然可用', 'dim');

@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // ─── 主题 ───────────────────────────────────────────
 function initTheme() {
-  const saved = localStorage.getItem('agent-beat-theme');
+  const saved = localStorage.getItem('agent-trace-theme');
   if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
     document.documentElement.classList.add('dark');
     isDark = true;
@@ -37,7 +37,7 @@ function initTheme() {
   document.getElementById('themeToggle')?.addEventListener('click', () => {
     isDark = !isDark;
     document.documentElement.classList.toggle('dark', isDark);
-    localStorage.setItem('agent-beat-theme', isDark ? 'dark' : 'light');
+    localStorage.setItem('agent-trace-theme', isDark ? 'dark' : 'light');
   });
 }
 
