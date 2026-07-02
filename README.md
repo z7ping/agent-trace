@@ -5,154 +5,53 @@
 AgentTrace – End-to-end observability for multi‑agent invocations.
 Aggregates call counts for SKILLs, Tools, and MCPs, and reconstructs the complete execution path of every session in real time.
 
-## ✨ 特性
+## 特性
 
-- **多工具支持**：已适配 5 种 AI 编码工具（Claude Code、Hermes、Codex、OpenCode、Cursor）
-- **一键安装**：运行脚本即可完成配置
-- **零操作启动**：安装后自动在后台运行，首次使用工具时自动拉起服务
-- **调用链追踪**：树形展示 Agent 调用的子工具
-- **实时监控**：自动刷新，增量加载
-- **分析仪表盘**：使用统计、性能分析、错误分析
-- **工具筛选**：按工具类型筛选数据
-- **依赖简单**：只需 Node.js + better-sqlite3
+- **多 Agent 追踪** — 统计 SKILL / Tool / MCP 调用次数，还原完整调用链
+- **调用链可视化** — 树形展示每次会话的 Agent→Tool 父子调用关系
+- **分析仪表盘** — 总调用数、错误率、工具使用排行、慢调用
+- **多数据源** — Hermes（SQLite 轮询）、Claude Code / Codex / Cursor（实时钩子）、OpenCode（SQLite 轮询）
+- **实时刷新** — 3 秒增量更新，无需手动刷新
+- **暗色主题** — 亮/暗一键切换
 
-## 🚀 快速安装
-
-### 前置：国内网络加速（可选）
-
-如果 `npm install` 安装 `better-sqlite3` 超时或失败，配置国内镜像：
+## 快速开始
 
 ```bash
-# 换淘宝 npm 源
-npm config set registry https://registry.npmmirror.com
-
-# 设置 better-sqlite3 预编译二进制镜像
-npm config set better_sqlite3_binary_host_mirror https://npmmirror.com/mirrors/better-sqlite3
-```
-
-> Windows 用户如果编译失败，还需安装构建工具：`npm install -g windows-build-tools`
-
-### 方式一：直接运行（推荐）
-
-```bash
-# 克隆仓库
-git clone http://192.168.31.239:53000/ai-area/agent-beat.git
-cd agent-beat
+# 克隆
+git clone https://github.com/z7ping/agent-trace.git
+cd agent-trace
 
 # 安装依赖
 npm install
 
-# 启动服务
-node server.js
+# 开发模式（前后端联调）
+npm run dev
+
+# 生产构建
+npm run build && npm start
 ```
 
-### 方式二：npm 脚本安装
+访问 `http://localhost:56789/`
 
-```bash
-npm install
-npm run install-hooks
-```
+### 配置数据源
 
-### 方式三：全局安装（推送到 npm 后可用）
+**Hermes（自动）**：服务启动后自动轮询 `~/.hermes/state.db`，无需额外配置。
 
-```bash
-# 全局安装后可直接使用 agent-beat 命令
-npm install -g agent-beat
-agent-beat install
-```
-
-## 📁 目录结构
-
-```
-agent-beat/
-├── adapters/             # 多工具适配器
-│   ├── base.js           # 适配器基类
-│   ├── claude-code.js    # Claude Code 适配器
-│   ├── hermes.js         # Hermes 适配器
-│   ├── codex.js          # Codex 适配器
-│   ├── opencode.js       # OpenCode 适配器
-│   ├── cursor.js         # Cursor 适配器
-│   ├── openclaw.js       # OpenClaw 适配器（骨架）
-│   └── index.js          # 适配器注册表
-├── hooks/                # Hook 脚本
-│   ├── prelog.js         # PreToolUse 钩子
-│   ├── log.js            # PostToolUse 钩子
-│   └── server-guard.js   # 服务守护模块
-├── docs/                 # 文档
-│   └── adapter-architecture.md  # 架构设计文档
-├── cli.js                # 统一 CLI 入口
-├── install-hooks.js      # settings.json 配置写入工具
-├── index.html            # 可视化页面（单页面 Tab 切换）
-├── server.js             # HTTP 服务器
-├── package.json
-├── README.md
-└── CLAUDE.md
-```
-
-## 🔧 启动 HTTP 服务器
-
-### 安装后自动运行（推荐）
-
-首次使用工具时，钩子会自动检测并拉起服务（端口 **56789**）。
-
-### 手动管理
-
-```bash
-# 使用 CLI
-node cli.js start             # 前台运行
-node cli.js start --daemon    # 后台守护进程
-node cli.js stop              # 停止服务
-node cli.js status            # 查看状态
-
-# 或直接使用 server.js
-node server.js 56789
-node server.js --status
-node server.js --stop
-```
-
-### 访问可视化页面
-
-- **主页**：http://localhost:56789/
-- Tab 切换：调用链 / 仪表盘
-
-## 🎯 使用步骤
-
-1. **安装工具**：克隆仓库，运行 `npm install`
-2. **启动服务**：运行 `node server.js`
-3. **配置钩子**：在对应工具的配置文件中添加 hooks（见下方）
-4. **使用工具**：工具调用会自动记录
-5. **打开浏览器**：访问 http://localhost:56789/
-
-## 📋 多工具适配器
-
-### 支持的工具
-
-| 工具 | 数据源 | 方式 | 状态 |
-|------|--------|------|------|
-| Claude Code | hooks stdin | 实时钩子 | ✅ |
-| Hermes | ~/.hermes/state.db | 定时轮询 | ✅ |
-| Codex | hooks stdin | 实时钩子 | ✅ |
-| OpenCode | ~/.local/share/opencode/opencode.db | 定时轮询 | ✅ |
-| Cursor | hooks stdin | 实时钩子 | ✅ |
-| OpenClaw | 待确认 | 待实现 | ⏳ |
-
-### Claude Code 钩子配置
-
-在 `~/.claude/settings.json` 中添加：
+**Claude Code**：在 `~/.claude/settings.json` 中添加：
 
 ```json
 {
   "hooks": {
     "PreToolUse": [{
       "hooks": [{
-        "command": "node ~/.claude/agent-beat/hooks/prelog.js",
+        "command": "node /path/to/agent-trace/server/hooks/prelog.js",
         "type": "command",
         "timeout": 5
       }]
     }],
     "PostToolUse": [{
       "hooks": [{
-        "command": "node ~/.claude/agent-beat/hooks/log.js",
+        "command": "node /path/to/agent-trace/server/hooks/log.js",
         "type": "command",
         "timeout": 10
       }]
@@ -161,124 +60,68 @@ node server.js --stop
 }
 ```
 
-### Cursor 钩子配置
+**Codex**：在 `~/.codex/hooks.json` 中添加相同配置。
 
-在 `~/.cursor/hooks.json` 中添加：
-
-```json
-{
-  "version": 1,
-  "hooks": {
-    "preToolUse": [{
-      "command": "node /path/to/agent-beat/hooks/prelog.js"
-    }],
-    "postToolUse": [{
-      "command": "node /path/to/agent-beat/hooks/log.js"
-    }]
-  }
-}
-```
-
-### Hermes / OpenCode
-
-无需配置钩子，定时轮询数据库（每 5 秒）。
-
-## 📋 功能说明
-
-### 核心功能
-
-| 功能 | 说明 |
-|:---|:---|
-| 📂 **会话分组** | 按 session_id 分组显示 |
-| 🔄 **自动刷新** | 3 秒增量刷新 |
-| 🔍 **搜索过滤** | 支持搜索工具名、文件路径等 |
-| 🌙 **暗色主题** | 点击月亮图标切换 |
-| 🌲 **调用链追踪** | 树形展示子工具调用 |
-| ⏱ **耗时统计** | 显示每个调用的耗时 |
-| 🔧 **工具筛选** | 按工具类型筛选数据 |
-
-### 分析仪表盘
-
-| 功能 | 说明 |
-|:---|:---|
-| 📊 **使用统计** | 总调用次数、平均耗时 |
-| 🔧 **工具使用 TOP 10** | 按频率排序 |
-| 🕐 **时间分布热力图** | 24 小时使用分布 |
-| 🐌 **慢调用排行** | TOP 10 最慢的调用 |
-| 💡 **效率洞察** | 智能分析工作流 |
-| 📥 **数据导出** | 支持导出为 JSON/CSV/Markdown |
-
-## ❓ 常见问题
-
-### 没有记录任何调用？
-
-1. 确认已重启对应工具
-2. 检查 hooks 配置是否正确
-3. 查看服务是否运行：`curl http://localhost:56789/`
-
-### 页面没有数据显示？
-
-1. 确认 HTTP 服务器正在运行
-2. 确认浏览器访问的是 `http://localhost:56789/`
-3. 确认已执行过一些工具操作
-
-### better-sqlite3 安装失败？
-
-配置国内镜像（见上方"国内网络加速"），或使用方式一直接运行。
-
-### 端口 56789 被占用？
+## CLI
 
 ```bash
-# 指定其他端口
-node server.js 38000
+npm start          # 启动服务
+npm stop           # 停止
+npm status         # 状态
+npm run start      # 前台运行
+npm run install-hooks  # 安装钩子到 Claude Code
 ```
 
-## 🗑️ 卸载
+## 目录结构
 
-```bash
-# 停止服务
-pkill -f "node server.js"
-
-# 删除项目目录
-rm -rf ~/.claude/agent-beat
+```
+agent-trace/
+├── server/                    # 后端
+│   ├── server.js              # HTTP 服务
+│   ├── cli.js                 # CLI 入口
+│   ├── abeat-db.js            # SQLite 存储层
+│   ├── config.js              # 服务配置
+│   ├── adapters/              # 多工具适配器
+│   │   ├── base.js            # 基类
+│   │   ├── hermes.js          # Hermes 轮询适配器
+│   │   ├── claude-code.js     # Claude Code 钩子适配器
+│   │   ├── codex.js           # Codex 钩子适配器
+│   │   ├── opencode.js        # OpenCode 轮询适配器
+│   │   ├── cursor.js          # Cursor 钩子适配器
+│   │   ├── pi.js              # Pi 适配器
+│   │   └── index.js           # 适配器注册表
+│   ├── hooks/                 # 实时钩子
+│   │   ├── prelog.js          # PreToolUse
+│   │   ├── log.js             # PostToolUse
+│   │   └── server-guard.js    # 服务守护
+│   └── scripts/               # 工具脚本
+├── src/                       # 前端
+│   ├── app.js                 # 主逻辑
+│   ├── config.js              # 前端配置
+│   ├── style.css              # 样式
+│   ├── callchain/             # 调用链 Tab
+│   └── dashboard/             # 仪表盘 Tab
+├── index.html                 # 入口页面
+├── package.json
+└── README.md
 ```
 
-## 📝 版本历史
+## 数据统计
 
-### v1.8.1 (2026-06-27)
-- 新增多工具适配器架构
-- 新增 Claude Code / Hermes / Codex / OpenCode / Cursor 适配器
-- 项目更名为 Agent Beat
-- 合并 index.html 和 dashboard.html 为单页面 Tab 切换
-- 新增工具筛选器
+从 state.db 拉取，覆盖 109+ 会话，254 次 skill_view 调用，131 种工具：
 
-### v1.8.0 (2026-06-26)
-- 新增统一 CLI 入口 `cli.js`
-- 精简脚本
-
-### v1.7.0 (2026-06-05)
-- 新增服务守护：钩子自动拉起 HTTP 服务器
-- 新增守护进程模式
-- 默认端口从 8080 改为 56789
-
-### v1.6.0 (2026-06-05)
-- 新增数据导出功能（JSON/CSV/Markdown）
-
-### v1.5.0 (2026-06-05)
-- 新增分析仪表盘
-
-### v1.4.0 (2026-06-05)
-- 新增状态栏、慢调用高亮、错误详情
-
-## 📄 许可证
-
-MIT License
-
----
+```
+次数最多的工具：terminal（14237）、read_file（1366）、patch（826）
+MCP 调用排序：Vikunja（474）、Chrome DevTools（288）、Playwright（103）
+加载最多的 Skill：z7ping-skill-management（23）、hermes-agent（21）、z7ping-vikunja（19）
+```
 
 ## TODO
 
-- [ ] 推送到 npm registry
-- [ ] 添加 LICENSE 文件
-- [ ] 实现 OpenClaw 适配器
-- [ ] systemd 开机自启服务
+- [ ] package.json `name` 改为 `agent-trace`
+- [ ] 补充 CHANGELOG
+- [ ] 推送到 GitHub Registry 或 npm
+
+## 许可证
+
+MIT License
