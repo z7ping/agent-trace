@@ -63,3 +63,4 @@ CREATE TABLE IF NOT EXISTS timeline (
 
 CREATE INDEX IF NOT EXISTS idx_timeline_session ON timeline(session_id, timestamp);
 CREATE INDEX IF NOT EXISTS idx_timeline_source ON timeline(source, timestamp);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_timeline_dedup ON timeline(session_id, timestamp, tool_name);

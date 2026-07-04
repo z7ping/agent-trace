@@ -90,7 +90,7 @@ function saveError(ts, sessionId, source, toolName, errorMessage) {
 function insertTimeline(record) {
   const db = getDb();
   db.prepare(`
-    INSERT INTO timeline (source, session_id, timestamp, seq, role, tool_name, content, tool_input, success, exit_code, duration_ms, output_snippet, error_message, project_key, parent_seq)
+    INSERT OR IGNORE INTO timeline (source, session_id, timestamp, seq, role, tool_name, content, tool_input, success, exit_code, duration_ms, output_snippet, error_message, project_key, parent_seq)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     record.source || '',
