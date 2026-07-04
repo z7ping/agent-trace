@@ -27,6 +27,45 @@ class ClaudeCodeAdapter extends BaseAdapter {
         return 'claude-code';
     }
 
+    // ─── PreToolUse ────────────────────────────────────────
+
+    /**
+     * 处理 PreToolUse 事件：记录 tool_use 到 timeline
+     */
+    async pre(data) {
+        await super.pre(data);
+
+        if (!data || typeof data !== 'object') return;
+        const toolName = data.tool_name || '';
+        if (!toolName) return;
+
+        const cwd = data.cwd || data.working_directory || process.cwd();
+        const projectKey = this.getProjectKey(cwd);
+        const stateFile = this.getStateFile(projectKey);
+        const state = this.readState(stateFile);
+        const topEntry = state.stack.length > 0 ? state.stack[state.stack.length - 1] : null;
+
+        try {
+            insertTimeline({
+                source: this.name,
+                session_id: data.session_id || '',
+                timestamp: new Date().toISOString(),
+                seq: topEntry ? topEntry.seq : null,
+                role: 'tool_use',
+                tool_name: toolName,
+                content: null,
+                tool_input: data.tool_input || null,
+                success: null,
+                exit_code: null,
+                duration_ms: null,
+                output_snippet: null,
+                error_message: null,
+                project_key: projectKey,
+                parent_seq: topEntry ? topEntry.parent_seq : null,
+            });
+        } catch (_) {}
+    }
+
     // ─── PostToolUse ───────────────────────────────────────
 
     /**
@@ -191,7 +230,7 @@ class ClaudeCodeAdapter extends BaseAdapter {
                 session_id: data.session_id || '',
                 timestamp: record.ts,
                 seq: callSeq,
-                role: 'tool',
+                role: success ? 'tool_result' : 'tool_error',
                 tool_name: toolName || null,
                 content: outputSnippet,
                 tool_input: data.tool_input || null,

@@ -577,20 +577,35 @@ class HermesAdapter extends BaseAdapter {
      * 从 state.db 读取新记录并写入 timeline 表
      */
     async collect() {
-        const db = this._getDb();
-        if (!db) return;
+        // 使用独立连接，避免与其他方法（getRecords等）冲突
+        let collectDb = null;
+        try {
+            const Database = require('better-sqlite3');
+            if (!fs.existsSync(STATE_DB)) return;
+            collectDb = new Database(STATE_DB, { readonly: true, fileMustExist: true });
+        } catch (e) {
+            return;
+        }
 
         try {
-            this._ensurePrepared();
+            // 准备 assistant 查询（在 collectDb 上）
+            const findAssistant = collectDb.prepare(`
+                SELECT m.id, m.timestamp, m.tool_calls
+                FROM messages m, json_each(m.tool_calls) j
+                WHERE m.role = 'assistant' AND m.tool_calls IS NOT NULL
+                AND json_extract(j.value, '$.id') = ?
+                ORDER BY m.id DESC
+                LIMIT 1
+            `);
 
             const hasWatermarks = this._lastTsBySession.size > 0;
-            let whereClause = `WHERE m.role = 'tool'`;
+            let whereClause = `WHERE m.role IN ('user', 'assistant', 'tool')`;
             if (!hasWatermarks) {
                 const cutoff = Math.floor(Date.now() / 1000) - 86400;
                 whereClause += ` AND m.timestamp >= ${cutoff}`;
             }
 
-            const stmt = db.prepare(`
+            const stmt = collectDb.prepare(`
                 SELECT m.*, s.cwd
                 FROM messages m
                 LEFT JOIN sessions s ON m.session_id = s.id
@@ -598,14 +613,15 @@ class HermesAdapter extends BaseAdapter {
                 ORDER BY m.timestamp ASC
             `);
 
-            // 用事务批量写入，每 100 条提交一次
             const BATCH = 100;
             let count = 0;
             let batch = [];
 
+            const { getDb: getAbeatDb } = require('../abeat-db');
             const flush = () => {
                 if (batch.length === 0) return;
-                const tx = db.transaction((rows) => {
+                const abeatDb = getAbeatDb();
+                const tx = abeatDb.transaction((rows) => {
                     for (const msg of rows) {
                         insertTimeline(msg);
                     }
@@ -623,29 +639,77 @@ class HermesAdapter extends BaseAdapter {
 
                 const cwd = msg.cwd || '';
                 const projectKey = this.getProjectKey(cwd);
-                const record = this._buildRecord(msg, sessionId, projectKey, this.getProjectName(cwd), cwd);
+                const ts = new Date(msg.timestamp * 1000).toISOString();
 
+                // 根据 state.db 的 role 映射到 timeline role
+                let timelineRole;
                 let content = null;
-                try {
-                    const parsed = JSON.parse(msg.content);
-                    content = parsed.text || parsed.output || null;
-                    if (content && typeof content === 'string') content = content.substring(0, 2000);
-                } catch (_) {}
+                let toolName = null;
+                let toolInput = null;
+                let success = null;
+                let outputSnippet = null;
+                let errorMessage = null;
+
+                if (msg.role === 'user') {
+                    timelineRole = 'user';
+                    try {
+                        content = typeof msg.content === 'string' ? JSON.parse(msg.content) : msg.content;
+                        if (content && typeof content === 'string') content = content.substring(0, 2000);
+                    } catch (_) {
+                        content = String(msg.content || '').substring(0, 2000);
+                    }
+                } else if (msg.role === 'assistant') {
+                    timelineRole = 'assistant';
+                    try {
+                        content = typeof msg.content === 'string' ? JSON.parse(msg.content) : msg.content;
+                        if (content && typeof content === 'string') content = content.substring(0, 2000);
+                    } catch (_) {
+                        content = String(msg.content || '').substring(0, 2000);
+                    }
+                } else if (msg.role === 'tool') {
+                    // tool 消息 → tool_result 或 tool_error
+                    const { success: isSuccess, error: err } = this._judgeSuccess(msg.content);
+                    timelineRole = isSuccess ? 'tool_result' : 'tool_error';
+                    success = isSuccess ? 1 : 0;
+                    errorMessage = err;
+
+                    // 提取 tool_name（从 assistant 的 tool_calls 反查）
+                    if (msg.tool_call_id) {
+                        try {
+                            const assistant = findAssistant.get(`%${msg.tool_call_id}%`);
+                            if (assistant) {
+                                const extracted = this._extractToolCallInput(assistant.tool_calls, msg.tool_call_id);
+                                if (extracted) {
+                                    toolName = extracted.toolName;
+                                    toolInput = this.summarizeInput(toolName, extracted.args);
+                                }
+                            }
+                        } catch (_) {}
+                    }
+
+                    // 提取 content
+                    try {
+                        const parsed = JSON.parse(msg.content);
+                        content = parsed.text || parsed.output || null;
+                        if (content && typeof content === 'string') content = content.substring(0, 2000);
+                    } catch (_) {}
+                    outputSnippet = content ? content.substring(0, 500) : null;
+                }
 
                 batch.push({
                     source: this.name,
                     session_id: sessionId,
-                    timestamp: record.ts,
+                    timestamp: ts,
                     seq: null,
-                    role: 'tool',
-                    tool_name: record.tool_name || null,
+                    role: timelineRole,
+                    tool_name: toolName,
                     content,
-                    tool_input: record.input_summary || null,
-                    success: record.success,
+                    tool_input: toolInput,
+                    success,
                     exit_code: null,
-                    duration_ms: record.duration_ms || null,
-                    output_snippet: content ? content.substring(0, 500) : null,
-                    error_message: record.error || null,
+                    duration_ms: null,
+                    output_snippet: outputSnippet,
+                    error_message: errorMessage,
                     project_key: projectKey,
                     parent_seq: null,
                 });
@@ -658,10 +722,12 @@ class HermesAdapter extends BaseAdapter {
                     await new Promise(r => setImmediate(r));
                 }
             }
-            flush(); // 剩余的
-            if (count > 0) this.log(`hermes:collect 导入 ${count} 条记录`);
+            flush();
+            if (count > 0) console.log(`hermes:collect 导入 ${count} 条记录`);
         } catch (e) {
             this.logError(e, 'hermes:collect');
+        } finally {
+            if (collectDb) { try { collectDb.close(); } catch (_) {} }
         }
     }
 

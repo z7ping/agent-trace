@@ -42,6 +42,9 @@ CREATE INDEX IF NOT EXISTS idx_daily_stats_date ON daily_stats(date);
 CREATE INDEX IF NOT EXISTS idx_recent_errors_ts ON recent_errors(ts DESC);
 
 -- 时间线（原始调用记录）
+-- role 值: user, assistant, system, tool_use, tool_result, tool_error,
+--          session_start, session_end, compact, notification
+-- source 值: hermes, claude-code
 CREATE TABLE IF NOT EXISTS timeline (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   source TEXT NOT NULL,
