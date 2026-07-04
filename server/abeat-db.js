@@ -89,9 +89,20 @@ function saveError(ts, sessionId, source, toolName, errorMessage) {
 /** 写入一条 timeline 记录 */
 function insertTimeline(record) {
   const db = getDb();
+
+  // 错误分类：优先用传入的，否则自动分类
+  let eType = record.error_type || null;
+  let eDetail = record.error_detail ? (typeof record.error_detail === 'string' ? record.error_detail : JSON.stringify(record.error_detail)) : null;
+  if (!eType && record.error_message) {
+    const BaseAdapter = require('./adapters/base');
+    const classified = BaseAdapter.prototype.classifyError(record.error_message);
+    eType = classified.error_type;
+    eDetail = classified.error_detail ? JSON.stringify(classified.error_detail) : null;
+  }
+
   db.prepare(`
-    INSERT OR IGNORE INTO timeline (source, session_id, timestamp, seq, role, tool_name, content, tool_input, success, exit_code, duration_ms, output_snippet, error_message, project_key, parent_seq)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT OR IGNORE INTO timeline (source, session_id, timestamp, seq, role, tool_name, content, tool_input, success, exit_code, duration_ms, output_snippet, error_message, error_type, error_detail, project_key, parent_seq)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     record.source || '',
     record.session_id || '',
@@ -106,6 +117,8 @@ function insertTimeline(record) {
     record.duration_ms ?? null,
     record.output_snippet ? String(record.output_snippet).substring(0, 500) : null,
     record.error_message ? String(record.error_message).substring(0, 500) : null,
+    eType,
+    eDetail,
     record.project_key || null,
     record.parent_seq ?? null
   );

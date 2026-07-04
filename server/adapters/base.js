@@ -391,6 +391,35 @@ class BaseAdapter {
             // 写日志本身失败时静默
         }
     }
+
+    /**
+     * 错误自动分类
+     * @param {string} errorMessage
+     * @returns {{ error_type: string, error_detail: object|null }}
+     */
+    classifyError(errorMessage) {
+        if (!errorMessage) return { error_type: 'unknown', error_detail: null };
+
+        const msg = String(errorMessage).toLowerCase();
+
+        if (msg.includes('cmd.exe') || msg.includes('powershell') || msg.includes('.exe') || msg.includes('c:\\\\')) {
+            return { error_type: 'windows_command', error_detail: { full_error: errorMessage.substring(0, 500) } };
+        }
+        if (msg.includes('no such file') || msg.includes('not found') || msg.includes('does not exist') || msg.includes('enoent')) {
+            return { error_type: 'path_not_found', error_detail: { full_error: errorMessage.substring(0, 500) } };
+        }
+        if (msg.includes('permission denied') || msg.includes('eacces') || msg.includes('permission')) {
+            return { error_type: 'permission', error_detail: { full_error: errorMessage.substring(0, 500) } };
+        }
+        if (msg.includes('timeout') || msg.includes('etimedout') || msg.includes('timed out')) {
+            return { error_type: 'timeout', error_detail: { full_error: errorMessage.substring(0, 500) } };
+        }
+        if (msg.includes('syntaxerror') || msg.includes('unexpected token') || msg.includes('syntax error')) {
+            return { error_type: 'syntax', error_detail: { full_error: errorMessage.substring(0, 500) } };
+        }
+
+        return { error_type: 'unknown', error_detail: { full_error: errorMessage.substring(0, 500) } };
+    }
 }
 
 module.exports = BaseAdapter;

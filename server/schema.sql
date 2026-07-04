@@ -60,6 +60,8 @@ CREATE TABLE IF NOT EXISTS timeline (
   duration_ms REAL,
   output_snippet TEXT,
   error_message TEXT,
+  error_type TEXT,        -- windows_command | path_not_found | permission | timeout | syntax | unknown
+  error_detail TEXT,      -- JSON: {stderr, full_error, hint}
   project_key TEXT,
   parent_seq INTEGER
 );
