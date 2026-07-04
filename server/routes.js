@@ -6,7 +6,7 @@
 const fs = require('fs');
 const path = require('path');
 const { getAdapter, getAllAdapters } = require('./adapters');
-const { getDb } = require('./abeat-db');
+const { getDb, queryTimeline } = require('./abeat-db');
 
 const ROOT = path.join(__dirname, '..');
 
@@ -180,27 +180,20 @@ async function handleApiTimeline(req, res, params) {
     const limit = Math.min(parseInt(params.get('limit') || '1000', 10), 10000);
 
     try {
-        const filter = { session_id: session, project_key: project, source, limit };
+        const items = queryTimeline({
+            session_id: session,
+            source: source || undefined,
+            project_key: project,
+            limit,
+        });
 
-        let items = [];
-        if (source) {
-            const adapter = getAdapter(source);
-            if (adapter) items = await adapter.getRecords(filter);
-        } else {
-            const adapters = getAllAdapters();
-            for (const adapter of adapters.values()) {
-                const records = await adapter.getRecords(filter);
-                items.push(...records);
-            }
-        }
+        // 统一字段名：timeline 表用 timestamp，前端可能期望 ts
+        const formatted = items.map(row => ({
+            ...row,
+            ts: row.timestamp,
+        }));
 
-        const hasSeq = items.length > 0 && items.some(i => i.seq != null);
-        if (hasSeq) {
-            items.sort((a, b) => (a.seq || 0) - (b.seq || 0));
-        } else {
-            items.sort((a, b) => (b.ts || b.timestamp || '').localeCompare(a.ts || a.timestamp || ''));
-        }
-        sendJson(res, { items: items.slice(0, limit) });
+        sendJson(res, { items: formatted });
     } catch (e) {
         sendJson(res, { error: e.message }, 500);
     }

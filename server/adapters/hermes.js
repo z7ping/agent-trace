@@ -7,6 +7,7 @@
 const fs = require('fs');
 const path = require('path');
 const BaseAdapter = require('./base');
+const { insertTimeline } = require('../abeat-db');
 
 const HOME_DIR = require('os').homedir();
 const STATE_DB = path.join(HOME_DIR, '.hermes', 'state.db');
@@ -16,6 +17,8 @@ class HermesAdapter extends BaseAdapter {
         super();
         this._db = null;
         this._prepared = {};
+        this._collectTimer = null;
+        this._lastTsBySession = new Map(); // sessionId → lastImportedTimestamp (unix seconds)
     }
 
     get name() {
@@ -556,7 +559,6 @@ class HermesAdapter extends BaseAdapter {
     async getTools() {
         const db = this._getDb();
         if (!db) return [];
-
         try {
             return db.prepare(`
                 SELECT tool_name, COUNT(*) as count,
@@ -569,6 +571,129 @@ class HermesAdapter extends BaseAdapter {
         }
     }
 
+    // ─── Timeline 收集 ─────────────────────────────────────
+
+    /**
+     * 从 state.db 读取新记录并写入 timeline 表
+     */
+    async collect() {
+        const db = this._getDb();
+        if (!db) return;
+
+        try {
+            this._ensurePrepared();
+
+            const hasWatermarks = this._lastTsBySession.size > 0;
+            let whereClause = `WHERE m.role = 'tool'`;
+            if (!hasWatermarks) {
+                const cutoff = Math.floor(Date.now() / 1000) - 86400;
+                whereClause += ` AND m.timestamp >= ${cutoff}`;
+            }
+
+            const stmt = db.prepare(`
+                SELECT m.*, s.cwd
+                FROM messages m
+                LEFT JOIN sessions s ON m.session_id = s.id
+                ${whereClause}
+                ORDER BY m.timestamp ASC
+            `);
+
+            // 用事务批量写入，每 100 条提交一次
+            const BATCH = 100;
+            let count = 0;
+            let batch = [];
+
+            const flush = () => {
+                if (batch.length === 0) return;
+                const tx = db.transaction((rows) => {
+                    for (const msg of rows) {
+                        insertTimeline(msg);
+                    }
+                });
+                tx(batch);
+                batch = [];
+            };
+
+            for (const msg of stmt.iterate()) {
+                const sessionId = msg.session_id;
+                if (!sessionId) continue;
+
+                const lastTs = this._lastTsBySession.get(sessionId) || 0;
+                if (msg.timestamp <= lastTs) continue;
+
+                const cwd = msg.cwd || '';
+                const projectKey = this.getProjectKey(cwd);
+                const record = this._buildRecord(msg, sessionId, projectKey, this.getProjectName(cwd), cwd);
+
+                let content = null;
+                try {
+                    const parsed = JSON.parse(msg.content);
+                    content = parsed.text || parsed.output || null;
+                    if (content && typeof content === 'string') content = content.substring(0, 2000);
+                } catch (_) {}
+
+                batch.push({
+                    source: this.name,
+                    session_id: sessionId,
+                    timestamp: record.ts,
+                    seq: null,
+                    role: 'tool',
+                    tool_name: record.tool_name || null,
+                    content,
+                    tool_input: record.input_summary || null,
+                    success: record.success,
+                    exit_code: null,
+                    duration_ms: record.duration_ms || null,
+                    output_snippet: content ? content.substring(0, 500) : null,
+                    error_message: record.error || null,
+                    project_key: projectKey,
+                    parent_seq: null,
+                });
+
+                this._lastTsBySession.set(sessionId, msg.timestamp);
+                count++;
+
+                if (batch.length >= BATCH) {
+                    flush();
+                    await new Promise(r => setImmediate(r));
+                }
+            }
+            flush(); // 剩余的
+            if (count > 0) this.log(`hermes:collect 导入 ${count} 条记录`);
+        } catch (e) {
+            this.logError(e, 'hermes:collect');
+        }
+    }
+
+    startCollecting(intervalMs = 5 * 60 * 1000) {
+        if (this._collectTimer) return;
+        // 从 timeline 表恢复水位线，避免首次全量导入
+        try {
+            const { getDb } = require('../abeat-db');
+            const db = getDb();
+            if (db) {
+                const rows = db.prepare(`
+                    SELECT session_id, MAX(timestamp) as max_ts
+                    FROM timeline WHERE source = 'hermes'
+                    GROUP BY session_id
+                `).all();
+                for (const row of rows) {
+                    const ts = new Date(row.max_ts).getTime() / 1000;
+                    if (ts > 0) this._lastTsBySession.set(row.session_id, ts);
+                }
+            }
+        } catch (_) {}
+        // 延迟首次 collect，避免阻塞服务器启动
+        setTimeout(() => this.collect(), 0);
+        this._collectTimer = setInterval(() => this.collect(), intervalMs);
+    }
+
+    stopCollecting() {
+        if (this._collectTimer) {
+            clearInterval(this._collectTimer);
+            this._collectTimer = null;
+        }
+    }
 }
 
 module.exports = HermesAdapter;

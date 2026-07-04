@@ -8,6 +8,7 @@
 const fs = require('fs');
 const path = require('path');
 const BaseAdapter = require('./base');
+const { insertTimeline } = require('../abeat-db');
 
 const BASE_DIR = path.join(__dirname, '..');
 const LOGS_DIR = path.join(BASE_DIR, 'logs');
@@ -177,6 +178,32 @@ class ClaudeCodeAdapter extends BaseAdapter {
             durationMs,
             error: record.error,
         });
+
+        // 写入 timeline 表
+        try {
+            let outputSnippet = null;
+            if (response && typeof response === 'object') {
+                const text = response.text || response.content || '';
+                if (typeof text === 'string') outputSnippet = text.substring(0, 500);
+            }
+            insertTimeline({
+                source: this.name,
+                session_id: data.session_id || '',
+                timestamp: record.ts,
+                seq: callSeq,
+                role: 'tool',
+                tool_name: toolName || null,
+                content: outputSnippet,
+                tool_input: data.tool_input || null,
+                success: success,
+                exit_code: null,
+                duration_ms: durationMs,
+                output_snippet: outputSnippet,
+                error_message: record.error || null,
+                project_key: projectKey,
+                parent_seq: parentSeq,
+            });
+        } catch (_) {}
     }
 
     // ─── JSONL 轮询聚合 ──────────────────────────────────

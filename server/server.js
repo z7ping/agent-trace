@@ -354,6 +354,7 @@ async function main() {
                     log(`  ✅ ${name} 轮询已启动`, 'green');
                 }
             }
+
         } catch (e) {
             log(`  ⚠️ 轮询启动失败: ${e.message}`, 'yellow');
         }
@@ -395,6 +396,20 @@ async function main() {
                 // 延迟 500ms 等服务器完全就绪
                 setTimeout(() => openBrowser(url), 500);
             }
+
+            // 启动 hermes timeline 收集（延迟执行避免阻塞）
+            setTimeout(() => {
+                try {
+                    const { getAdapter: ga } = require('./adapters');
+                    const hermesAdapter = ga('hermes');
+                    if (hermesAdapter && hermesAdapter.startCollecting) {
+                        hermesAdapter.startCollecting();
+                        log(`  ✅ hermes timeline 收集已启动`, 'green');
+                    }
+                } catch (e) {
+                    log(`  ⚠️ hermes 收集启动失败: ${e.message}`, 'yellow');
+                }
+            }, 1000);
         });
 
         // ─── 优雅关闭 ──────────────────────────────────────────────

@@ -40,3 +40,26 @@ CREATE INDEX IF NOT EXISTS idx_sessions_source ON sessions(source);
 CREATE INDEX IF NOT EXISTS idx_sessions_project ON sessions(project_key);
 CREATE INDEX IF NOT EXISTS idx_daily_stats_date ON daily_stats(date);
 CREATE INDEX IF NOT EXISTS idx_recent_errors_ts ON recent_errors(ts DESC);
+
+-- 时间线（原始调用记录）
+CREATE TABLE IF NOT EXISTS timeline (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  source TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  timestamp TEXT NOT NULL,
+  seq INTEGER,
+  role TEXT NOT NULL,
+  tool_name TEXT,
+  content TEXT,
+  tool_input TEXT,
+  success INTEGER,
+  exit_code INTEGER,
+  duration_ms REAL,
+  output_snippet TEXT,
+  error_message TEXT,
+  project_key TEXT,
+  parent_seq INTEGER
+);
+
+CREATE INDEX IF NOT EXISTS idx_timeline_session ON timeline(session_id, timestamp);
+CREATE INDEX IF NOT EXISTS idx_timeline_source ON timeline(source, timestamp);

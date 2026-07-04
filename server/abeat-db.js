@@ -84,6 +84,48 @@ function saveError(ts, sessionId, source, toolName, errorMessage) {
   `).run();
 }
 
+// ─── Timeline ─────────────────────────────────────────
+
+/** 写入一条 timeline 记录 */
+function insertTimeline(record) {
+  const db = getDb();
+  db.prepare(`
+    INSERT INTO timeline (source, session_id, timestamp, seq, role, tool_name, content, tool_input, success, exit_code, duration_ms, output_snippet, error_message, project_key, parent_seq)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    record.source || '',
+    record.session_id || '',
+    record.timestamp || '',
+    record.seq ?? null,
+    record.role || 'tool',
+    record.tool_name || null,
+    record.content ? String(record.content).substring(0, 2000) : null,
+    record.tool_input ? JSON.stringify(record.tool_input).substring(0, 2000) : null,
+    record.success != null ? (record.success ? 1 : 0) : null,
+    record.exit_code ?? null,
+    record.duration_ms ?? null,
+    record.output_snippet ? String(record.output_snippet).substring(0, 500) : null,
+    record.error_message ? String(record.error_message).substring(0, 500) : null,
+    record.project_key || null,
+    record.parent_seq ?? null
+  );
+}
+
+/** 查询 timeline 记录 */
+function queryTimeline(options = {}) {
+  const db = getDb();
+  const { session_id, source, project_key, limit = 1000 } = options;
+  let where = 'WHERE 1=1';
+  const params = [];
+  if (session_id) { where += ' AND session_id = ?'; params.push(session_id); }
+  if (source) { where += ' AND source = ?'; params.push(source); }
+  if (project_key) { where += ' AND project_key = ?'; params.push(project_key); }
+
+  return db.prepare(`
+    SELECT * FROM timeline ${where} ORDER BY timestamp ASC LIMIT ?
+  `).all(...params, limit);
+}
+
 // ─── 查询方法 ──────────────────────────────────────────
 
 /** 查询统计信息（仪表盘用） */
@@ -175,6 +217,8 @@ module.exports = {
   getSessionDuration,
   updateDailyStats,
   saveError,
+  insertTimeline,
+  queryTimeline,
   queryStats,
   querySessions,
   queryRecentErrors,

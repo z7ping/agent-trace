@@ -79,6 +79,9 @@ function stopAll() {
         if (typeof adapter.stopPolling === 'function') {
             try { adapter.stopPolling(); } catch (_) {}
         }
+        if (typeof adapter.stopCollecting === 'function') {
+            try { adapter.stopCollecting(); } catch (_) {}
+        }
     }
 }
 
