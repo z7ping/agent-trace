@@ -1,0 +1,307 @@
+/**
+ * API 路由处理
+ * 从 server.js 拆分，职责：处理 /api/* 请求
+ */
+
+const fs = require('fs');
+const path = require('path');
+const { getAdapter, getAllAdapters } = require('./adapters');
+const { getDb } = require('./abeat-db');
+
+const ROOT = path.join(__dirname, '..');
+
+function sendJson(res, data, statusCode = 200) {
+    res.writeHead(statusCode, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify(data));
+}
+
+async function handleApiStats(req, res, params) {
+    try {
+        const source = params.get('source');
+        const since = params.get('since');
+
+        if (source === 'hermes') {
+            const hermesAdapter = getAdapter('hermes');
+            if (hermesAdapter) {
+                const stats = await hermesAdapter.getStats({ since });
+                sendJson(res, stats);
+                return;
+            }
+        }
+
+        const database = getDb();
+        if (!database) {
+            sendJson(res, { error: 'SQLite 数据库不可用' }, 503);
+            return;
+        }
+
+        let whereClause = 'WHERE 1=1';
+        const queryParams = [];
+        if (source) { whereClause += ' AND source = ?'; queryParams.push(source); }
+        if (since) { whereClause += ' AND date >= ?'; queryParams.push(since); }
+
+        const byTool = database.prepare(`
+            SELECT tool_name, SUM(call_count) as count, SUM(error_count) as errors, AVG(avg_duration_ms) as avg_duration_ms
+            FROM daily_stats ${whereClause}
+            GROUP BY tool_name ORDER BY count DESC
+        `).all(...queryParams);
+
+        const bySource = database.prepare(`
+            SELECT source, SUM(call_count) as count, SUM(error_count) as errors
+            FROM daily_stats ${whereClause}
+            GROUP BY source ORDER BY count DESC
+        `).all(...queryParams);
+
+        const byDay = database.prepare(`
+            SELECT date, SUM(call_count) as count, SUM(error_count) as errors
+            FROM daily_stats ${whereClause}
+            GROUP BY date ORDER BY date ASC
+        `).all(...queryParams);
+
+        const totals = database.prepare(`
+            SELECT
+                SUM(call_count) as total_calls,
+                SUM(error_count) as total_errors,
+                (SELECT COUNT(*) FROM sessions) as session_count
+            FROM daily_stats ${whereClause}
+        `).get(...queryParams);
+
+        sendJson(res, { totals, byTool, bySource, byDay });
+    } catch (e) {
+        sendJson(res, { error: e.message }, 500);
+    }
+}
+
+async function handleApiTools(req, res, params) {
+    try {
+        const allAdapters = getAllAdapters();
+        const toolMap = new Map();
+
+        for (const [name, adapter] of allAdapters) {
+            if (adapter.getTools) {
+                const tools = await adapter.getTools();
+                for (const t of tools) {
+                    const key = t.tool_name;
+                    if (toolMap.has(key)) {
+                        const existing = toolMap.get(key);
+                        existing.count += t.count || 0;
+                        existing.errors += t.errors || 0;
+                    } else {
+                        toolMap.set(key, { tool_name: key, count: t.count || 0, errors: t.errors || 0 });
+                    }
+                }
+            }
+        }
+
+        const database = getDb();
+        if (database) {
+            const dbTools = database.prepare(`
+                SELECT tool_name, SUM(call_count) as count, SUM(error_count) as errors
+                FROM daily_stats
+                GROUP BY tool_name
+            `).all();
+            for (const t of dbTools) {
+                const key = t.tool_name;
+                if (toolMap.has(key)) {
+                    const existing = toolMap.get(key);
+                    existing.count += t.count || 0;
+                    existing.errors += t.errors || 0;
+                } else {
+                    toolMap.set(key, { tool_name: key, count: t.count || 0, errors: t.errors || 0 });
+                }
+            }
+        }
+
+        const items = Array.from(toolMap.values()).sort((a, b) => b.count - a.count);
+        sendJson(res, { items });
+    } catch (e) {
+        sendJson(res, { error: e.message }, 500);
+    }
+}
+
+async function handleApiSessions(req, res, params) {
+    try {
+        const source = params.get('source');
+        const project = params.get('project');
+        const limit = Math.min(parseInt(params.get('limit') || '50', 10), 200);
+
+        let allSessions = [];
+
+        const adapters = source ? { [source]: getAdapter(source) } : Object.fromEntries(getAllAdapters());
+        for (const [name, adapter] of Object.entries(adapters)) {
+            if (!adapter || !adapter.getSessions) continue;
+            const sessions = await adapter.getSessions({ project_key: project, limit });
+            allSessions.push(...sessions);
+        }
+
+        const database = getDb();
+        if (database) {
+            let whereClause = 'WHERE 1=1';
+            const queryParams = [];
+            if (source) { whereClause += ' AND source = ?'; queryParams.push(source); }
+            if (project) { whereClause += ' AND project_key = ?'; queryParams.push(project); }
+
+            const dbSessions = database.prepare(`
+                SELECT * FROM sessions ${whereClause}
+                ORDER BY start_time DESC LIMIT ?
+            `).all(...queryParams, limit * 2);
+            allSessions.push(...dbSessions);
+        }
+
+        const seen = new Set();
+        const unique = allSessions.filter(s => {
+            if (seen.has(s.session_id)) return false;
+            seen.add(s.session_id);
+            return true;
+        });
+        unique.sort((a, b) => (b.start_time || '').localeCompare(a.start_time || ''));
+
+        try {
+            const projectsFile = path.join(ROOT, 'projects.json');
+            const projects = fs.existsSync(projectsFile)
+                ? JSON.parse(fs.readFileSync(projectsFile, 'utf-8'))
+                : {};
+            for (const s of unique) {
+                const proj = projects[s.project_key];
+                s.project_name = proj?.name || s.project_key;
+            }
+        } catch (_) {}
+
+        sendJson(res, { items: unique.slice(0, limit) });
+    } catch (e) {
+        sendJson(res, { error: e.message }, 500);
+    }
+}
+
+async function handleApiTimeline(req, res, params) {
+    const project = params.get('project');
+    const session = params.get('session');
+    const source = params.get('source') || null;
+    const limit = Math.min(parseInt(params.get('limit') || '1000', 10), 10000);
+
+    try {
+        const filter = { session_id: session, project_key: project, source, limit };
+
+        let items = [];
+        if (source) {
+            const adapter = getAdapter(source);
+            if (adapter) items = await adapter.getRecords(filter);
+        } else {
+            const adapters = getAllAdapters();
+            for (const adapter of adapters.values()) {
+                const records = await adapter.getRecords(filter);
+                items.push(...records);
+            }
+        }
+
+        const hasSeq = items.length > 0 && items.some(i => i.seq != null);
+        if (hasSeq) {
+            items.sort((a, b) => (a.seq || 0) - (b.seq || 0));
+        } else {
+            items.sort((a, b) => (b.ts || b.timestamp || '').localeCompare(a.ts || a.timestamp || ''));
+        }
+        sendJson(res, { items: items.slice(0, limit) });
+    } catch (e) {
+        sendJson(res, { error: e.message }, 500);
+    }
+}
+
+let skillsCache = null;
+let skillsCacheTime = 0;
+const SKILLS_CACHE_TTL = 30000;
+
+function handleApiSkills(req, res, params) {
+    if (skillsCache && (Date.now() - skillsCacheTime) < SKILLS_CACHE_TTL) {
+        sendJson(res, skillsCache);
+        return;
+    }
+    try {
+        const claudeProjectsDir = path.join(require('os').homedir(), '.claude', 'projects');
+        const sessions = [];
+        const skillsSummary = {};
+
+        if (!fs.existsSync(claudeProjectsDir)) {
+            sendJson(res, { sessions: [], skillsSummary: {}, totalSessions: 0, totalUniqueSkills: 0 });
+            return;
+        }
+
+        const jsonlFiles = [];
+        const scanDir = (dir) => {
+            try {
+                const entries = fs.readdirSync(dir, { withFileTypes: true });
+                for (const entry of entries) {
+                    const fullPath = path.join(dir, entry.name);
+                    if (entry.isDirectory()) {
+                        scanDir(fullPath);
+                    } else if (entry.name.endsWith('.jsonl')) {
+                        jsonlFiles.push(fullPath);
+                    }
+                }
+            } catch (e) {}
+        };
+        scanDir(claudeProjectsDir);
+
+        const processedSessions = new Set();
+        for (const filePath of jsonlFiles) {
+            try {
+                const content = fs.readFileSync(filePath, 'utf-8');
+                const lines = content.split('\n').filter(line => line.trim());
+
+                for (const line of lines) {
+                    try {
+                        const entry = JSON.parse(line);
+                        const sessionId = entry.sessionId;
+
+                        if (entry.type === 'assistant' && entry.message?.content) {
+                            const contentArr = Array.isArray(entry.message.content) ? entry.message.content : [];
+                            for (const item of contentArr) {
+                                if (item.type === 'tool_use' && item.name === 'Skill' && item.input?.skill) {
+                                    const skillName = item.input.skill;
+                                    if (!skillsSummary[skillName]) {
+                                        skillsSummary[skillName] = { count: 0, sessions: [] };
+                                    }
+                                    skillsSummary[skillName].count++;
+                                    if (sessionId && !skillsSummary[skillName].sessions.includes(sessionId)) {
+                                        skillsSummary[skillName].sessions.push(sessionId);
+                                    }
+                                }
+                            }
+                        }
+
+                        if (entry.type === 'attachment' &&
+                            entry.attachment &&
+                            entry.attachment.type === 'skill_listing' &&
+                            entry.sessionId) {
+                            if (!processedSessions.has(entry.sessionId)) {
+                                processedSessions.add(entry.sessionId);
+                                sessions.push({
+                                    sessionId: entry.sessionId,
+                                    cwd: entry.cwd || '',
+                                    timestamp: entry.timestamp || '',
+                                    skillCount: entry.attachment.skillCount || entry.attachment.names?.length || 0,
+                                    skills: entry.attachment.names || []
+                                });
+                            }
+                        }
+                    } catch (parseErr) {}
+                }
+            } catch (readErr) {}
+        }
+
+        sessions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        const result = {
+            sessions,
+            skillsSummary,
+            totalSessions: sessions.length,
+            totalUniqueSkills: Object.keys(skillsSummary).length
+        };
+        skillsCache = result;
+        skillsCacheTime = Date.now();
+        sendJson(res, result);
+    } catch (e) {
+        sendJson(res, { error: e.message }, 500);
+    }
+}
+
+module.exports = { handleApiStats, handleApiTools, handleApiSessions, handleApiTimeline, handleApiSkills };
