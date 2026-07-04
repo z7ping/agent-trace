@@ -19,6 +19,7 @@ class HermesAdapter extends BaseAdapter {
         this._prepared = {};
         this._collectTimer = null;
         this._lastTsBySession = new Map(); // sessionId → lastImportedTimestamp (unix seconds)
+        this._collectStateFile = path.join(__dirname, '..', 'states', 'hermes-collect-state.json');
     }
 
     get name() {
@@ -573,6 +574,33 @@ class HermesAdapter extends BaseAdapter {
 
     // ─── Timeline 收集 ─────────────────────────────────────
 
+    /** 从文件加载水位线 */
+    _loadCollectState() {
+        try {
+            if (fs.existsSync(this._collectStateFile)) {
+                const data = JSON.parse(fs.readFileSync(this._collectStateFile, 'utf-8'));
+                if (data.sessions) {
+                    for (const [sid, ts] of Object.entries(data.sessions)) {
+                        this._lastTsBySession.set(sid, ts);
+                    }
+                }
+            }
+        } catch (_) {}
+    }
+
+    /** 保存水位线到文件 */
+    _saveCollectState() {
+        try {
+            const dir = path.dirname(this._collectStateFile);
+            if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+            const sessions = {};
+            for (const [sid, ts] of this._lastTsBySession) {
+                sessions[sid] = ts;
+            }
+            fs.writeFileSync(this._collectStateFile, JSON.stringify({ sessions }, null, 2), 'utf-8');
+        } catch (_) {}
+    }
+
     /**
      * 从 state.db 读取新记录并写入 timeline 表
      */
@@ -719,10 +747,12 @@ class HermesAdapter extends BaseAdapter {
 
                 if (batch.length >= BATCH) {
                     flush();
+                    this._saveCollectState();
                     await new Promise(r => setImmediate(r));
                 }
             }
             flush();
+            this._saveCollectState();
             if (count > 0) console.log(`hermes:collect 导入 ${count} 条记录`);
         } catch (e) {
             this.logError(e, 'hermes:collect');
@@ -733,22 +763,26 @@ class HermesAdapter extends BaseAdapter {
 
     startCollecting(intervalMs = 5 * 60 * 1000) {
         if (this._collectTimer) return;
-        // 从 timeline 表恢复水位线，避免首次全量导入
-        try {
-            const { getDb } = require('../abeat-db');
-            const db = getDb();
-            if (db) {
-                const rows = db.prepare(`
-                    SELECT session_id, MAX(timestamp) as max_ts
-                    FROM timeline WHERE source = 'hermes'
-                    GROUP BY session_id
-                `).all();
-                for (const row of rows) {
-                    const ts = new Date(row.max_ts).getTime() / 1000;
-                    if (ts > 0) this._lastTsBySession.set(row.session_id, ts);
+        // 优先从文件恢复水位线
+        this._loadCollectState();
+        // 文件为空时从 timeline 表恢复（fallback）
+        if (this._lastTsBySession.size === 0) {
+            try {
+                const { getDb } = require('../abeat-db');
+                const db = getDb();
+                if (db) {
+                    const rows = db.prepare(`
+                        SELECT session_id, MAX(timestamp) as max_ts
+                        FROM timeline WHERE source = 'hermes'
+                        GROUP BY session_id
+                    `).all();
+                    for (const row of rows) {
+                        const ts = new Date(row.max_ts).getTime() / 1000;
+                        if (ts > 0) this._lastTsBySession.set(row.session_id, ts);
+                    }
                 }
-            }
-        } catch (_) {}
+            } catch (_) {}
+        }
         // 延迟首次 collect，避免阻塞服务器启动
         setTimeout(() => this.collect(), 0);
         this._collectTimer = setInterval(() => this.collect(), intervalMs);
@@ -759,6 +793,7 @@ class HermesAdapter extends BaseAdapter {
             clearInterval(this._collectTimer);
             this._collectTimer = null;
         }
+        this._saveCollectState();
     }
 }
 
