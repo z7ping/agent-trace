@@ -297,4 +297,79 @@ function handleApiSkills(req, res, params) {
     }
 }
 
-module.exports = { handleApiStats, handleApiTools, handleApiSessions, handleApiTimeline, handleApiSkills };
+// ─── 跨工具对比 API ───────────────────────────────────────────
+
+function handleApiCompare(req, res) {
+    try {
+        const db = getDb();
+
+        // 同类工具耗时对比
+        const durationComparison = db.prepare(`
+            SELECT tool_name, source,
+                   ROUND(AVG(duration_ms), 0) as avg_ms,
+                   COUNT(*) as calls
+            FROM timeline
+            WHERE role IN ('tool_result', 'tool_error') AND duration_ms IS NOT NULL
+            GROUP BY tool_name, source
+            ORDER BY tool_name, avg_ms DESC
+        `).all();
+
+        // 成功率对比
+        const successRates = db.prepare(`
+            SELECT tool_name, source,
+                   COUNT(*) as total,
+                   ROUND(100.0 * SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END) / COUNT(*), 1) as success_rate
+            FROM timeline
+            WHERE role IN ('tool_result', 'tool_error')
+            GROUP BY tool_name, source
+            HAVING total >= 5
+            ORDER BY success_rate DESC
+        `).all();
+
+        sendJson(res, { durationComparison, successRates });
+    } catch (e) {
+        sendJson(res, { error: e.message }, 500);
+    }
+}
+
+// ─── 报错分析 API ─────────────────────────────────────────────
+
+function handleApiErrors(req, res, params) {
+    try {
+        const db = getDb();
+        const limit = Math.min(parseInt(params.get('limit') || '50', 10), 200);
+
+        // 报错类型分布
+        const errorTypeDistribution = db.prepare(`
+            SELECT error_type, COUNT(*) as count
+            FROM timeline
+            WHERE role IN ('tool_result', 'tool_error') AND success = 0
+            GROUP BY error_type
+            ORDER BY count DESC
+        `).all();
+
+        // 哪个工具最容易报错
+        const errorByTool = db.prepare(`
+            SELECT tool_name, error_type, COUNT(*) as count
+            FROM timeline
+            WHERE role IN ('tool_result', 'tool_error') AND success = 0
+            GROUP BY tool_name, error_type
+            ORDER BY count DESC
+        `).all();
+
+        // 最近报错
+        const recentErrors = db.prepare(`
+            SELECT timestamp, source, tool_name, error_type, error_detail
+            FROM timeline
+            WHERE role IN ('tool_result', 'tool_error') AND success = 0
+            ORDER BY timestamp DESC
+            LIMIT ?
+        `).all(limit);
+
+        sendJson(res, { errorTypeDistribution, errorByTool, recentErrors });
+    } catch (e) {
+        sendJson(res, { error: e.message }, 500);
+    }
+}
+
+module.exports = { handleApiStats, handleApiTools, handleApiSessions, handleApiTimeline, handleApiSkills, handleApiCompare, handleApiErrors };

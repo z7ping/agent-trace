@@ -228,7 +228,7 @@ async function main() {
 
     // ─── API 处理函数 ──────────────────────────────────────────
 
-    const { handleApiStats, handleApiTools, handleApiSessions, handleApiTimeline, handleApiSkills } = require('./routes');
+    const { handleApiStats, handleApiTools, handleApiSessions, handleApiTimeline, handleApiSkills, handleApiCompare, handleApiErrors } = require('./routes');
 
     function sendJson(res, data, statusCode = 200) {
         res.writeHead(statusCode, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -276,6 +276,16 @@ async function main() {
 
         if (urlPath === '/api/skills') {
             handleApiSkills(req, res, urlParams);
+            return;
+        }
+
+        if (urlPath === '/api/compare') {
+            handleApiCompare(req, res);
+            return;
+        }
+
+        if (urlPath === '/api/errors') {
+            handleApiErrors(req, res, urlParams);
             return;
         }
 

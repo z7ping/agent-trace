@@ -47,11 +47,15 @@ CREATE INDEX IF NOT EXISTS idx_recent_errors_ts ON recent_errors(ts DESC);
 -- source 值: hermes, claude-code
 CREATE TABLE IF NOT EXISTS timeline (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  source TEXT NOT NULL,
+  source TEXT NOT NULL CHECK(source IN ('hermes', 'claude-code')),
   session_id TEXT NOT NULL,
   timestamp TEXT NOT NULL,
   seq INTEGER,
-  role TEXT NOT NULL,
+  role TEXT NOT NULL CHECK(role IN (
+    'user', 'assistant', 'system',
+    'tool_use', 'tool_result', 'tool_error',
+    'session_start', 'session_end', 'compact', 'notification'
+  )),
   tool_name TEXT,
   content TEXT,
   tool_input TEXT,
@@ -69,3 +73,8 @@ CREATE TABLE IF NOT EXISTS timeline (
 CREATE INDEX IF NOT EXISTS idx_timeline_session ON timeline(session_id, timestamp);
 CREATE INDEX IF NOT EXISTS idx_timeline_source ON timeline(source, timestamp);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_timeline_dedup ON timeline(session_id, timestamp, role);
+
+-- 分析查询索引
+CREATE INDEX IF NOT EXISTS idx_timeline_tool ON timeline(source, tool_name, timestamp);
+CREATE INDEX IF NOT EXISTS idx_timeline_role ON timeline(role, timestamp);
+CREATE INDEX IF NOT EXISTS idx_timeline_error ON timeline(role, success, error_type);
