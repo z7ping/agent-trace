@@ -27,6 +27,12 @@ const SETTINGS_FILE = path.join(os.homedir(), '.claude', 'settings.json');
 const { DEFAULT_PORT } = require('./config');
 const VERSION = require('../package.json').version;
 
+// ─── systemd 配置 ──────────────────────────────────────────────────
+const SERVICE_NAME = 'agent-trace';
+const SYSTEMD_DIR = path.join(os.homedir(), '.config', 'systemd', 'user');
+const SERVICE_FILE = path.join(SYSTEMD_DIR, `${SERVICE_NAME}.service`);
+const NODE_BIN = process.execPath; // 当前 node 路径
+
 // ─── 彩色输出 ────────────────────────────────────────────────────
 
 const c = {
@@ -118,6 +124,365 @@ function isProcessAlive(pid) {
     }
 }
 
+// ─── 跨平台服务管理 ──────────────────────────────────────────────
+//
+// Linux   → systemd user service (~/.config/systemd/user/)
+// macOS   → launchd agent     (~/Library/LaunchAgents/)
+// Windows → 任务计划程序       (schtasks)
+//
+
+const SERVICE_LABEL = 'com.agent-trace';
+const LAUNCHD_DIR = path.join(os.homedir(), 'Library', 'LaunchAgents');
+const LAUNCHD_PLIST = path.join(LAUNCHD_DIR, `${SERVICE_LABEL}.plist`);
+const SCHTASKS_NAME = 'AgentTrace';
+
+function isMac() { return process.platform === 'darwin'; }
+
+/**
+ * 返回当前平台可用的服务后端: 'systemd' | 'launchd' | 'schtasks' | null
+ */
+function getServiceBackend() {
+    if (isWin()) {
+        // 检查 schtasks 是否可用
+        try {
+            execSync('schtasks /query /tn "nonexistent_test" 2>nul', { stdio: 'ignore', shell: true });
+        } catch {
+            // schtasks 存在但任务不存在会返回错误码 1，这是正常的
+        }
+        return 'schtasks';
+    }
+    if (isMac()) {
+        try {
+            execSync('launchctl version', { stdio: 'ignore' });
+            return 'launchd';
+        } catch {
+            return null;
+        }
+    }
+    // Linux
+    try {
+        execSync('systemctl --user daemon-reload', { stdio: 'ignore' });
+        return 'systemd';
+    } catch {
+        return null;
+    }
+}
+
+// ─── systemd 实现（Linux）────────────────────────────────────────
+
+function systemdServiceFile() {
+    const serverJs = path.join(INSTALL_DIR, 'server.js');
+    return `[Unit]
+Description=Agent Trace - AI Agent Observability
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=${NODE_BIN} ${serverJs} ${DEFAULT_PORT}
+WorkingDirectory=${INSTALL_DIR}
+Restart=on-failure
+RestartSec=5
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=default.target
+`;
+}
+
+function systemdInstall() {
+    mkdirp(SYSTEMD_DIR);
+    fs.writeFileSync(SERVICE_FILE, systemdServiceFile(), 'utf-8');
+    execSync('systemctl --user daemon-reload', { stdio: 'ignore' });
+    execSync(`systemctl --user enable ${SERVICE_NAME}`, { stdio: 'ignore' });
+    log('[OK] systemd 服务已注册并启用开机自启', 'green');
+    // 检查 linger
+    try {
+        const user = os.userInfo().username;
+        const lingerPath = `/var/lib/systemd/linger/${user}`;
+        if (!fs.existsSync(lingerPath)) {
+            log('[INFO] 建议运行: sudo loginctl enable-linger ' + user, 'yellow');
+            log('  这样服务可在未登录时保持运行', 'dim');
+        }
+    } catch (_) {}
+}
+
+function systemdStart() {
+    execSync(`systemctl --user start ${SERVICE_NAME}`, { stdio: 'ignore' });
+    log('[OK] 服务已启动', 'green');
+}
+
+function systemdStop() {
+    execSync(`systemctl --user stop ${SERVICE_NAME}`, { stdio: 'ignore' });
+    log('[OK] 服务已停止', 'green');
+}
+
+function systemdEnable() {
+    execSync(`systemctl --user enable ${SERVICE_NAME}`, { stdio: 'ignore' });
+    log('[OK] 已启用开机自启', 'green');
+}
+
+function systemdDisable() {
+    execSync(`systemctl --user disable ${SERVICE_NAME}`, { stdio: 'ignore' });
+    log('[OK] 已关闭开机自启', 'green');
+}
+
+function systemdStatus() {
+    try {
+        const out = execSync(`systemctl --user is-active ${SERVICE_NAME} 2>/dev/null`, { encoding: 'utf-8' }).trim();
+        if (out === 'active') {
+            log('✅ 服务运行中（systemd）', 'green');
+        } else {
+            log(`⚠️  服务状态: ${out}`, 'yellow');
+        }
+    } catch {
+        log('❌ 服务未注册或未运行', 'yellow');
+    }
+    try {
+        const enabled = execSync(`systemctl --user is-enabled ${SERVICE_NAME} 2>/dev/null`, { encoding: 'utf-8' }).trim();
+        log(`开机自启: ${enabled === 'enabled' ? '✅ 已启用' : '❌ 未启用'}`, enabled === 'enabled' ? 'green' : 'yellow');
+    } catch {
+        log('开机自启: ❌ 未启用', 'yellow');
+    }
+}
+
+function systemdUninstall() {
+    try {
+        execSync(`systemctl --user stop ${SERVICE_NAME} 2>/dev/null`, { stdio: 'ignore' });
+        execSync(`systemctl --user disable ${SERVICE_NAME} 2>/dev/null`, { stdio: 'ignore' });
+    } catch (_) {}
+    if (fs.existsSync(SERVICE_FILE)) {
+        fs.unlinkSync(SERVICE_FILE);
+        execSync('systemctl --user daemon-reload', { stdio: 'ignore' });
+        log('[OK] systemd 服务已移除', 'green');
+    }
+}
+
+// ─── launchd 实现（macOS）────────────────────────────────────────
+
+function launchdPlistContent() {
+    const serverJs = path.join(INSTALL_DIR, 'server.js');
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>${SERVICE_LABEL}</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>${NODE_BIN}</string>
+        <string>${serverJs}</string>
+        <string>${String(DEFAULT_PORT)}</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>${INSTALL_DIR}</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+    <key>StandardOutPath</key>
+    <string>${path.join(INSTALL_DIR, 'logs', 'launchd-stdout.log')}</string>
+    <key>StandardErrorPath</key>
+    <string>${path.join(INSTALL_DIR, 'logs', 'launchd-stderr.log')}</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>NODE_ENV</key>
+        <string>production</string>
+    </dict>
+</dict>
+</plist>
+`;
+}
+
+function launchdInstall() {
+    mkdirp(LAUNCHD_DIR);
+    fs.writeFileSync(LAUNCHD_PLIST, launchdPlistContent(), 'utf-8');
+    execSync(`launchctl load ${LAUNCHD_PLIST}`, { stdio: 'ignore' });
+    log('[OK] launchd 服务已注册并启用开机自启', 'green');
+}
+
+function launchdStart() {
+    execSync(`launchctl start ${SERVICE_LABEL}`, { stdio: 'ignore' });
+    log('[OK] 服务已启动', 'green');
+}
+
+function launchdStop() {
+    execSync(`launchctl stop ${SERVICE_LABEL}`, { stdio: 'ignore' });
+    log('[OK] 服务已停止', 'green');
+}
+
+function launchdEnable() {
+    // launchd 的 RunAtLoad=true 已实现开机自启，重新 load 即可
+    try { execSync(`launchctl unload ${LAUNCHD_PLIST}`, { stdio: 'ignore' }); } catch (_) {}
+    execSync(`launchctl load ${LAUNCHD_PLIST}`, { stdio: 'ignore' });
+    log('[OK] 已启用开机自启', 'green');
+}
+
+function launchdDisable() {
+    execSync(`launchctl unload ${LAUNCHD_PLIST}`, { stdio: 'ignore' });
+    log('[OK] 已关闭开机自启', 'green');
+}
+
+function launchdStatus() {
+    try {
+        const out = execSync(`launchctl list | grep ${SERVICE_LABEL}`, { encoding: 'utf-8' }).trim();
+        if (out) {
+            const parts = out.split(/\s+/);
+            const pid = parts[0];
+            const exitCode = parts[1];
+            if (pid !== '-') {
+                log(`✅ 服务运行中（launchd） PID: ${pid}`, 'green');
+            } else {
+                log(`⚠️  服务已注册但未运行（退出码: ${exitCode}）`, 'yellow');
+            }
+        } else {
+            log('❌ 服务未注册', 'yellow');
+        }
+    } catch {
+        log('❌ 服务未注册', 'yellow');
+    }
+    if (fs.existsSync(LAUNCHD_PLIST)) {
+        log('开机自启: ✅ 已启用（RunAtLoad）', 'green');
+    } else {
+        log('开机自启: ❌ 未启用', 'yellow');
+    }
+}
+
+function launchdUninstall() {
+    try { execSync(`launchctl unload ${LAUNCHD_PLIST} 2>/dev/null`, { stdio: 'ignore' }); } catch (_) {}
+    if (fs.existsSync(LAUNCHD_PLIST)) {
+        fs.unlinkSync(LAUNCHD_PLIST);
+        log('[OK] launchd 服务已移除', 'green');
+    }
+}
+
+// ─── schtasks 实现（Windows）─────────────────────────────────────
+
+function schtasksInstall() {
+    const serverJs = path.join(INSTALL_DIR, 'server.js');
+    // 创建任务：用户登录时启动，开机时也启动
+    const cmd = `schtasks /create /tn "${SCHTASKS_NAME}" /tr "\\"${NODE_BIN}\\" \\"${serverJs}\\" ${DEFAULT_PORT}" /sc onlogon /rl highest /f`;
+    try {
+        execSync(cmd, { stdio: 'ignore', shell: true });
+        log('[OK] 任务计划已注册（登录时启动）', 'green');
+    } catch (e) {
+        log(`[ERROR] 注册失败: ${e.message}`, 'red');
+        log('  需要管理员权限，或手动运行:', 'yellow');
+        log(`  ${cmd}`, 'dim');
+        return false;
+    }
+    // 额外创建一个开机触发器
+    const bootCmd = `schtasks /create /tn "${SCHTASKS_NAME}_Boot" /tr "\\"${NODE_BIN}\\" \\"${serverJs}\\" ${DEFAULT_PORT}" /sc onstart /rl highest /f`;
+    try {
+        execSync(bootCmd, { stdio: 'ignore', shell: true });
+    } catch (_) {}
+    return true;
+}
+
+function schtasksStart() {
+    try {
+        execSync(`schtasks /run /tn "${SCHTASKS_NAME}"`, { stdio: 'ignore', shell: true });
+        log('[OK] 任务已启动', 'green');
+    } catch (e) {
+        log(`[ERROR] 启动失败: ${e.message}`, 'red');
+    }
+}
+
+function schtasksStop() {
+    // schtasks 没有直接 stop，需要 taskkill
+    try {
+        const out = execSync(`schtasks /query /tn "${SCHTASKS_NAME}" /fo csv /nh`, { encoding: 'utf-8', shell: true }).trim();
+        if (out) {
+            execSync('taskkill /f /im node.exe 2>nul', { stdio: 'ignore', shell: true });
+            log('[OK] 任务已停止', 'green');
+        }
+    } catch {
+        log('未找到运行中的任务', 'yellow');
+    }
+}
+
+function schtasksEnable() {
+    // schtasks 创建时已启用，重新创建即可
+    schtasksInstall();
+}
+
+function schtasksDisable() {
+    try {
+        execSync(`schtasks /change /tn "${SCHTASKS_NAME}" /disable`, { stdio: 'ignore', shell: true });
+        execSync(`schtasks /change /tn "${SCHTASKS_NAME}_Boot" /disable 2>nul`, { stdio: 'ignore', shell: true });
+        log('[OK] 已关闭开机自启', 'green');
+    } catch (e) {
+        log(`[ERROR] 操作失败: ${e.message}`, 'red');
+    }
+}
+
+function schtasksStatus() {
+    try {
+        const out = execSync(`schtasks /query /tn "${SCHTASKS_NAME}" /fo list`, { encoding: 'utf-8', shell: true });
+        if (out.includes('Running')) {
+            log('✅ 服务运行中（任务计划）', 'green');
+        } else if (out.includes('Ready')) {
+            log('⚠️  任务已注册但未运行', 'yellow');
+        } else {
+            log('⚠️  任务状态未知', 'yellow');
+        }
+        if (out.includes('Disabled')) {
+            log('开机自启: ❌ 已禁用', 'yellow');
+        } else {
+            log('开机自启: ✅ 已启用', 'green');
+        }
+    } catch {
+        log('❌ 任务未注册', 'yellow');
+    }
+}
+
+function schtasksUninstall() {
+    try { execSync(`schtasks /delete /tn "${SCHTASKS_NAME}" /f`, { stdio: 'ignore', shell: true }); } catch (_) {}
+    try { execSync(`schtasks /delete /tn "${SCHTASKS_NAME}_Boot" /f 2>nul`, { stdio: 'ignore', shell: true }); } catch (_) {}
+    log('[OK] 任务计划已移除', 'green');
+}
+
+// ─── 统一 service 命令 ──────────────────────────────────────────
+
+function platformAction(action) {
+    const backend = getServiceBackend();
+    if (!backend) {
+        log('[WARN] 当前平台不支持自动服务管理', 'yellow');
+        log('  手动启动: agent-trace start --daemon', 'dim');
+        return false;
+    }
+
+    const map = {
+        systemd: { install: systemdInstall, start: systemdStart, stop: systemdStop, enable: systemdEnable, disable: systemdDisable, status: systemdStatus, uninstall: systemdUninstall },
+        launchd: { install: launchdInstall, start: launchdStart, stop: launchdStop, enable: launchdEnable, disable: launchdDisable, status: launchdStatus, uninstall: launchdUninstall },
+        schtasks: { install: schtasksInstall, start: schtasksStart, stop: schtasksStop, enable: schtasksEnable, disable: schtasksDisable, status: schtasksStatus, uninstall: schtasksUninstall },
+    };
+
+    const fn = map[backend]?.[action];
+    if (!fn) {
+        log(`[ERROR] 不支持的操作: ${action}`, 'red');
+        return false;
+    }
+    return fn();
+}
+
+function cmdService(subcmd) {
+    switch (subcmd) {
+        case 'install':   return platformAction('install');
+        case 'uninstall': return platformAction('uninstall');
+        case 'start':     return platformAction('start');
+        case 'stop':      return platformAction('stop');
+        case 'enable':    return platformAction('enable');
+        case 'disable':   return platformAction('disable');
+        case 'status':    return platformAction('status');
+        default:
+            log('用法: agent-trace service <install|uninstall|start|stop|enable|disable|status>', 'cyan');
+            return undefined;
+    }
+}
+
 // ─── install 命令 ────────────────────────────────────────────────
 
 async function cmdInstall() {
@@ -205,25 +570,55 @@ async function cmdInstall() {
         log('[WARN] 更新 settings.json 失败', 'yellow');
     }
 
-    // 6. 自动启动守护进程
+    // 6. 注册系统服务并启动
     console.log('');
-    log('启动后台服务...', 'cyan');
-    try {
-        cmdStart(['--daemon']);
-        // 等待服务启动
+    log('配置系统服务...', 'cyan');
+    const serviceReady = platformAction('install');
+
+    if (serviceReady !== false) {
+        // 启动服务
+        platformAction('start');
         await new Promise(resolve => setTimeout(resolve, 2000));
 
         // 检查状态
-        const pid = readPid(INSTALL_DIR);
-        if (pid && isProcessAlive(pid)) {
+        const backend = getServiceBackend();
+        let running = false;
+        if (backend === 'systemd') {
+            try {
+                running = execSync(`systemctl --user is-active ${SERVICE_NAME} 2>/dev/null`, { encoding: 'utf-8' }).trim() === 'active';
+            } catch {}
+        } else if (backend === 'launchd') {
+            try {
+                const out = execSync(`launchctl list | grep ${SERVICE_LABEL}`, { encoding: 'utf-8' }).trim();
+                running = out && !out.split(/\s+/)[0] === '-';
+            } catch {}
+        } else {
+            running = true; // schtasks 无法可靠检测
+        }
+
+        if (running) {
             log(`[OK] 服务已启动 → http://localhost:${DEFAULT_PORT}/`, 'green');
         } else {
             log('[WARN] 服务未启动，请手动运行:', 'yellow');
+            log(`  agent-trace service start`, 'dim');
+        }
+    } else {
+        // 无可用服务后端，回退到 daemon 模式
+        log('回退到 daemon 模式...', 'yellow');
+        try {
+            cmdStart(['--daemon']);
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            const pid = readPid(INSTALL_DIR);
+            if (pid && isProcessAlive(pid)) {
+                log(`[OK] 服务已启动 → http://localhost:${DEFAULT_PORT}/`, 'green');
+            } else {
+                log('[WARN] 服务未启动，请手动运行:', 'yellow');
+                log(`  agent-trace start`, 'dim');
+            }
+        } catch (_) {
+            log('[WARN] 自动启动失败，请手动运行:', 'yellow');
             log(`  agent-trace start`, 'dim');
         }
-    } catch (_) {
-        log('[WARN] 自动启动失败，请手动运行:', 'yellow');
-        log(`  agent-trace start`, 'dim');
     }
 
     // 7. 完成提示
@@ -232,12 +627,17 @@ async function cmdInstall() {
     log('安装完成！', 'bright');
     console.log('');
     log('使用方式:', 'yellow');
-    log('  服务会在首次使用 Claude Code 工具时自动拉起', 'dim');
+    if (serviceReady !== false) {
+        log('  服务已注册为系统服务，开机自动启动', 'dim');
+    } else {
+        log('  服务会在首次使用 Claude Code 工具时自动拉起', 'dim');
+    }
     log(`  浏览器打开: http://localhost:${DEFAULT_PORT}/`, 'dim');
     log('  管理命令:', 'dim');
-    log('    agent-trace start    启动服务', 'dim');
-    log('    agent-trace stop     停止服务', 'dim');
-    log('    agent-trace status   查看状态', 'dim');
+    log('    agent-trace service start     启动服务', 'dim');
+    log('    agent-trace service stop      停止服务', 'dim');
+    log('    agent-trace service disable   关闭开机自启', 'dim');
+    log('    agent-trace service status    查看状态', 'dim');
     log('  向后兼容: node server.js 仍然可用', 'dim');
     console.log('');
     log(`文档: ${INSTALL_DIR}/README.md`, 'dim');
@@ -369,8 +769,13 @@ async function cmdUninstall() {
     log('═'.repeat(45), 'dim');
     console.log('');
 
-    // 1. 停止运行中的服务
+    // 1. 停止运行中的服务（跨平台）
     log('停止运行中的服务...', 'cyan');
+    try {
+        platformAction('uninstall');
+    } catch (_) {
+        log('[SKIP] 系统服务未注册', 'dim');
+    }
     try {
         cmdStop(INSTALL_DIR);
     } catch (_) {
@@ -535,25 +940,33 @@ function showHelp() {
     log('  agent-trace <command> [options]', 'cyan');
     console.log('');
     log('命令:', 'yellow');
-    log('  install              安装 hooks 到 Claude Code 配置', 'dim');
+    log('  install              安装 hooks + 注册 systemd 服务（自动启动+开机自启）', 'dim');
     log('  start [--daemon]     启动服务器', 'dim');
     log('  stop                 停止后台服务', 'dim');
     log('  status               查看服务状态', 'dim');
+    log('  service <sub>        管理 systemd 服务', 'dim');
     log('  package              打包分发', 'dim');
     log('  uninstall            卸载并清理所有配置和数据', 'dim');
     log('  help                 显示此帮助', 'dim');
+    console.log('');
+    log('service 子命令:', 'yellow');
+    log('  service install      注册 systemd 服务', 'dim');
+    log('  service uninstall    移除 systemd 服务', 'dim');
+    log('  service start        启动服务', 'dim');
+    log('  service stop         停止服务', 'dim');
+    log('  service enable       启用开机自启', 'dim');
+    log('  service disable      关闭开机自启', 'dim');
+    log('  service status       查看服务状态', 'dim');
     console.log('');
     log('选项:', 'yellow');
     log('  --daemon, -d         后台守护进程模式（仅 start）', 'dim');
     log('  --open               自动打开浏览器（仅 start）', 'dim');
     console.log('');
     log('示例:', 'yellow');
-    log('  agent-trace install           # 首次安装', 'dim');
-    log('  agent-trace start             # 前台启动', 'dim');
-    log('  agent-trace start --daemon    # 后台启动', 'dim');
-    log('  agent-trace stop              # 停止服务', 'dim');
-    log('  agent-trace status            # 查看状态', 'dim');
-    log('  agent-trace package           # 打包分发', 'dim');
+    log('  agent-trace install           # 首次安装（自动注册服务+启动）', 'dim');
+    log('  agent-trace service stop      # 停止服务', 'dim');
+    log('  agent-trace service disable   # 关闭开机自启', 'dim');
+    log('  agent-trace service status    # 查看状态', 'dim');
     console.log('');
     log('向后兼容:', 'yellow');
     log('  node server.js [port]         # 仍然可用', 'dim');
@@ -582,6 +995,9 @@ function main() {
             break;
         case 'uninstall':
             cmdUninstall();
+            break;
+        case 'service':
+            cmdService(cmdArgs[0]);
             break;
         case 'status':
             cmdStatus(PROJECT_DIR);
