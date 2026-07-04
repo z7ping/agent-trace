@@ -38,6 +38,9 @@ Thumbs.db
 *~
 .vscode/
 .idea/
+
+# Claude Code 缓存
+.ccb/
 tracker.db-shm
 tracker.db-wal
 a-beat.db
