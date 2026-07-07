@@ -22,10 +22,13 @@ const { spawn, execSync } = require('child_process');
 // ─── 配置 ────────────────────────────────────────────────────────
 
 const PROJECT_DIR = path.join(__dirname, '..');
-const INSTALL_DIR = path.join(os.homedir(), '.claude', 'agent-trace');
+const INSTALL_DIR = path.join(os.homedir(), '.agent-trace');
 const SETTINGS_FILE = path.join(os.homedir(), '.claude', 'settings.json');
 const { DEFAULT_PORT } = require('./config');
-const VERSION = require('../package.json').version;
+// ponytail: 版本号仅打包时用，按需读取，不复制 package.json
+function getVersion() {
+    try { return require(path.join(PROJECT_DIR, 'package.json')).version; } catch { return '0.0.0'; }
+}
 
 // ─── systemd 配置 ──────────────────────────────────────────────────
 const SERVICE_NAME = 'agent-trace';
@@ -526,7 +529,7 @@ async function cmdInstall() {
         // server/ 根目录文件
         const rootFiles = [
             'server.js', 'cli.js', 'db.js', 'config.js', 'abeat-db.js',
-            'install-hooks.js', 'schema.sql'
+            'install-hooks.js', 'schema.sql', 'routes.js'
         ];
         rootFiles.forEach(f => {
             copyFile(path.join(PROJECT_DIR, 'server', f), path.join(INSTALL_DIR, f));
@@ -570,7 +573,24 @@ async function cmdInstall() {
         log('[WARN] 更新 settings.json 失败', 'yellow');
     }
 
-    // 6. 注册系统服务并启动
+    // 6. 创建 PATH 链接
+    const localBin = path.join(os.homedir(), '.local', 'bin');
+    mkdirp(localBin);
+    const symlinkPath = path.join(localBin, 'agent-trace');
+    const cliPath = path.join(INSTALL_DIR, 'cli.js');
+    try {
+        if (fs.existsSync(symlinkPath)) fs.unlinkSync(symlinkPath);
+        fs.symlinkSync(cliPath, symlinkPath);
+        fs.chmodSync(cliPath, 0o755);
+        log(`[OK] 已创建链接: ${symlinkPath}`, 'green');
+        if (!process.env.PATH.includes(localBin)) {
+            log(`[WARN] 请确保 ${localBin} 在 PATH 中`, 'yellow');
+        }
+    } catch (e) {
+        log(`[WARN] 创建链接失败: ${e.message}`, 'yellow');
+    }
+
+    // 7. 注册系统服务并启动
     console.log('');
     log('配置系统服务...', 'cyan');
     const serviceReady = platformAction('install');
@@ -621,7 +641,7 @@ async function cmdInstall() {
         }
     }
 
-    // 7. 完成提示
+    // 8. 完成提示
     console.log('');
     log('═'.repeat(45), 'dim');
     log('安装完成！', 'bright');
@@ -704,7 +724,7 @@ function cmdStart(argv) {
         log('══════════════════════════════════════════', 'dim');
         console.log('');
 
-        const child = spawn('node', ['server.js', ...serverArgs], {
+        const child = spawn('node', ['server/server.js', ...serverArgs], {
             cwd: PROJECT_DIR,
             stdio: 'inherit',
         });
@@ -815,7 +835,7 @@ async function cmdUninstall() {
         log(`[WARN] 清理配置失败: ${e.message}`, 'yellow');
     }
 
-    // 3. 删除 ~/.claude/agent-trace/ 目录
+    // 3. 删除 ~/.agent-trace/ 目录
     log(`删除目录: ${INSTALL_DIR}`, 'cyan');
     if (fs.existsSync(INSTALL_DIR)) {
         rimraf(INSTALL_DIR);
@@ -857,10 +877,10 @@ function cmdStatus(baseDir) {
 // ─── package 命令 ────────────────────────────────────────────────
 
 function cmdPackage() {
-    const pkgName = `agent-trace-v${VERSION}`;
+    const pkgName = `agent-trace-v${getVersion()}`;
     const distDir = path.join(PROJECT_DIR, 'dist');
 
-    log(`📦 打包 Agent Beat v${VERSION}`, 'bright');
+    log(`📦 打包 Agent Beat v${getVersion()}`, 'bright');
     log('═'.repeat(45), 'dim');
     console.log('');
 
