@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Agent Beat - HTTP 服务器
+ * Agent Trace - HTTP 服务器
  *
  * 用法:
  *   node server.js [port]              # 前台运行
@@ -382,7 +382,7 @@ async function main() {
 
             if (!isDaemon) {
                 console.log('');
-                log('🧠 Agent Beat - HTTP 服务器', 'bright');
+                log('🧠 Agent Trace - HTTP 服务器', 'bright');
                 log('========================================', 'dim');
                 console.log('');
                 log(`✅ 服务器已启动`, 'green');
