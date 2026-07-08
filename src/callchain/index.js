@@ -93,6 +93,23 @@ export function renderCallChain(data) {
       }
     }
   }
+
+  // 默认展开第一个会话（如果没有已展开的会话）
+  if (expandedSessionIds.size === 0 && sessions.length > 0) {
+    const firstCard = container.querySelector('.session-card');
+    if (firstCard) {
+      const body = firstCard.querySelector('.session-body');
+      const arrow = firstCard.querySelector('.session-arrow');
+      if (body) {
+        body.classList.remove('hidden');
+        if (arrow) arrow.style.transform = 'rotate(90deg)';
+        // 触发加载调用详情
+        if (!body.dataset.loaded && window.loadSessionCalls) {
+          window.loadSessionCalls(firstCard);
+        }
+      }
+    }
+  }
 }
 
 /** 根据字符串生成稳定颜色（用于 session ID） */
@@ -206,20 +223,23 @@ function renderSession(session) {
 
   const header = `
     <div class="session-header" onclick="toggleSession(event.currentTarget)">
-      <div class="flex items-center gap-2">
-        <svg class="session-arrow w-3 h-3 text-neutral-400 transition-transform duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M9 18l6-6-6-6"/>
-        </svg>
-        <span class="session-id font-mono text-xs font-semibold" style="color:${color}" title="会话ID: ${escapeHtml(session.id)}">${escapeHtml(shortId(session.id))}</span>
-        ${sourceLabel ? `<span class="text-[10px] px-1.5 py-0.5 rounded-md font-medium ${sourceColor}">${escapeHtml(sourceLabel)}</span>` : ''}
-        <span class="text-[10px] px-1.5 py-0.5 rounded-md font-medium bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">${escapeHtml(truncate(projectName, 30))}</span>
-        <span class="text-xs text-neutral-400">${timeRange}</span>
-      </div>
-      <div class="flex items-center gap-3 text-xs text-neutral-500">
-        <span>📋 ${toolCount}</span>
-        <span class="text-success-600 dark:text-success-400">✅ ${okCount}</span>
-        ${hasError ? `<span class="text-danger-500">❌ ${session.errors}</span>` : ''}
-        <span class="text-neutral-400">⚡ ${formatDuration(avgDur)}</span>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2">
+          <svg class="session-arrow w-3 h-3 text-neutral-400 transition-transform duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 18l6-6-6-6"/>
+          </svg>
+          <span class="session-id font-mono text-xs font-semibold" style="color:${color}" title="会话ID: ${escapeHtml(session.id)}">${escapeHtml(shortId(session.id))}</span>
+          ${sourceLabel ? `<span class="text-[10px] px-1.5 py-0.5 rounded-md font-medium ${sourceColor}">${escapeHtml(sourceLabel)}</span>` : ''}
+          <span class="text-[10px] px-1.5 py-0.5 rounded-md font-medium bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">${escapeHtml(truncate(projectName, 30))}</span>
+        </div>
+        <div class="flex items-center gap-3 text-[11px] text-neutral-400 mt-1 ml-5">
+          <span>${timeRange}</span>
+          <span class="text-neutral-300 dark:text-neutral-600">|</span>
+          <span>📋 ${toolCount}</span>
+          <span class="text-success-600 dark:text-success-400">✅ ${okCount}</span>
+          ${hasError ? `<span class="text-danger-500">❌ ${session.errors}</span>` : ''}
+          <span class="text-neutral-400">⚡ ${formatDuration(avgDur)}</span>
+        </div>
       </div>
     </div>
   `;

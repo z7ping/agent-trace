@@ -98,7 +98,7 @@
 
   /* 调用行 */
   .call-row {
-    @apply flex items-center gap-2 px-4 py-2 border-l-[3px] border-transparent hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors cursor-pointer text-sm;
+    @apply flex items-center gap-2 px-4 py-2.5 border-l-[3px] border-transparent hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors cursor-pointer text-sm;
   }
   .call-row:hover {
     @apply bg-neutral-50 dark:bg-neutral-800/30;

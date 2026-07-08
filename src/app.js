@@ -364,3 +364,6 @@ window.toggleAllSessions = function () {
   const btn = document.getElementById('expandAllBtn');
   if (btn) btn.textContent = allHidden ? '折叠全部' : '展开全部';
 };
+
+// 暴露 loadSessionCalls 到全局作用域，供 callchain 模块使用
+window.loadSessionCalls = loadSessionCalls;
