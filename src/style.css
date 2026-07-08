@@ -118,11 +118,17 @@
     @apply border-l-warning-500 bg-warning-50/30 dark:bg-warning-500/5;
   }
 
-  /* 调用详情面板（原始 JSON） */
+  /* 调用详情面板 */
   .call-detail {
-    @apply ml-[28px] mr-4 mb-1.5 rounded-lg border border-neutral-200/60 dark:border-neutral-700/60 bg-neutral-50/80 dark:bg-neutral-800/40 overflow-hidden;
+    @apply ml-[28px] mr-4 mb-1.5 rounded-lg border border-neutral-200/60 dark:border-neutral-700/60 bg-neutral-50/80 dark:bg-neutral-800/40 overflow-hidden border-l-[3px];
     backdrop-filter: blur(4px);
   }
+  .call-detail.type-bash  { @apply border-l-warning-500; }
+  .call-detail.type-read  { @apply border-l-primary-500; }
+  .call-detail.type-write { @apply border-l-success-500; }
+  .call-detail.type-mcp   { @apply border-l-info-500; }
+  .call-detail.type-agent { @apply border-l-orange-500; }
+  .call-detail.type-other { @apply border-l-neutral-400; }
   .call-detail pre {
     @apply p-4 text-[11px] leading-relaxed font-mono overflow-x-auto max-h-[320px] m-0;
     color: var(--call-detail-fg, #6b7280);

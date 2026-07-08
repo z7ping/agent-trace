@@ -335,17 +335,11 @@ function renderCall(call, index, projectPath) {
     ? `<span class="exit-badge error">✘${exitCode}</span>`
     : `<span class="exit-badge success">✔${exitCode}</span>`;
 
-  // 树形缩进
-  const indent = depth > 0
-    ? `<span class="tree-indent" style="width:${depth * 20}px"></span>`
-    : '';
-
   // 结构化详情面板
   const detailContent = renderCallDetail(call);
 
   return `
     <div class="${rowClass}" style="padding-left:${12 + depth * 20}px" onclick="toggleCallDetail(this)">
-      ${indent}
       <span class="tool-badge ${type}">${escapeHtml(toolName)}</span>
       <span class="flex-1 min-w-0">
         <span class="call-preview">${preview}</span>
@@ -356,7 +350,7 @@ function renderCall(call, index, projectPath) {
         <span class="call-duration">${duration}</span>
       </span>
     </div>
-    <div class="call-detail hidden">${detailContent}</div>
+    <div class="call-detail hidden type-${type}">${detailContent}</div>
   `;}
 
 /** 类型特定行内预览 */
