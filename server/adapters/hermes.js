@@ -632,6 +632,15 @@ class HermesAdapter extends BaseAdapter {
             `);
 
             let whereClause = `WHERE m.role IN ('user', 'assistant', 'tool')`;
+            
+            // 优化：用水位线最小值过滤，避免全表扫描
+            if (this._lastTsBySession.size > 0) {
+                const minTs = Math.min(...this._lastTsBySession.values());
+                if (minTs > 0) {
+                    whereClause += ` AND m.timestamp > ${minTs}`;
+                }
+            }
+            
             // ponytail: 加 LIMIT 防全表扫描卡死，459MB 的 db 全扫太慢
             const stmt = collectDb.prepare(`
                 SELECT m.*, s.cwd
