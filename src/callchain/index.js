@@ -224,9 +224,12 @@ function renderSession(session) {
     </div>
   `;
 
+  // 来源颜色 hex 值（用于左边线 inline style）
+  const sourceHex = (sourceColors[source] || {}).light || '';
+
   // 树形渲染调用
   const tree = buildTree(session.calls);
-  const calls = tree.map((call, i) => renderCall(call, i, session.project)).join('');
+  const calls = tree.map((call, i) => renderCall(call, i, session.project, sourceHex)).join('');
 
   const borderClass = sourceBorderColors[source] || 'border-l-neutral-300 dark:border-l-neutral-600';
 
@@ -236,7 +239,7 @@ function renderSession(session) {
          data-session-id="${escapeHtml(session.id)}"
          data-source="${escapeHtml(session.source)}">
       ${header}
-      <div class="session-body hidden">
+      <div class="session-body hidden" style="border-left-color:${sourceHex}">
         ${calls.length > 0 ? calls : '<div class="text-center py-4 text-neutral-400 text-sm">加载中...</div>'}
       </div>
     </div>
@@ -311,7 +314,7 @@ function highlightJson(json) {
 }
 
 /** 渲染单个调用行 */
-function renderCall(call, index, projectPath) {
+function renderCall(call, index, projectPath, sourceColor = '') {
   const toolName = call.tool_name || call.name || '未知';
   const type = getToolType(toolName);
   const duration = formatDuration(call.duration_ms);
@@ -337,10 +340,10 @@ function renderCall(call, index, projectPath) {
     : `<span class="exit-badge success">✔${exitCode}</span>`;
 
   // 结构化详情面板
-  const detailContent = renderCallDetail(call);
+  const detailContent = renderCallDetail(call, sourceColor);
 
   return `
-    <div class="${rowClass}" style="padding-left:${12 + depth * 20}px" onclick="toggleCallDetail(this)">
+    <div class="${rowClass}" style="padding-left:${12 + depth * 20}px;border-left-color:${sourceColor}" onclick="toggleCallDetail(this)">
       <span class="tool-badge ${type}">${escapeHtml(toolName)}</span>
       <span class="flex-1 min-w-0">
         <span class="call-preview">${preview}</span>
@@ -351,7 +354,7 @@ function renderCall(call, index, projectPath) {
         <span class="call-duration">${duration}</span>
       </span>
     </div>
-    <div class="call-detail hidden type-${type}">${detailContent}</div>
+    <div class="call-detail hidden type-${type}" style="border-left-color:${sourceColor}">${detailContent}</div>
   `;}
 
 /** 类型特定行内预览 */
@@ -468,7 +471,7 @@ function groupByRounds(calls) {
 }
 
 /** 渲染单个轮次 */
-function renderRound(round, index) {
+function renderRound(round, index, sourceColor = '') {
   const parts = [];
 
   // 从轮次内的工具调用推断来源（取第一个有 source 的）
@@ -508,8 +511,8 @@ function renderRound(round, index) {
   // 工具调用（树形）
   if (round.toolCalls.length > 0) {
     const tree = buildTree(round.toolCalls);
-    const rendered = tree.map((call, i) => renderCall(call, i, '')).join('');
-    parts.push(`<div class="round-calls">${rendered}</div>`);
+    const rendered = tree.map((call, i) => renderCall(call, i, '', sourceColor)).join('');
+    parts.push(`<div class="round-calls" style="border-left:3px solid ${sourceColor}">${rendered}</div>`);
   }
 
   return parts.join('');
@@ -566,7 +569,7 @@ function getOutputContent(call) {
 }
 
 /** 渲染结构化调用详情（替代原始 JSON） */
-function renderCallDetail(call) {
+function renderCallDetail(call, sourceColor = '') {
   const toolName = call.tool_name || '';
   const input = parseToolInput(call);
   const output = getOutputContent(call);
@@ -719,15 +722,19 @@ function renderCallDetail(call) {
 export function renderCallChainCalls(calls) {
   if (!calls || calls.length === 0) return '';
 
+  // 从调用数据中提取来源颜色
+  const src = calls[0]?.source || '';
+  const sourceColor = (sourceColors[src] || {}).light || '';
+
   const rounds = groupByRounds(calls);
 
   // 无轮次数据（全是 tool 记录，无 user）,退化到平铺
   if (rounds.length === 0) {
     const tree = buildTree(calls);
-    return tree.map((call, i) => renderCall(call, i, '')).join('');
+    return tree.map((call, i) => renderCall(call, i, '', sourceColor)).join('');
   }
 
-  return rounds.map((round, i) => renderRound(round, i)).join('');
+  return rounds.map((round, i) => renderRound(round, i, sourceColor)).join('');
 }
 
 /** 切换调用行的详情面板 */
