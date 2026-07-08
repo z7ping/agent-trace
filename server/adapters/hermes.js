@@ -268,8 +268,7 @@ class HermesAdapter extends BaseAdapter {
 
         let assistant = null;
         if (msg.tool_call_id) {
-            const likePattern = `%${msg.tool_call_id}%`;
-            assistant = this._prepared.findAssistantByToolCallId.get(likePattern);
+            assistant = this._prepared.findAssistantByToolCallId.get(msg.tool_call_id);
 
             if (assistant) {
                 const extracted = this._extractToolCallInput(assistant.tool_calls, msg.tool_call_id);
@@ -708,7 +707,7 @@ class HermesAdapter extends BaseAdapter {
                     // 提取 tool_name（从 assistant 的 tool_calls 反查）
                     if (msg.tool_call_id) {
                         try {
-                            const assistant = findAssistant.get(`%${msg.tool_call_id}%`);
+                            const assistant = findAssistant.get(msg.tool_call_id);
                             if (assistant) {
                                 const extracted = this._extractToolCallInput(assistant.tool_calls, msg.tool_call_id);
                                 if (extracted) {
