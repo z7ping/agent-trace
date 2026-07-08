@@ -120,7 +120,7 @@
 
   /* 调用详情面板 */
   .call-detail {
-    @apply ml-[28px] mr-4 mb-1.5 rounded-lg border border-neutral-200/60 dark:border-neutral-700/60 bg-neutral-50/80 dark:bg-neutral-800/40 overflow-hidden border-l-[3px];
+    @apply ml-12 mr-4 mb-1.5 rounded-lg border border-neutral-200/60 dark:border-neutral-700/60 bg-neutral-50/80 dark:bg-neutral-800/40 overflow-hidden border-l-[3px];
     backdrop-filter: blur(4px);
   }
   .call-detail.type-bash  { @apply border-l-warning-500; }
@@ -203,7 +203,7 @@
 
 /* ═══ 轮次分组 ═══ */
 .round-header {
-  @apply flex items-center gap-3 px-4 py-2 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-800/30 border-l-[3px] border-l-transparent ml-[3px];
+  @apply flex items-center gap-3 px-4 py-2 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-800/30 border-l-[3px] border-l-transparent ml-4;
 }
 .round-badge {
   @apply text-[10px] font-semibold px-2 py-0.5 rounded-full bg-neutral-200/60 dark:bg-neutral-700/60 text-neutral-500 dark:text-neutral-400 flex-shrink-0;
@@ -224,7 +224,7 @@
   @apply text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed;
 }
 .round-calls {
-  @apply divide-y divide-neutral-100/60 dark:divide-neutral-800/60;
+  @apply divide-y divide-neutral-100/60 dark:divide-neutral-800/60 ml-4;
 }
 
 /* ═══ 结构化详情面板 ═══ */
