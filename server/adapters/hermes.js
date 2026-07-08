@@ -790,12 +790,44 @@ class HermesAdapter extends BaseAdapter {
         // 延迟首次 collect，避免阻塞服务器启动
         setTimeout(() => this.collect(), 0);
         this._collectTimer = setInterval(() => this.collect(), intervalMs);
+
+        // 实时监听 state.db 变化，有新数据立即 collect
+        this._startWatcher();
+    }
+
+    _startWatcher() {
+        if (this._watcher || !fs.existsSync(STATE_DB)) return;
+        try {
+            this._watchDebounce = null;
+            this._watcher = fs.watch(STATE_DB, (eventType) => {
+                if (eventType !== 'change') return;
+                // 防抖：2秒内的多次变化只触发一次 collect
+                if (this._watchDebounce) clearTimeout(this._watchDebounce);
+                this._watchDebounce = setTimeout(() => {
+                    this.collect().catch(() => {});
+                }, 2000);
+            });
+            this._watcher.on('error', () => {
+                // watcher 出错时静默，30分钟定时兜底
+                this._watcher = null;
+            });
+        } catch (_) {
+            // fs.watch 失败时静默，定时轮询兜底
+        }
     }
 
     stopCollecting() {
         if (this._collectTimer) {
             clearInterval(this._collectTimer);
             this._collectTimer = null;
+        }
+        if (this._watcher) {
+            try { this._watcher.close(); } catch (_) {}
+            this._watcher = null;
+        }
+        if (this._watchDebounce) {
+            clearTimeout(this._watchDebounce);
+            this._watchDebounce = null;
         }
         this._saveCollectState();
     }
