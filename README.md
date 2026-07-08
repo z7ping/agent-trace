@@ -1,9 +1,11 @@
 # Agent Trace
 
-—— 多 Agent 调用的全链路可观测性工具。统计 SKILL / Tool / MCP 调用次数，实时还原每一次会话的完整执行路径。
+多 Agent 调用的全链路可观测性工具。统计 SKILL / Tool / MCP 调用次数，实时还原每一次会话的完整执行路径。
 
 AgentTrace – End-to-end observability for multi‑agent invocations.
 Aggregates call counts for SKILLs, Tools, and MCPs, and reconstructs the complete execution path of every session in real time.
+
+> **一句话**：`npm install && npm start` → 打开浏览器看仪表盘。
 
 ## 特性
 
@@ -15,31 +17,110 @@ Aggregates call counts for SKILLs, Tools, and MCPs, and reconstructs the complet
 - **实时刷新** — 3 秒增量更新，无需手动刷新
 - **暗色主题** — 亮/暗一键切换
 
-## 快速开始
+## 快速上手
 
 ```bash
-# 克隆
 git clone https://github.com/z7ping/agent-trace.git
 cd agent-trace
-
-# 安装依赖
 npm install
-
-# 开发模式
-npm run dev           # vite dev server（端口 5173），代理 /api 到 56789
-node server/cli.js start   # 启动后端服务（端口 56789）
-
-# 生产构建
-npm run build && npm start
+npm start              # 自动构建前端 + 启动后端，端口 56789
 ```
 
-访问 `http://localhost:56789/`
+打开 **http://localhost:56789/** 即可看到仪表盘。
 
-### 配置数据源
+> `npm start` 等价于 `node server/cli.js start`，前台运行，按 Ctrl+C 停止。
+> 后台运行加 `--daemon`：`node server/cli.js start --daemon`。
 
-**Hermes（自动）**：服务启动后自动轮询 `~/.hermes/state.db`，无需额外配置。支持 state 持久化，重启不重复导入。
+---
 
-**Claude Code**：在 `~/.claude/settings.json` 中添加：
+## 目录结构
+
+```
+agent-trace/
+├── server/                    # 后端（纯 Node.js，无构建步骤）
+│   ├── server.js              # HTTP 服务（端口 56789）
+│   ├── cli.js                 # CLI 入口
+│   ├── routes.js              # API 路由
+│   ├── abeat-db.js            # SQLite 存储层
+│   ├── config.js              # 服务配置
+│   ├── schema.sql             # 表结构定义
+│   ├── adapters/              # 多工具适配器（Hermes / Claude Code / Cursor / Pi ...）
+│   ├── hooks/                 # 实时钩子（prelog.js / log.js）
+│   └── scripts/               # 工具脚本
+├── src/                       # 前端（Vite + Tailwind）
+│   ├── app.js                 # 主逻辑
+│   ├── config.js / utils.js   # 配置与工具函数
+│   ├── style.css              # 样式
+│   ├── callchain/             # 调用链 Tab
+│   └── dashboard/             # 仪表盘 Tab（含 Chart.js 图表）
+├── dist/                      # 构建产物（npm run build 生成）
+├── index.html                 # 入口页面
+├── package.json
+├── vite.config.mjs
+└── tailwind.config.mjs
+```
+
+---
+
+## 场景指南
+
+### 场景 A：我就想看仪表盘（生产模式）
+
+```bash
+npm start            # 自动构建 + 启动，访问 http://localhost:56789/
+```
+
+### 场景 B：我要开发前端（热更新）
+
+一条命令同时启动后端 + Vite 热更新：
+
+```bash
+npm run dev              # 后端（56789）+ Vite（5173）一起启动
+```
+
+后端和前端用不同颜色区分输出，修改 `src/` 里的代码浏览器自动刷新。
+
+访问 **http://localhost:5173/**（Vite 代理 `/api` 到后端 56789）。
+
+> 如果想单独启动 Vite（不启动后端），用 `npm run dev:frontend`。
+
+### 场景 C：我要后台 24 小时采集（系统服务）
+
+安装时会自动构建前端 + 注册系统服务，一步到位：
+
+```bash
+npx agent-trace install          # 自动 npm run build + 安装钩子 + 注册系统服务
+npx agent-trace service start    # 后台启动，开机自启
+```
+
+安装后自动注册为**系统服务**，支持开机自启。自动检测平台：
+
+| 平台 | 服务机制 | 配置路径 |
+|------|---------|---------|
+| Linux | systemd user service | `~/.config/systemd/user/agent-trace.service` |
+| macOS | launchd agent | `~/Library/LaunchAgents/com.agent-trace.plist` |
+| Windows | 任务计划程序 | `schtasks /tn "AgentTrace"` |
+
+> **Linux 注意**：需要 `sudo loginctl enable-linger <user>` 才能在未登录时保持服务运行。安装时会自动检测并提示。
+>
+> **Windows 注意**：任务计划程序需要管理员权限注册，安装时若失败会提示手动运行。
+
+---
+
+## 数据源配置
+
+| 数据源 | 方式 | 配置 |
+|--------|------|------|
+| **Hermes** | 自动轮询 `~/.hermes/state.db` | 无需配置，启动即用 |
+| **Claude Code** | 实时钩子 | 见下方 |
+| **Codex** | 实时钩子 | 同 Claude Code |
+| **Cursor** | 实时钩子 | 同 Claude Code |
+| **Pi** | 实时钩子 | 同 Claude Code |
+| **OpenCode** | 轮询 `~/.local/share/opencode/opencode.db` | 无需配置 |
+
+### 配置 Claude Code / Codex / Cursor / Pi 钩子
+
+在 `~/.claude/settings.json` 中添加：
 
 ```json
 {
@@ -62,105 +143,65 @@ npm run build && npm start
 }
 ```
 
-**Codex**：在 `~/.codex/hooks.json` 中添加相同配置。
+Codex 放在 `~/.codex/hooks.json`，路径相同。
 
-## CLI
+---
 
-```bash
-npx agent-trace install            # 安装 hooks + 注册 systemd 服务（自动启动+开机自启）
-npx agent-trace service start      # 启动服务
-npx agent-trace service stop       # 停止服务
-npx agent-trace service enable     # 启用开机自启
-npx agent-trace service disable    # 关闭开机自启
-npx agent-trace service status     # 查看服务状态
-npx agent-trace service uninstall  # 移除 systemd 服务
-npx agent-trace package            # 打包分发
-
-# 向后兼容
-node server/cli.js start
-node server/cli.js stop
-node server/cli.js status
-```
+## CLI 参考
 
 ### 服务管理
 
-安装后自动注册为**系统服务**，支持开机自启。自动检测平台：
+```bash
+node server/cli.js start            # 自动构建 + 前台启动（Ctrl+C 停止）
+node server/cli.js start --daemon   # 自动构建 + 后台运行
+node server/cli.js stop             # 停止后台服务
+node server/cli.js status           # 查看运行状态
+```
 
-| 平台 | 服务机制 | 配置路径 |
-|------|---------|---------|
-| Linux | systemd user service | `~/.config/systemd/user/agent-trace.service` |
-| macOS | launchd agent | `~/Library/LaunchAgents/com.agent-trace.plist` |
-| Windows | 任务计划程序 | `schtasks /tn "AgentTrace"` |
+> `start` 命令会自动检测 `dist/` 是否存在，不存在则先执行 `npm run build`。
+
+安装为系统服务后（见场景 C），可用 `service` 子命令：
 
 ```bash
-# 查看状态
-npx agent-trace service status
-
-# 停止/启动服务
-npx agent-trace service stop
-npx agent-trace service start
-
-# 关闭/开启开机自启
-npx agent-trace service disable
-npx agent-trace service enable
-
-# 完全卸载系统服务
-npx agent-trace service uninstall
+npx agent-trace service start       # 启动系统服务
+npx agent-trace service stop        # 停止
+npx agent-trace service status      # 状态
+npx agent-trace service enable      # 开机自启
+npx agent-trace service disable     # 关闭自启
+npx agent-trace service uninstall   # 卸载服务
 ```
 
-> **Linux 注意**：需要 `sudo loginctl enable-linger <user>` 才能在未登录时保持服务运行。安装时会自动检测并提示。
->
-> **Windows 注意**：任务计划程序需要管理员权限注册，安装时若失败会提示手动运行。
+### 其他
 
-## 目录结构
-
-```
-agent-trace/
-├── server/                    # 后端
-│   ├── server.js              # HTTP 服务
-│   ├── cli.js                 # CLI 入口
-│   ├── routes.js              # API 路由
-│   ├── abeat-db.js            # SQLite 存储层
-│   ├── db.js                  # 数据库连接管理
-│   ├── config.js              # 服务配置
-│   ├── schema.sql             # 表结构定义
-│   ├── adapters/              # 多工具适配器
-│   │   ├── base.js            # 基类
-│   │   ├── hermes.js          # Hermes 轮询适配器
-│   │   ├── claude-code.js     # Claude Code 钩子适配器
-│   │   ├── codex.js           # Codex 钩子适配器
-│   │   ├── opencode.js        # OpenCode 轮询适配器
-│   │   ├── cursor.js          # Cursor 钩子适配器
-│   │   ├── pi.js              # Pi 轮询适配器
-│   │   ├── openclaw.js        # OpenClaw 骨架
-│   │   └── index.js           # 适配器注册表
-│   ├── hooks/                 # 实时钩子
-│   │   ├── prelog.js          # PreToolUse
-│   │   ├── log.js             # PostToolUse
-│   │   └── server-guard.js    # 服务守护
-│   └── scripts/               # 工具脚本
-│       ├── migrate-jsonl.js   # JSONL 数据迁移
-│       └── verify-integrity.js # 数据完整性校验
-├── src/                       # 前端
-│   ├── app.js                 # 主逻辑
-│   ├── config.js              # 前端配置
-│   ├── style.css              # 样式
-│   ├── utils.js               # 工具函数
-│   ├── callchain/             # 调用链 Tab
-│   │   └── index.js
-│   └── dashboard/             # 仪表盘 Tab
-│       ├── index.js
-│       └── charts.js
-├── index.html                 # 入口页面
-├── package.json
-├── vite.config.mjs            # Vite 配置
-├── tailwind.config.mjs        # Tailwind 配置
-└── README.md
+```bash
+npx agent-trace install    # 安装钩子到 Claude Code + 注册系统服务
+npx agent-trace package    # 打包分发
 ```
 
-## Timeline 表
+---
 
-核心数据模型，存储所有数据源的结构化事件：
+## 常见问题
+
+### 仪表盘白屏 / 只显示后端日志？
+
+缺少 `dist/` 目录。`src/` 里的源码需要 Vite 处理才能运行。
+
+**解决**：
+- 用 `npm start`（自动构建）或 `node server/cli.js start`（也会自动构建）
+- 如果用 `node server/server.js` 直接启动，需先手动 `npm run build`
+- 如果安装了系统服务，重新运行 `npx agent-trace install` 会自动构建
+
+### 端口 56789 被占了？
+
+```bash
+node server/cli.js start 8080   # 指定其他端口
+```
+
+---
+
+## 数据模型
+
+### Timeline 表（核心）
 
 | 字段 | 说明 |
 |------|------|
@@ -172,7 +213,7 @@ agent-trace/
 | error_type | 错误分类：`windows_command` / `path_not_found` / `permission` / `timeout` / `syntax` / `unknown` |
 | error_detail | 错误详情 JSON |
 
-## 数据库表（a-beat.db）
+### SQLite 表（a-beat.db）
 
 | 表名 | 用途 |
 |------|------|
@@ -180,6 +221,8 @@ agent-trace/
 | daily_stats | 按天+工具聚合统计 |
 | recent_errors | 最近错误（滚动保留 50 条） |
 | timeline | 原始调用记录（role 语义分类） |
+
+---
 
 ## TODO
 

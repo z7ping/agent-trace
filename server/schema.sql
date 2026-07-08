@@ -47,7 +47,7 @@ CREATE INDEX IF NOT EXISTS idx_recent_errors_ts ON recent_errors(ts DESC);
 -- source 值: hermes, claude-code
 CREATE TABLE IF NOT EXISTS timeline (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  source TEXT NOT NULL CHECK(source IN ('hermes', 'claude-code')),
+  source TEXT NOT NULL CHECK(source IN ('hermes', 'claude-code', 'codex', 'opencode', 'cursor', 'pi', 'openclaw')),
   session_id TEXT NOT NULL,
   timestamp TEXT NOT NULL,
   seq INTEGER,

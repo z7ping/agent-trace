@@ -174,6 +174,26 @@ class PiAdapter extends BaseAdapter {
                     error_count: 0,
                     total_duration_ms: existingDuration + (record.duration_ms || 0),
                 });
+                // 写入 timeline 表，让前端能展开查看调用详情
+                abeatDb.insertTimeline({
+                    source: 'pi',
+                    session_id: record.session_id,
+                    timestamp: record.ts || '',
+                    seq: null,
+                    role: 'tool_result',
+                    tool_name: record.tool_name || null,
+                    content: null,
+                    tool_input: record.input_summary ? JSON.stringify(record.input_summary) : null,
+                    success: record.success != null ? (record.success ? 1 : 0) : 1,
+                    exit_code: null,
+                    duration_ms: record.duration_ms ?? null,
+                    output_snippet: null,
+                    error_message: null,
+                    error_type: null,
+                    error_detail: null,
+                    project_key: record.project_key || null,
+                    parent_seq: null,
+                });
             }
         } catch (_) {}
     }

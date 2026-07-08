@@ -545,6 +545,18 @@ async function cmdInstall() {
         if (fs.existsSync(path.join(PROJECT_DIR, 'dist'))) {
             copyDir(path.join(PROJECT_DIR, 'dist'), path.join(INSTALL_DIR, 'dist'));
             log(`  dist/ 已复制`, 'dim');
+        } else {
+            log('  dist/ 不存在，正在构建前端...', 'yellow');
+            try {
+                execSync('npm run build', { cwd: PROJECT_DIR, stdio: 'inherit' });
+                if (fs.existsSync(path.join(PROJECT_DIR, 'dist'))) {
+                    copyDir(path.join(PROJECT_DIR, 'dist'), path.join(INSTALL_DIR, 'dist'));
+                    log(`  dist/ 已构建并复制`, 'green');
+                }
+            } catch (e) {
+                log('[WARN] 前端构建失败，请手动运行: npm run build', 'yellow');
+                log('  然后重新安装或手动复制 dist/ 到目标目录', 'dim');
+            }
         }
 
         log(`[OK] 文件已复制`, 'green');
@@ -573,21 +585,51 @@ async function cmdInstall() {
         log('[WARN] 更新 settings.json 失败', 'yellow');
     }
 
-    // 6. 创建 PATH 链接
-    const localBin = path.join(os.homedir(), '.local', 'bin');
-    mkdirp(localBin);
-    const symlinkPath = path.join(localBin, 'agent-trace');
+    // 6. 创建可执行入口
     const cliPath = path.join(INSTALL_DIR, 'cli.js');
-    try {
-        if (fs.existsSync(symlinkPath)) fs.unlinkSync(symlinkPath);
-        fs.symlinkSync(cliPath, symlinkPath);
-        fs.chmodSync(cliPath, 0o755);
-        log(`[OK] 已创建链接: ${symlinkPath}`, 'green');
-        if (!process.env.PATH.includes(localBin)) {
-            log(`[WARN] 请确保 ${localBin} 在 PATH 中`, 'yellow');
+    if (isWin()) {
+        // Windows: 创建 batch 脚本 + 自动加入 PATH
+        const batPath = path.join(INSTALL_DIR, 'agent-trace.cmd');
+        const nodeExe = process.execPath;
+        const batContent = `@echo off
+"${nodeExe}" "${cliPath}" %*
+`;
+        try {
+            fs.writeFileSync(batPath, batContent, 'utf-8');
+            // 自动加入用户 PATH
+            const userPath = execSync('reg query HKCU\\Environment /v PATH 2>nul', { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] }).trim();
+            const pathMatch = userPath.match(/PATH\s+REG_(?:EXPAND_)?SZ\s+(.+)/);
+            const currentPath = pathMatch ? pathMatch[1].trim() : '';
+            if (!currentPath.split(';').some(p => p.toLowerCase() === INSTALL_DIR.toLowerCase())) {
+                const newPath = currentPath ? `${INSTALL_DIR};${currentPath}` : INSTALL_DIR;
+                execSync(`setx PATH "${newPath}"`, { stdio: 'ignore' });
+                log(`[OK] 已创建: ${batPath}`, 'green');
+                log(`[OK] 已加入 PATH: ${INSTALL_DIR}`, 'green');
+                log('  请重启终端后使用 "agent-trace" 命令', 'dim');
+            } else {
+                log(`[OK] 已创建: ${batPath} (已在 PATH 中)`, 'green');
+            }
+        } catch (e) {
+            log(`[OK] 已创建: ${batPath}`, 'green');
+            log(`[WARN] 自动加入 PATH 失败，请手动将以下目录加入 PATH:`, 'yellow');
+            log(`  ${INSTALL_DIR}`, 'dim');
         }
-    } catch (e) {
-        log(`[WARN] 创建链接失败: ${e.message}`, 'yellow');
+    } else {
+        // Unix: 创建符号链接到 ~/.local/bin（XDG 规范）
+        const localBin = path.join(os.homedir(), '.local', 'bin');
+        mkdirp(localBin);
+        const symlinkPath = path.join(localBin, 'agent-trace');
+        try {
+            if (fs.existsSync(symlinkPath)) fs.unlinkSync(symlinkPath);
+            fs.symlinkSync(cliPath, symlinkPath);
+            fs.chmodSync(cliPath, 0o755);
+            log(`[OK] 已创建链接: ${symlinkPath}`, 'green');
+            if (!process.env.PATH.includes(localBin)) {
+                log(`[WARN] 请确保 ${localBin} 在 PATH 中`, 'yellow');
+            }
+        } catch (e) {
+            log(`[WARN] 创建链接失败: ${e.message}`, 'yellow');
+        }
     }
 
     // 7. 注册系统服务并启动
@@ -678,6 +720,37 @@ function cmdStart(argv) {
     } else {
         const portIdx = argv.findIndex(a => !a.startsWith('-') && !isNaN(parseInt(a, 10)));
         if (portIdx >= 0) port = parseInt(argv[portIdx], 10) || DEFAULT_PORT;
+    }
+
+    // 确保前端已构建
+    const distPath = path.join(PROJECT_DIR, 'dist');
+    if (!fs.existsSync(distPath)) {
+        if (isDaemon) {
+            log('dist/ 不存在，正在静默构建前端...', 'yellow');
+            try {
+                execSync('npm run build', { cwd: PROJECT_DIR, stdio: 'ignore' });
+            } catch (_) {}
+        } else {
+            console.log('');
+            log('📦 正在构建前端，请稍候...', 'bright');
+            log('  （首次启动需要，后续启动直接使用缓存）', 'dim');
+            console.log('');
+            const startTime = Date.now();
+            try {
+                execSync('npm run build', { cwd: PROJECT_DIR, stdio: 'inherit' });
+                const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+                console.log('');
+                log(`✅ 前端构建完成（${elapsed}s）`, 'green');
+                console.log('');
+            } catch (e) {
+                console.log('');
+                log('⚠️ 前端构建失败，可稍后手动运行: npm run build', 'yellow');
+                console.log('');
+            }
+        }
+        if (fs.existsSync(distPath)) {
+            log(`  构建产物: ${distPath}`, 'dim');
+        }
     }
 
     const serverArgs = [String(port)];

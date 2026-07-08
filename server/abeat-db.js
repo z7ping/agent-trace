@@ -21,6 +21,20 @@ function getDb() {
   _db = new Database(DB_PATH);
   _db.pragma('journal_mode = WAL');
   _db.pragma('foreign_keys = ON');
+
+  // 迁移：旧版 timeline 表 CHECK(source) 只允许 hermes/claude-code，
+  // 导致 pi/opencode/cursor/codex 等写入被静默丢弃。
+  try {
+    const oldSql = _db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='timeline'").pluck().get();
+    if (oldSql && oldSql.includes("'hermes', 'claude-code'")) {
+      console.log('[migrate] 重建 timeline 表（更新 source CHECK 约束）');
+      _db.pragma('foreign_keys = OFF');
+      _db.exec('DROP TABLE IF EXISTS timeline');
+      _db.exec(fs.readFileSync(SCHEMA_PATH, 'utf-8'));
+      _db.pragma('foreign_keys = ON');
+    }
+  } catch (_) {}
+
   const schema = fs.readFileSync(SCHEMA_PATH, 'utf-8');
   _db.exec(schema);
   return _db;
