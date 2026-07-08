@@ -1,0 +1,128 @@
+# AGENTS.md
+
+This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
+
+## 项目概述
+
+Agent Beat 是一个实时监控和可视化 AI 编码工具调用的工具。通过钩入 Codex/Cursor 等工具的 PreToolUse 和 PostToolUse 生命周期事件，记录每次工具调用，并在浏览器仪表盘中展示。支持多工具适配器架构（Codex、Hermes、Codex、OpenCode、Cursor、Pi）。
+
+**唯一运行时依赖：better-sqlite3（原生 SQLite 模块）。**
+
+## 常用命令
+
+```bash
+# 安装 hooks + 注册系统服务（自动启动+开机自启）
+npx agent-trace install
+
+# 服务管理（跨平台：systemd/launchd/schtasks）
+npx agent-trace service start      # 启动服务
+npx agent-trace service stop       # 停止服务
+npx agent-trace service enable     # 启用开机自启
+npx agent-trace service disable    # 关闭开机自启
+npx agent-trace service status     # 查看状态
+npx agent-trace service uninstall  # 移除系统服务
+
+# 其他
+npx agent-trace package            # 打包分发
+
+# 向后兼容（仍可使用）
+node server/cli.js start 56789     # 直接启动
+node server/cli.js start --daemon  # 后台守护进程
+node server/cli.js stop            # 停止服务
+node server/cli.js status          # 查看状态
+```
+
+**无构建步骤，无测试运行器。** 文件直接提供服务 — 编辑后刷新浏览器即可。
+
+### 开发模式
+
+```bash
+# 前后端联调（推荐）
+npm run dev           # vite dev server（端口 5173），代理 /api 到 56789
+node server/cli.js start          # 后端服务（端口 56789）
+npm run dev:frontend  # 仅 vite dev server
+
+# 构建生产版本
+npm run build         # vite build → dist/
+```
+
+Vite dev server 会代理 `/api`、`/logs`、`/states`、`/projects.json` 到后端 server.js。
+
+### 自动守护（核心特性）
+
+安装后，**无需手动启动服务器**：
+- `hooks/prelog.js` 在每次工具调用时检测服务是否运行
+- 如果服务未运行，自动通过 `npx agent-trace start --daemon` 在后台启动
+- 服务写入 `.server.pid` 管理生命周期
+- 服务挂掉后，下次工具调用会自动拉起
+
+## 多工具支持
+
+支持追踪以下 AI 编码工具：
+- Codex（实时钩子）
+- Hermes（定时轮询 state.db）
+- Codex（实时钩子）
+- OpenCode（定时轮询 opencode.db）
+- Cursor（实时钩子）
+- Pi（实时钩子）
+- OpenClaw（骨架，待实现）
+
+## 架构
+
+系统是**基于钩子的四阶段管道 + 多工具适配器**：
+
+### 管道阶段
+
+1. **PreToolUse 钩子** (`hooks/prelog.js`) — 在每次工具调用前触发。从 stdin 读取 JSON，委托给默认适配器的 `pre()` 方法。将记录推入持久化调用栈 (`states/<projectKey>.json`)，附带顺序 `seq` 和 `parent_seq`（当前栈顶）。
+
+2. **PostToolUse 钩子** (`hooks/log.js`) — 在每次工具调用后触发。从调用栈弹出，构建包含耗时/成功/错误的日志记录，以 JSONL 格式追加到 `logs/<projectKey>.jsonl`，并更新 `projects.json`。
+
+3. **HTTP 服务器** (`server/server.js`) — 最小化静态文件服务器，端口 56789（定义在 `config.js`）。支持守护进程模式（`--daemon`），通过 `.server.pid` 管理生命周期。优先从 `dist/` 提供构建后的文件，否则从项目根目录提供。
+
+4. **浏览器可视化** (`index.html`) — 单页面 Tab 切换（调用链 / 仪表盘），通过 `fetch()` 在客户端解析 JSONL。
+
+### 适配器架构
+
+适配器定义在 `server/adapters/` 目录，继承 `BaseAdapter`（`server/adapters/base.js`）：
+
+```
+server/adapters/
+├── base.js          # 基类：getProjectKey()、日志写入、状态管理
+├── Codex.js   # 实时钩子（stdin JSON）
+├── hermes.js        # 定时轮询 ~/.hermes/state.db
+├── codex.js         # 实时钩子
+├── opencode.js      # 定时轮询 ~/.local/share/opencode/opencode.db
+├── cursor.js        # 实时钩子
+├── pi.js            # 实时钩子
+├── openclaw.js      # 骨架
+└── index.js         # 注册表：getAdapter()、getAllAdapters()、stopAll()
+```
+
+**添加新适配器**：
+1. 继承 `BaseAdapter`，实现 `name` getter、`pre(data)`、`post(data)`、`getRecords(filter)` 方法
+2. 在 `server/adapters/index.js` 中注册：`adapters.set('name', new MyAdapter())`
+3. 钩子（`server/hooks/prelog.js`、`server/hooks/log.js`）通过 `getDefaultAdapter()` 自动委托
+
+## 核心设计模式
+
+- **多项目隔离**：项目键 = 工作目录路径 MD5 的前 12 位。所有状态/日志文件按此键命名空间隔离。
+- **调用链重建**：基于栈 — `prelog` 推入 `seq`/`parent_seq`，`log` 弹出。构建将代理链接到其子工具的树形结构。
+- **输入摘要**：钩子按工具类型摘要工具输入（Bash → 命令，文件工具 → 路径，MCP → 服务器名称）。保持日志文件小巧。
+- **增量渲染**：`index.html` 跟踪已渲染的 `seq` 值，自动刷新时仅追加新条目。
+- **双钩子实现**：Node.js 钩子为主/推荐。
+
+## 运行时数据
+
+- `projects.json` — 项目注册表：映射 `projectKey` 到 `{cwd, name, last_seen}`
+- `logs/<projectKey>.jsonl` — 仅追加日志文件，每个工具调用一个 JSON 对象
+- `states/<projectKey>.json` — 临时调用栈状态（执行期间活跃读写）
+- `dist/` — Vite 构建输出（生产环境使用）
+- `.server.pid` — 服务进程 PID 文件
+- `a-beat.db` — SQLite 数据库，存储 sessions、daily_stats、recent_errors、timeline 表
+
+## 约定
+
+- **UI 文本为中文 (zh-CN)** — HTML 文件中所有面向用户的字符串
+- **无框架** — 原生 HTML/CSS/JS + Vite，CSS 变量用于主题（亮/暗）
+- **钩子输入格式**：钩子从 stdin 接收 JSON，包含 `tool_name`、`cwd`、`session_id`、`tool_response`、`duration_ms` 等字段
+- **错误检测**：结构化工具检查 `success`/`exit_code`；Bash 模式匹配 stdout 中的已知错误字符串
