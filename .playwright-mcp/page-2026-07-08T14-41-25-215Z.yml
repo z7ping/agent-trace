@@ -1,0 +1,51 @@
+- generic [active] [ref=f2e1]:
+  - navigation [ref=f2e2]:
+    - generic [ref=f2e3]:
+      - link "🧠 Agent Trace" [ref=f2e4] [cursor=pointer]:
+        - /url: /
+        - text: 🧠
+        - generic [ref=f2e5]: Agent Trace
+      - generic [ref=f2e6]:
+        - button "调用链" [ref=f2e7] [cursor=pointer]:
+          - img [ref=f2e8]
+          - text: 调用链
+        - button "仪表盘" [ref=f2e10] [cursor=pointer]:
+          - img [ref=f2e11]
+          - text: 仪表盘
+      - button "切换主题" [ref=f2e16] [cursor=pointer]:
+        - img [ref=f2e17]
+  - generic [ref=f2e19]:
+    - generic [ref=f2e21]:
+      - button "全部" [ref=f2e22] [cursor=pointer]
+      - button "Claude Code" [ref=f2e23] [cursor=pointer]
+      - button "Hermes" [ref=f2e24] [cursor=pointer]
+      - button "Codex" [ref=f2e25] [cursor=pointer]
+      - button "OpenCode" [ref=f2e26] [cursor=pointer]
+      - button "Pi" [ref=f2e27] [cursor=pointer]
+      - button "OpenClaw" [ref=f2e28] [cursor=pointer]
+    - generic [ref=f2e29]:
+      - combobox [ref=f2e30]:
+        - option "全部项目" [selected]
+      - generic [ref=f2e32]:
+        - button "全部" [ref=f2e33] [cursor=pointer]
+        - button "Bash" [ref=f2e34] [cursor=pointer]
+        - button "Read" [ref=f2e35] [cursor=pointer]
+        - button "Write" [ref=f2e36] [cursor=pointer]
+        - button "MCP" [ref=f2e37] [cursor=pointer]
+      - generic [ref=f2e38]:
+        - generic "点击切换自动刷新" [ref=f2e39] [cursor=pointer]:
+          - generic [ref=f2e41]: PAUSED
+        - generic [ref=f2e42]: ·
+        - generic [ref=f2e43]: Hook
+        - generic [ref=f2e44]: 检测中...
+        - generic [ref=f2e45]: ·
+        - generic [ref=f2e46]:
+          - text: "错误:"
+          - generic [ref=f2e47]: "0"
+        - generic [ref=f2e48]: ·
+        - generic [ref=f2e49]:
+          - text: "慢:"
+          - generic [ref=f2e50]: "0"
+        - button "↓ 最新" [ref=f2e51] [cursor=pointer]
+        - button "展开全部" [ref=f2e52] [cursor=pointer]
+  - main [ref=f2e53]

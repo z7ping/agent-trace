@@ -343,7 +343,7 @@ function renderCall(call, index, projectPath, sourceColor = '') {
   const detailContent = renderCallDetail(call, sourceColor);
 
   return `
-    <div class="${rowClass}" style="padding-left:${12 + depth * 20}px" onclick="toggleCallDetail(this)">
+    <div class="${rowClass}" style="padding-left:${32 + depth * 20}px" onclick="toggleCallDetail(this)">
       <span class="tool-badge ${type}">${escapeHtml(toolName)}</span>
       <span class="flex-1 min-w-0">
         <span class="call-preview">${preview}</span>
@@ -354,7 +354,7 @@ function renderCall(call, index, projectPath, sourceColor = '') {
         <span class="call-duration">${duration}</span>
       </span>
     </div>
-    <div class="call-detail hidden type-${type}" style="border-left-color:${sourceColor}">${detailContent}</div>
+    <div class="call-detail hidden type-${type}">${detailContent}</div>
   `;}
 
 /** 类型特定行内预览 */
