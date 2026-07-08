@@ -238,6 +238,63 @@ async function main() {
         res.end(JSON.stringify(data));
     }
 
+    // ─── 处理 Hermes 插件推送的 hook 数据 ──────────────────────
+    function handleHookData(data) {
+        const crypto = require('crypto');
+        const { insertTimeline, upsertSession, updateDailyStats, getSessionDuration } = require('./abeat-db');
+
+        const source = data.source || 'hermes';
+        const toolName = data.tool_name || '';
+        const cwd = data.cwd || '';
+        const sessionId = data.session_id || '';
+        const durationMs = data.duration_ms || 0;
+        const success = data.success !== false;
+        const inputSummary = data.input_summary || {};
+        const errorMsg = data.error || null;
+
+        // 计算 project_key (MD5 of cwd, first 12 chars)
+        const projectKey = crypto.createHash('md5').update(cwd || process.cwd()).digest('hex').substring(0, 12);
+        const ts = new Date().toISOString();
+
+        // 写入 timeline
+        insertTimeline({
+            source,
+            session_id: sessionId,
+            timestamp: ts,
+            seq: null,
+            role: 'tool',
+            tool_name: toolName,
+            content: null,
+            tool_input: JSON.stringify(inputSummary),
+            success: success ? 1 : 0,
+            exit_code: null,
+            duration_ms: durationMs,
+            output_snippet: null,
+            error_message: errorMsg,
+            error_type: null,
+            error_detail: null,
+            project_key: projectKey,
+            parent_seq: null,
+        });
+
+        // 更新 session
+        const existingDuration = getSessionDuration(sessionId);
+        upsertSession({
+            session_id: sessionId,
+            project_key: projectKey,
+            source,
+            start_time: ts,
+            end_time: ts,
+            tool_count: 1,
+            error_count: success ? 0 : 1,
+            total_duration_ms: existingDuration + durationMs,
+        });
+
+        // 更新 daily_stats
+        const date = ts.slice(0, 10);
+        updateDailyStats(date, source, toolName, 1, success ? 0 : 1, durationMs);
+    }
+
     // ─── 创建 HTTP 服务器 ──────────────────────────────────────
 
     const server = http.createServer((req, res) => {
@@ -246,7 +303,7 @@ async function main() {
         
         // CORS 头
         res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
         res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
         if (req.method === 'OPTIONS') {
@@ -284,6 +341,22 @@ async function main() {
 
         if (urlPath === '/api/compare') {
             handleApiCompare(req, res);
+            return;
+        }
+
+        // ─── POST /api/hook — 接收 Hermes 插件推送的工具调用数据 ───
+        if (urlPath === '/api/hook' && req.method === 'POST') {
+            let body = '';
+            req.on('data', chunk => { body += chunk; });
+            req.on('end', () => {
+                try {
+                    const data = JSON.parse(body);
+                    handleHookData(data);
+                    sendJson(res, { ok: true });
+                } catch (e) {
+                    sendJson(res, { error: e.message }, 400);
+                }
+            });
             return;
         }
 
