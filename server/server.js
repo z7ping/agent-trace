@@ -39,10 +39,13 @@ const shouldStatus = flags.includes('--status');
 // 端口：第一个非 flag 参数，或环境变量，或默认 56789
 const PORT = parseInt(positional[0], 10) || parseInt(process.env.TRACKER_PORT, 10) || require('./config').DEFAULT_PORT;
 const ROOT = path.join(__dirname, '..');
-const DIR = fs.existsSync(path.join(ROOT, 'dist'))
-    ? path.join(ROOT, 'dist')
-    : ROOT;
-const PID_FILE = path.join(ROOT, '.server.pid');
+// ponytail: 安装模式下 server.js 和 dist/ 同级，开发模式下 dist 在父目录
+const DIR = fs.existsSync(path.join(__dirname, 'dist'))
+    ? path.join(__dirname, 'dist')
+    : fs.existsSync(path.join(ROOT, 'dist'))
+        ? path.join(ROOT, 'dist')
+        : ROOT;
+const PID_FILE = path.join(__dirname, '.server.pid');
 
 // ─── 彩色输出 ────────────────────────────────────────────────
 

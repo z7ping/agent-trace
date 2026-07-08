@@ -26,7 +26,7 @@ cd agent-trace
 npm install
 
 # 开发模式
-npm run dev           # 仅前端 vite dev server（端口 5173）
+npm run dev           # vite dev server（端口 5173），代理 /api 到 56789
 node server/cli.js start   # 启动后端服务（端口 56789）
 
 # 生产构建
@@ -37,7 +37,7 @@ npm run build && npm start
 
 ### 配置数据源
 
-**Hermes（自动）**：服务启动后自动轮询 `~/.hermes/data/state.db`，无需额外配置。支持 state 持久化，重启不重复导入。
+**Hermes（自动）**：服务启动后自动轮询 `~/.hermes/state.db`，无需额外配置。支持 state 持久化，重启不重复导入。
 
 **Claude Code**：在 `~/.claude/settings.json` 中添加：
 
@@ -131,7 +131,7 @@ agent-trace/
 │   │   ├── codex.js           # Codex 钩子适配器
 │   │   ├── opencode.js        # OpenCode 轮询适配器
 │   │   ├── cursor.js          # Cursor 钩子适配器
-│   │   ├── pi.js              # Pi 适配器
+│   │   ├── pi.js              # Pi 轮询适配器
 │   │   ├── openclaw.js        # OpenClaw 骨架
 │   │   └── index.js           # 适配器注册表
 │   ├── hooks/                 # 实时钩子
@@ -146,11 +146,15 @@ agent-trace/
 │   ├── config.js              # 前端配置
 │   ├── style.css              # 样式
 │   ├── utils.js               # 工具函数
-│   ├── components/            # 公共组件
 │   ├── callchain/             # 调用链 Tab
+│   │   └── index.js
 │   └── dashboard/             # 仪表盘 Tab
+│       ├── index.js
+│       └── charts.js
 ├── index.html                 # 入口页面
 ├── package.json
+├── vite.config.mjs            # Vite 配置
+├── tailwind.config.mjs        # Tailwind 配置
 └── README.md
 ```
 
@@ -168,9 +172,17 @@ agent-trace/
 | error_type | 错误分类：`windows_command` / `path_not_found` / `permission` / `timeout` / `syntax` / `unknown` |
 | error_detail | 错误详情 JSON |
 
+## 数据库表（a-beat.db）
+
+| 表名 | 用途 |
+|------|------|
+| sessions | 会话摘要（按 source 聚合） |
+| daily_stats | 按天+工具聚合统计 |
+| recent_errors | 最近错误（滚动保留 50 条） |
+| timeline | 原始调用记录（role 语义分类） |
+
 ## TODO
 
-- [ ] 补充 CHANGELOG
 - [ ] 发布到 npm
 
 ## 许可证

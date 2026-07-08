@@ -18,6 +18,7 @@ class HermesAdapter extends BaseAdapter {
         this._db = null;
         this._prepared = {};
         this._collectTimer = null;
+        this._collecting = false; // ponytail: 防并发 collect
         this._lastTsBySession = new Map(); // sessionId → lastImportedTimestamp (unix seconds)
         this._collectStateFile = path.join(__dirname, '..', 'states', 'hermes-collect-state.json');
     }
@@ -605,6 +606,8 @@ class HermesAdapter extends BaseAdapter {
      * 从 state.db 读取新记录并写入 timeline 表
      */
     async collect() {
+        if (this._collecting) return; // ponytail: 跳过上一轮还没跑完的
+        this._collecting = true;
         // 使用独立连接，避免与其他方法（getRecords等）冲突
         let collectDb = null;
         try {
@@ -632,13 +635,14 @@ class HermesAdapter extends BaseAdapter {
                 const cutoff = Math.floor(Date.now() / 1000) - 86400;
                 whereClause += ` AND m.timestamp >= ${cutoff}`;
             }
-
+            // ponytail: 加 LIMIT 防全表扫描卡死，459MB 的 db 全扫太慢
             const stmt = collectDb.prepare(`
                 SELECT m.*, s.cwd
                 FROM messages m
                 LEFT JOIN sessions s ON m.session_id = s.id
                 ${whereClause}
                 ORDER BY m.timestamp ASC
+                LIMIT 5000
             `);
 
             const BATCH = 100;
@@ -757,11 +761,12 @@ class HermesAdapter extends BaseAdapter {
         } catch (e) {
             this.logError(e, 'hermes:collect');
         } finally {
+            this._collecting = false;
             if (collectDb) { try { collectDb.close(); } catch (_) {} }
         }
     }
 
-    startCollecting(intervalMs = 5 * 60 * 1000) {
+    startCollecting(intervalMs = 30 * 60 * 1000) {
         if (this._collectTimer) return;
         // 优先从文件恢复水位线
         this._loadCollectState();
