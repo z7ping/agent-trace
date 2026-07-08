@@ -195,10 +195,6 @@
 .session-card.selected {
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
 }
-/* 展开后 Session Body 左边线贯穿（具体颜色由 JS inline style 覆盖） */
-.session-body {
-  border-left: 3px solid transparent;
-}
 
 /* ═══ 空状态 ═══ */
 .empty-state {

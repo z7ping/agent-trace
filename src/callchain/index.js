@@ -239,7 +239,7 @@ function renderSession(session) {
          data-session-id="${escapeHtml(session.id)}"
          data-source="${escapeHtml(session.source)}">
       ${header}
-      <div class="session-body hidden" style="border-left-color:${sourceHex}">
+      <div class="session-body hidden">
         ${calls.length > 0 ? calls : '<div class="text-center py-4 text-neutral-400 text-sm">加载中...</div>'}
       </div>
     </div>
@@ -343,7 +343,7 @@ function renderCall(call, index, projectPath, sourceColor = '') {
   const detailContent = renderCallDetail(call, sourceColor);
 
   return `
-    <div class="${rowClass}" style="padding-left:${12 + depth * 20}px;border-left-color:${sourceColor}" onclick="toggleCallDetail(this)">
+    <div class="${rowClass}" style="padding-left:${12 + depth * 20}px" onclick="toggleCallDetail(this)">
       <span class="tool-badge ${type}">${escapeHtml(toolName)}</span>
       <span class="flex-1 min-w-0">
         <span class="call-preview">${preview}</span>
