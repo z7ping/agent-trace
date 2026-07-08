@@ -206,6 +206,9 @@ class OpenCodeAdapter extends BaseAdapter {
         const db = await this._getDb();
         if (!db || !this._prepared.fetchToolParts) return;
 
+        // 补上 watcher（文件在启动后创建的情况）
+        if (!this._watcher && fs.existsSync(OPENCODE_DB)) this._startWatcher();
+
         try {
             const toolParts = this._prepared.fetchToolParts.all(this._lastProcessedTs, POLL_BATCH_SIZE);
             if (toolParts.length === 0) return;

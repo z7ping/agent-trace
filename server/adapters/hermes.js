@@ -612,6 +612,8 @@ class HermesAdapter extends BaseAdapter {
         try {
             const Database = require('better-sqlite3');
             if (!fs.existsSync(STATE_DB)) return;
+            // 补上 watcher（文件在启动后创建的情况）
+            if (!this._watcher) this._startWatcher();
             collectDb = new Database(STATE_DB, { readonly: true, fileMustExist: true });
         } catch (e) {
             return;
