@@ -26,7 +26,9 @@ function getDb() {
   // 导致 pi/opencode/cursor/codex 等写入被静默丢弃。
   try {
     const oldSql = _db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='timeline'").pluck().get();
-    if (oldSql && oldSql.includes("'hermes', 'claude-code'")) {
+    // 只在约束为旧版（仅 hermes/claude-code）时重建
+    const oldOnly = "CHECK(source IN ('hermes', 'claude-code'))";
+    if (oldSql && oldSql.includes(oldOnly)) {
       console.log('[migrate] 重建 timeline 表（更新 source CHECK 约束）');
       _db.pragma('foreign_keys = OFF');
       _db.exec('DROP TABLE IF EXISTS timeline');
@@ -125,7 +127,7 @@ function insertTimeline(record) {
     record.role || 'tool',
     record.tool_name || null,
     record.content ? String(record.content).substring(0, 2000) : null,
-    record.tool_input ? JSON.stringify(record.tool_input).substring(0, 2000) : null,
+    record.tool_input ? (typeof record.tool_input === 'string' ? record.tool_input.substring(0, 2000) : JSON.stringify(record.tool_input).substring(0, 2000)) : null,
     record.success != null ? (record.success ? 1 : 0) : null,
     record.exit_code ?? null,
     record.duration_ms ?? null,

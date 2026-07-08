@@ -8,6 +8,33 @@ import { extractSessions } from '../utils.js';
 /** 记录当前展开的 session ID */
 let expandedSessionIds = new Set();
 
+// ─── 来源标签 & 颜色映射（共享给会话卡片和轮次头） ───────────────
+
+const sourceLabels = {
+  'claude-code': 'Claude', 'hermes': 'Hermes', 'codex': 'Codex',
+  'opencode': 'OpenCode', 'cursor': 'Cursor', 'pi': 'Pi', 'openclaw': 'OpenClaw',
+};
+
+const sourceColors = {
+  'claude-code': { light: '#3b82f6', dark: '#60a5fa' },
+  'hermes': { light: '#a855f7', dark: '#c084fc' },
+  'codex': { light: '#22c55e', dark: '#4ade80' },
+  'opencode': { light: '#f97316', dark: '#fb923c' },
+  'cursor': { light: '#06b6d4', dark: '#22d3ee' },
+  'pi': { light: '#f43f5e', dark: '#fb7185' },
+  'openclaw': { light: '#14b8a6', dark: '#2dd4bf' },
+};
+
+const sourceBorderColors = {
+  'claude-code': 'border-l-blue-500 dark:border-l-blue-400',
+  'hermes': 'border-l-purple-500 dark:border-l-purple-400',
+  'codex': 'border-l-green-500 dark:border-l-green-400',
+  'opencode': 'border-l-orange-500 dark:border-l-orange-400',
+  'cursor': 'border-l-cyan-500 dark:border-l-cyan-400',
+  'pi': 'border-l-rose-500 dark:border-l-rose-400',
+  'openclaw': 'border-l-teal-500 dark:border-l-teal-400',
+};
+
 /** 渲染调用链 */
 export function renderCallChain(data) {
   const container = document.getElementById('sessionContainer');
@@ -163,8 +190,8 @@ function renderSession(session) {
 
   // 来源标签样式
   const source = session.source || '';
-  const sourceLabels = { 'claude-code': 'Claude', 'hermes': 'Hermes', 'codex': 'Codex', 'opencode': 'OpenCode', 'cursor': 'Cursor', 'pi': 'Pi', 'openclaw': 'OpenClaw' };
-  const sourceColors = {
+  const sourceLabel = sourceLabels[source] || source;
+  const sourceColor = ({
     'claude-code': 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
     'hermes': 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
     'codex': 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
@@ -172,9 +199,7 @@ function renderSession(session) {
     'cursor': 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',
     'pi': 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
     'openclaw': 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',
-  };
-  const sourceLabel = sourceLabels[source] || source;
-  const sourceColor = sourceColors[source] || 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400';
+  })[source] || 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400';
 
   // 项目名（优先使用 project_name，回退到 project_key）
   const projectName = session.projectName || session.project || '';
@@ -203,16 +228,6 @@ function renderSession(session) {
   const tree = buildTree(session.calls);
   const calls = tree.map((call, i) => renderCall(call, i, session.project)).join('');
 
-  // 来源左边框颜色
-  const sourceBorderColors = {
-    'claude-code': 'border-l-blue-500 dark:border-l-blue-400',
-    'hermes': 'border-l-purple-500 dark:border-l-purple-400',
-    'codex': 'border-l-green-500 dark:border-l-green-400',
-    'opencode': 'border-l-orange-500 dark:border-l-orange-400',
-    'cursor': 'border-l-cyan-500 dark:border-l-cyan-400',
-    'pi': 'border-l-rose-500 dark:border-l-rose-400',
-    'openclaw': 'border-l-teal-500 dark:border-l-teal-400',
-  };
   const borderClass = sourceBorderColors[source] || 'border-l-neutral-300 dark:border-l-neutral-600';
 
   return `
@@ -298,107 +313,111 @@ function highlightJson(json) {
 function renderCall(call, index, projectPath) {
   const toolName = call.tool_name || call.name || '未知';
   const type = getToolType(toolName);
-  const colors = getToolColor(toolName);
   const duration = formatDuration(call.duration_ms);
   const isError = call.error === true || call.success === false || (call.exit_code != null && call.exit_code !== 0);
   const isSlow = call.duration_ms > 5000;
   const depth = call._depth || 0;
+  const exitCode = call.exit_code != null ? call.exit_code : (call.success === 0 ? 1 : 0);
 
   // 状态类
   let rowClass = 'call-row';
+  rowClass += ' type-' + type;
   if (isError) rowClass += ' error';
   else if (isSlow) rowClass += ' slow';
-  if (type === 'mcp') rowClass += ' mcp';
 
-  // 输入摘要 + 文件路径
-  const summary = getCallSummary(call);
-  const filePath = getFilePath(call, projectPath);
+  // 类型特定预览
+  const input = parseToolInput(call);
+  const preview = getTypePreview(toolName, input, call, projectPath);
+  const outputSnippet = getOutputContent(call).substring(0, 120);
 
-  // 状态图标
-  let statusIcon = '';
-  if (isError) {
-    statusIcon = '<svg class="w-4 h-4 text-danger-500 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>';
-  } else if (isSlow) {
-    statusIcon = '<svg class="w-4 h-4 text-warning-500 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>';
-  }
-
-  // 来源标签
-  const source = call.source || '';
-  const sourceLabels = { 'claude-code': 'Claude', 'hermes': 'Hermes', 'codex': 'Codex', 'opencode': 'OpenCode', 'cursor': 'Cursor', 'pi': 'Pi', 'openclaw': 'OpenClaw' };
-  const sourceLabel = sourceLabels[source] || source;
+  // 状态图标 + exit code
+  const exitBadge = isError
+    ? `<span class="exit-badge error">✘${exitCode}</span>`
+    : `<span class="exit-badge success">✔${exitCode}</span>`;
 
   // 树形缩进
   const indent = depth > 0
     ? `<span class="tree-indent" style="width:${depth * 20}px"></span>`
     : '';
 
-  // 原始 JSON（转义 HTML + 语法高亮）
-  const rawJson = highlightJson(JSON.stringify(call, null, 2));
+  // 结构化详情面板
+  const detailContent = renderCallDetail(call);
 
   return `
-    <div class="${rowClass}" data-source="${escapeHtml(source)}" style="padding-left:${12 + depth * 20}px" onclick="toggleCallDetail(this)">
+    <div class="${rowClass}" style="padding-left:${12 + depth * 20}px" onclick="toggleCallDetail(this)">
       ${indent}
-      ${statusIcon || '<div class="w-4"></div>'}
       <span class="tool-badge ${type}">${escapeHtml(toolName)}</span>
-      ${sourceLabel ? `<span class="text-xs px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 flex-shrink-0">${escapeHtml(sourceLabel)}</span>` : ''}
-      <span class="flex-1 text-sm text-neutral-600 dark:text-neutral-400 truncate" title="${escapeHtml(summary)}">${escapeHtml(truncate(summary, 60))}</span>
-      ${filePath ? `<span class="text-xs text-neutral-400 dark:text-neutral-500 truncate max-w-[300px] flex-shrink-0 font-mono" title="${escapeHtml(filePath.full)}">📂 ${escapeHtml(filePath.short)}</span>` : ''}
-      <span class="text-xs text-neutral-400 flex-shrink-0">${duration}</span>
+      <span class="flex-1 min-w-0">
+        <span class="call-preview">${preview}</span>
+        ${outputSnippet ? `<span class="call-output">${escapeHtml(outputSnippet)}</span>` : ''}
+      </span>
+      <span class="call-meta">
+        ${exitBadge}
+        <span class="call-duration">${duration}</span>
+      </span>
     </div>
-    <div class="call-detail hidden"><pre>${rawJson}</pre></div>
-  `;
+    <div class="call-detail hidden">${detailContent}</div>
+  `;}
+
+/** 类型特定行内预览 */
+function getTypePreview(toolName, input, call, projectPath) {
+  if (toolName === 'bash') {
+    const cmd = input.command || input.cmd || '';
+    if (cmd) return `<span class="preview-cmd">❯ ${escapeHtml(truncate(cmd, 80))}</span>`;
+    const raw = call.tool_input || '';
+    if (raw) return `<span class="preview-cmd">❯ ${escapeHtml(truncate(String(raw), 80))}</span>`;
+  }
+  if (toolName === 'read') {
+    const path = input.path || input.file_path || input.filePath || '';
+    if (path) return `<span class="preview-file">📄 ${escapeHtml(truncate(path, 60))}</span>`;
+  }
+  if (toolName === 'write') {
+    const path = input.path || input.file_path || input.filePath || '';
+    if (path) return `<span class="preview-file">✏️ ${escapeHtml(truncate(path, 60))}</span>`;
+  }
+  if (toolName === 'edit') {
+    const path = input.path || input.file_path || input.filePath || '';
+    if (path) return `<span class="preview-file">🔧 ${escapeHtml(truncate(path, 60))}</span>`;
+  }
+  // 通用回退：显示输入摘要
+  const inputStr = Object.keys(input).length > 0 ? JSON.stringify(input) : '';
+  if (inputStr) return `<span class="preview-fallback">${escapeHtml(truncate(inputStr, 80))}</span>`;
+  return '';
 }
 
-/** 获取调用输入摘要 */
+/** 获取调用输入摘要（供 session 卡片预览用） */
 function getCallSummary(call) {
-  const input = call.input || call.arguments || call.tool_input;
-  const summary = call.input_summary || {};
-
-  if (input && typeof input === 'string') return input;
-
-  // Bash 命令
-  if (input?.command) return input.command;
-  if (input?.cmd) return input.cmd;
-  if (summary.command) return summary.command;
-
-  // 搜索
-  if (input?.pattern) return `grep: ${input.pattern}`;
-  if (input?.query) return input.query;
-  if (summary.pattern) return `grep: ${summary.pattern}`;
-
-  // MCP
-  if (input?.name) return input.name;
-  if (summary.name) return summary.name;
-
-  // 文件路径（作为摘要的一部分）
-  const filePath = getFilePath(call);
-  if (filePath) return filePath.short;
-
-  // 描述
-  if (summary.description) return summary.description;
-
-  // 通用
-  if (input?.tool_name) return input.tool_name;
-
-  // 回退：input_summary 的值
-  if (typeof summary === 'object' && Object.keys(summary).length > 0) {
-    const vals = Object.values(summary).filter(v => typeof v === 'string');
-    if (vals.length) return vals[0];
+  const input = parseToolInput(call);
+  if (!input || Object.keys(input).length === 0) {
+    const raw = call.tool_input || '';
+    if (raw && typeof raw === 'string') return raw;
+    return '';
   }
 
-  // 最终回退：避免显示空对象
-  const fallback = input || summary;
-  if (fallback && typeof fallback === 'object' && Object.keys(fallback).length === 0) return '';
-  return JSON.stringify(fallback).slice(0, 100);
+  // Bash 命令
+  if (input.command) return input.command;
+  if (input.cmd) return input.cmd;
+
+  // 文件路径
+  if (input.path || input.file_path || input.filePath) return input.path || input.file_path || input.filePath;
+
+  // 搜索
+  if (input.pattern) return `grep: ${input.pattern}`;
+  if (input.query) return input.query;
+
+  // 描述
+  if (input.description) return input.description;
+
+  // 回退
+  const vals = Object.values(input).filter(v => typeof v === 'string');
+  if (vals.length) return vals[0];
+  return JSON.stringify(input).slice(0, 100);
 }
 
 /** 获取文件路径（省略共同前缀） */
 function getFilePath(call, projectPath) {
-  const input = call.input || call.arguments || call.tool_input;
-  const summary = call.input_summary || {};
-  // 检查所有可能的路径字段
-  const rawPath = (input && (input.path || input.file_path || input.filePath || input.new_path || input.old_path))
-    || summary.file_path || summary.path || summary.filePath;
+  const input = parseToolInput(call);
+  const rawPath = input.path || input.file_path || input.filePath || input.new_path || input.old_path;
   if (!rawPath || typeof rawPath !== 'string') return null;
 
   const full = rawPath;
@@ -424,14 +443,299 @@ function getFilePath(call, projectPath) {
   return { full, short };
 }
 
+/** 按轮次分组（role=user 为分隔） */
+function groupByRounds(calls) {
+  const rounds = [];
+  let currentRound = null;
+
+  for (const call of calls) {
+    if (call.role === 'user') {
+      currentRound = { userMessage: call, toolCalls: [], assistantMessages: [] };
+      rounds.push(currentRound);
+    } else if (call.role === 'assistant') {
+      if (currentRound) {
+        currentRound.assistantMessages.push(call);
+      } else {
+        // 没有前置 user 消息，作为首个轮次
+        currentRound = { userMessage: null, toolCalls: [], assistantMessages: [call] };
+        rounds.push(currentRound);
+      }
+    } else if (call.role === 'tool_result' || call.role === 'tool_error') {
+      if (!currentRound) {
+        currentRound = { userMessage: null, toolCalls: [], assistantMessages: [] };
+        rounds.push(currentRound);
+      }
+      currentRound.toolCalls.push(call);
+    }
+  }
+
+  return rounds;
+}
+
+/** 渲染单个轮次 */
+function renderRound(round, index) {
+  const parts = [];
+
+  // 从轮次内的工具调用推断来源（取第一个有 source 的）
+  const roundSource = round.toolCalls.find(c => c.source)?.source
+    || round.assistantMessages.find(m => m.source)?.source
+    || '';
+  const sc = sourceColors[roundSource] || {};
+  const borderStyle = sc.light
+    ? `border-left:3px solid ${sc.light}`
+    : '';
+
+  // 轮次头
+  const userContent = round.userMessage
+    ? extractUserText(round.userMessage)
+    : '';
+  parts.push(`
+    <div class="round-header" style="${borderStyle}">
+      <span class="round-badge">第 ${index + 1} 轮</span>
+      ${userContent ? `<span class="round-user-msg">${escapeHtml(truncate(userContent, 80))}</span>` : ''}
+      ${round.toolCalls.length > 0 ? `<span class="round-call-count">${round.toolCalls.length} 次调用</span>` : ''}
+    </div>
+  `);
+
+  // AI 回复
+  for (const msg of round.assistantMessages) {
+    const text = extractAssistantText(msg);
+    if (text) {
+      parts.push(`
+        <div class="round-assistant">
+          <div class="round-assistant-label">AI</div>
+          <div class="round-assistant-text">${escapeHtml(truncate(text, 200))}</div>
+        </div>
+      `);
+    }
+  }
+
+  // 工具调用（树形）
+  if (round.toolCalls.length > 0) {
+    const tree = buildTree(round.toolCalls);
+    const rendered = tree.map((call, i) => renderCall(call, i, '')).join('');
+    parts.push(`<div class="round-calls">${rendered}</div>`);
+  }
+
+  return parts.join('');
+}
+
+/** 从 user 消息中提取文本 */
+function extractUserText(call) {
+  if (call.content) {
+    if (typeof call.content === 'string') {
+      try {
+        const parsed = JSON.parse(call.content);
+        return parsed.text || parsed.content || call.content;
+      } catch { return call.content; }
+    }
+    if (typeof call.content === 'object') {
+      return call.content.text || call.content.content || JSON.stringify(call.content);
+    }
+  }
+  return '';
+}
+
+/** 从 assistant 消息中提取文本 */
+function extractAssistantText(call) {
+  return extractUserText(call);
+}
+
+/** 解析 tool_input（兼容字符串、对象、双重 JSON） */
+function parseToolInput(call) {
+  if (!call) return {};
+  if (call.input_summary && typeof call.input_summary === 'object' && Object.keys(call.input_summary).length > 0) {
+    return call.input_summary;
+  }
+  const raw = call.tool_input || call.input || call.arguments;
+  if (!raw) return {};
+  if (typeof raw === 'object') return raw;
+  try {
+    const parsed = JSON.parse(raw);
+    // 处理双重序列化：'{"command":"npm"}' → 再解析一次
+    if (typeof parsed === 'string') {
+      try { return JSON.parse(parsed); } catch { return { raw: parsed }; }
+    }
+    return parsed;
+  } catch { return { raw }; }
+}
+
+/** 获取输出内容 */
+function getOutputContent(call) {
+  if (call.output_snippet) return call.output_snippet;
+  if (call.content) {
+    if (typeof call.content === 'string') return call.content;
+    try { return JSON.stringify(call.content).slice(0, 500); } catch { return ''; }
+  }
+  return '';
+}
+
+/** 渲染结构化调用详情（替代原始 JSON） */
+function renderCallDetail(call) {
+  const toolName = call.tool_name || '';
+  const input = parseToolInput(call);
+  const output = getOutputContent(call);
+  const ts = call.timestamp ? new Date(call.timestamp).toLocaleString('zh-CN', { hour12: false }) : '';
+  const exitCode = call.exit_code != null ? call.exit_code : (call.success === 0 ? 1 : 0);
+  const isError = call.success === 0 || call.error || call.error_message || (call.exit_code != null && call.exit_code !== 0);
+  const hasOutput = !!output;
+  const hasError = !!call.error_message || isError;
+
+  let parts = [];
+
+  // ── 头部信息条 ──
+  const statusBadge = isError
+    ? `<span class="detail-status-badge error">✘ Exit ${exitCode}</span>`
+    : `<span class="detail-status-badge success">✔ Exit ${exitCode}</span>`;
+
+  parts.push(`
+    <div class="detail-header">
+      ${statusBadge}
+      <span class="detail-duration">⚡ ${formatDuration(call.duration_ms)}</span>
+      <span class="detail-time">${escapeHtml(ts)}</span>
+      ${call.source ? `<span class="detail-source">${escapeHtml(call.source)}</span>` : ''}
+    </div>
+  `);
+
+  // ── Bash ──
+  if (toolName === 'bash') {
+    const cmd = input.command || input.cmd || input.raw || '';
+    if (cmd) {
+      parts.push(`
+        <div class="detail-section">
+          <div class="detail-label">命令</div>
+          <pre class="detail-code select-all">${escapeHtml(cmd)}</pre>
+        </div>
+      `);
+    }
+    if (hasOutput) {
+      parts.push(`
+        <div class="detail-section">
+          <div class="detail-label">输出</div>
+          <pre class="detail-code max-h-32">${escapeHtml(output)}</pre>
+        </div>
+      `);
+    }
+    if (hasError && call.error_message) {
+      parts.push(`
+        <div class="detail-section error">
+          <div class="detail-label">错误</div>
+          <pre class="detail-code">${escapeHtml(call.error_message)}</pre>
+          ${call.error_type ? `<div class="detail-error-type">类型: ${escapeHtml(call.error_type)}</div>` : ''}
+        </div>
+      `);
+    }
+  }
+
+  // ── Read ──
+  else if (toolName === 'read') {
+    const path = input.path || input.file_path || input.filePath || '';
+    if (path) {
+      parts.push(`
+        <div class="detail-section">
+          <div class="detail-label">📄 文件</div>
+          <div class="detail-path select-all">${escapeHtml(path)}</div>
+        </div>
+      `);
+    }
+    if (hasOutput) {
+      parts.push(`
+        <div class="detail-section">
+          <div class="detail-label">内容</div>
+          <pre class="detail-code max-h-40">${escapeHtml(output)}</pre>
+        </div>
+      `);
+    }
+  }
+
+  // ── Write / Edit ──
+  else if (toolName === 'write' || toolName === 'edit') {
+    const path = input.path || input.file_path || input.filePath || input.new_path || '';
+    if (path) {
+      parts.push(`
+        <div class="detail-section">
+          <div class="detail-label">✏️ 文件</div>
+          <div class="detail-path select-all">${escapeHtml(path)}</div>
+        </div>
+      `);
+    }
+    const content = input.content || input.new_content || '';
+    if (content) {
+      const preview = typeof content === 'string' ? content.slice(0, 500) : JSON.stringify(content).slice(0, 500);
+      parts.push(`
+        <div class="detail-section">
+          <div class="detail-label">${input.old_content ? '变更内容' : '内容'}</div>
+          <pre class="detail-code max-h-32">${escapeHtml(preview)}${content.length > 500 ? '…' : ''}</pre>
+        </div>
+      `);
+    }
+    if (hasOutput) {
+      parts.push(`
+        <div class="detail-section">
+          <div class="detail-label">输出</div>
+          <pre class="detail-code max-h-20">${escapeHtml(output)}</pre>
+        </div>
+      `);
+    }
+  }
+
+  // ── 通用回退 ──
+  else {
+    const inputStr = Object.keys(input).length > 0 ? JSON.stringify(input, null, 2) : '';
+    if (inputStr) {
+      parts.push(`
+        <div class="detail-section">
+          <div class="detail-label">输入</div>
+          <pre class="detail-code max-h-32">${escapeHtml(inputStr)}</pre>
+        </div>
+      `);
+    }
+    if (hasOutput) {
+      parts.push(`
+        <div class="detail-section">
+          <div class="detail-label">输出</div>
+          <pre class="detail-code max-h-32">${escapeHtml(output)}</pre>
+        </div>
+      `);
+    }
+    if (hasError && call.error_message) {
+      parts.push(`
+        <div class="detail-section error">
+          <div class="detail-label">错误</div>
+          <pre class="detail-code">${escapeHtml(call.error_message)}</pre>
+        </div>
+      `);
+    }
+  }
+
+  // ── 底部：查看原始数据 ──
+  const rawJson = highlightJson(JSON.stringify(call, null, 2));
+  parts.push(`
+    <div class="detail-raw-toggle">
+      <button onclick="event.stopPropagation();this.nextElementSibling.classList.toggle('hidden')">📋 查看原始数据</button>
+      <pre class="hidden detail-raw-json">${rawJson}</pre>
+    </div>
+  `);
+
+  return `<div class="call-detail-inner">${parts.join('')}</div>`;
+}
+
 /** 渲染调用列表（供外部懒加载使用） */
 export function renderCallChainCalls(calls) {
   if (!calls || calls.length === 0) return '';
-  const tree = buildTree(calls);
-  return tree.map((call, i) => renderCall(call, i, '')).join('');
+
+  const rounds = groupByRounds(calls);
+
+  // 无轮次数据（全是 tool 记录，无 user）,退化到平铺
+  if (rounds.length === 0) {
+    const tree = buildTree(calls);
+    return tree.map((call, i) => renderCall(call, i, '')).join('');
+  }
+
+  return rounds.map((round, i) => renderRound(round, i)).join('');
 }
 
-/** 切换调用行的 JSON 详情面板 */
+/** 切换调用行的详情面板 */
 window.toggleCallDetail = function (rowEl) {
   const detail = rowEl.nextElementSibling;
   if (!detail || !detail.classList.contains('call-detail')) return;
