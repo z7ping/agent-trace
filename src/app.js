@@ -276,6 +276,13 @@ window.toggleSession = function (el) {
     if (arrow) {
       arrow.style.transform = body.classList.contains('hidden') ? '' : 'rotate(90deg)';
     }
+    // 选中态高亮
+    if (!body.classList.contains('hidden')) {
+      document.querySelectorAll('.session-card.selected').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+    } else {
+      card.classList.remove('selected');
+    }
     // 首次展开时加载调用详情
     if (!body.classList.contains('hidden') && !body.dataset.loaded) {
       loadSessionCalls(card);
@@ -328,14 +335,14 @@ window.toggleAllSessions = function () {
     const body = card.querySelector('.session-body');
     return body && body.classList.contains('hidden');
   });
+  const toLoad = [];
   cards.forEach(card => {
     const body = card.querySelector('.session-body');
     const arrow = card.querySelector('.session-arrow');
     if (body) {
       if (allHidden) {
         body.classList.remove('hidden');
-        // 首次展开时加载调用详情
-        if (!body.dataset.loaded) loadSessionCalls(card);
+        if (!body.dataset.loaded) toLoad.push(card);
       } else {
         body.classList.add('hidden');
       }
@@ -344,6 +351,15 @@ window.toggleAllSessions = function () {
       arrow.style.transform = allHidden ? 'rotate(90deg)' : '';
     }
   });
+  // ponytail: batch load, 5 per batch, 300ms delay. 原来是 100 个并发
+  for (let i = 0; i < toLoad.length; i += 5) {
+    const batch = toLoad.slice(i, i + 5);
+    if (i > 0) {
+      setTimeout(() => batch.forEach(c => loadSessionCalls(c)), (i / 5) * 300);
+    } else {
+      batch.forEach(c => loadSessionCalls(c));
+    }
+  }
   // 更新按钮文字
   const btn = document.getElementById('expandAllBtn');
   if (btn) btn.textContent = allHidden ? '折叠全部' : '展开全部';

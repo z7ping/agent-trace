@@ -232,6 +232,7 @@ function renderSession(session) {
 
   return `
     <div class="session-card ${borderClass}${isActive ? ' active-session' : ''}"
+         id="session-${escapeHtml(session.id)}"
          data-session-id="${escapeHtml(session.id)}"
          data-source="${escapeHtml(session.source)}">
       ${header}

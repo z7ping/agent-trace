@@ -192,6 +192,9 @@
 .session-card.active-session {
   border-left: 3px solid #3b82f6;
 }
+.session-card.selected {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
 
 /* ═══ 空状态 ═══ */
 .empty-state {
