@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Agent Beat - 统一 CLI 入口
+ * Agent Trace - 统一 CLI 入口
  *
  * 用法:
  *   agent-trace install              安装 hooks 到 Claude Code 配置
@@ -489,7 +489,7 @@ function cmdService(subcmd) {
 // ─── install 命令 ────────────────────────────────────────────────
 
 async function cmdInstall() {
-    log('🧠 Agent Beat - 安装', 'bright');
+    log('🧠 Agent Trace - 安装', 'bright');
     log('═'.repeat(45), 'dim');
     console.log('');
 
@@ -713,7 +713,7 @@ function cmdStart(argv) {
     } else {
         // 前台模式
         console.log('');
-        log('🧠 Agent Beat - HTTP 服务器', 'bright');
+        log('🧠 Agent Trace - HTTP 服务器', 'bright');
         log('═'.repeat(40), 'dim');
         console.log('');
         log(`✅ 端口: ${port}`, 'green');
@@ -785,7 +785,7 @@ async function cmdUninstall() {
         return;
     }
 
-    log('🧠 Agent Beat - 卸载', 'bright');
+    log('🧠 Agent Trace - 卸载', 'bright');
     log('═'.repeat(45), 'dim');
     console.log('');
 
@@ -880,7 +880,7 @@ function cmdPackage() {
     const pkgName = `agent-trace-v${getVersion()}`;
     const distDir = path.join(PROJECT_DIR, 'dist');
 
-    log(`📦 打包 Agent Beat v${getVersion()}`, 'bright');
+    log(`📦 打包 Agent Trace v${getVersion()}`, 'bright');
     log('═'.repeat(45), 'dim');
     console.log('');
 
@@ -954,7 +954,7 @@ function cmdPackage() {
 // ─── help 命令 ───────────────────────────────────────────────────
 
 function showHelp() {
-    log('🧠 Agent Beat CLI', 'bright');
+    log('🧠 Agent Trace CLI', 'bright');
     console.log('');
     log('用法:', 'yellow');
     log('  agent-trace <command> [options]', 'cyan');
