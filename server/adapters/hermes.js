@@ -68,7 +68,8 @@ class HermesAdapter extends BaseAdapter {
     // ─── PreToolUse ────────────────────────────────────────
 
     /**
-     * Hermes 无 PreToolUse 钩子，轮询模式下无需 pre()
+     * Hermes 通过插件系统支持 hooks (post_tool_call)
+     * fs.watch 作为兜底机制，确保插件未加载时仍能收集数据
      */
     async pre(data) {
         // no-op
