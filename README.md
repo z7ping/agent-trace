@@ -60,7 +60,9 @@ agent-trace/
 └── tailwind.config.mjs
 ```
 
----
+# 开发模式
+npm run dev           # vite dev server（端口 5173），代理 /api 到 56789
+node server/cli.js start   # 启动后端服务（端口 56789）
 
 ## 场景指南
 
@@ -84,7 +86,7 @@ npm run dev              # 后端（56789）+ Vite（5173）一起启动
 
 > 如果想单独启动 Vite（不启动后端），用 `npm run dev:frontend`。
 
-### 场景 C：我要后台 24 小时采集（系统服务）
+**Hermes（自动）**：服务启动后自动轮询 `~/.hermes/state.db`，无需额外配置。支持 state 持久化，重启不重复导入。
 
 安装时会自动构建前端 + 注册系统服务，一步到位：
 
