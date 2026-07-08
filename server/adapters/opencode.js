@@ -23,6 +23,8 @@ class OpenCodeAdapter extends BaseAdapter {
         this._db = null;
         this._prepared = {};
         this._lastProcessedTs = 0; // 已处理的最高 time_created
+        this._watcher = null;
+        this._watchDebounce = null;
     }
 
     get name() {
@@ -342,6 +344,24 @@ class OpenCodeAdapter extends BaseAdapter {
         this._pollOnce();
 
         this._pollTimer = setInterval(() => this._pollOnce(), intervalMs);
+
+        // 实时监听 opencode.db 变化
+        this._startWatcher();
+    }
+
+    _startWatcher() {
+        if (this._watcher || !fs.existsSync(OPENCODE_DB)) return;
+        try {
+            this._watchDebounce = null;
+            this._watcher = fs.watch(OPENCODE_DB, (eventType) => {
+                if (eventType !== 'change') return;
+                if (this._watchDebounce) clearTimeout(this._watchDebounce);
+                this._watchDebounce = setTimeout(() => {
+                    this._pollOnce().catch(() => {});
+                }, 2000);
+            });
+            this._watcher.on('error', () => { this._watcher = null; });
+        } catch (_) {}
     }
 
     /**
@@ -351,6 +371,14 @@ class OpenCodeAdapter extends BaseAdapter {
         if (this._pollTimer) {
             clearInterval(this._pollTimer);
             this._pollTimer = null;
+        }
+        if (this._watcher) {
+            try { this._watcher.close(); } catch (_) {}
+            this._watcher = null;
+        }
+        if (this._watchDebounce) {
+            clearTimeout(this._watchDebounce);
+            this._watchDebounce = null;
         }
         if (this._db) {
             try { this._db.close(); } catch (_) {}
