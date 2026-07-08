@@ -21,8 +21,6 @@ class ClaudeCodeAdapter extends BaseAdapter {
     constructor() {
         super();
         this._pollTimer = null;
-        this._watcher = null;
-        this._watchDebounce = null;
     }
 
     get name() {
@@ -373,27 +371,6 @@ class ClaudeCodeAdapter extends BaseAdapter {
         this._pollOnce();
 
         this._pollTimer = setInterval(() => this._pollOnce(), intervalMs);
-
-        // 实时监听 logs 目录变化
-        this._startWatcher();
-    }
-
-    _startWatcher() {
-        if (this._watcher) return;
-        try {
-            if (!fs.existsSync(LOGS_DIR)) {
-                fs.mkdirSync(LOGS_DIR, { recursive: true });
-            }
-            this._watchDebounce = null;
-            this._watcher = fs.watch(LOGS_DIR, (eventType) => {
-                if (eventType !== 'rename') return; // 新文件创建或修改
-                if (this._watchDebounce) clearTimeout(this._watchDebounce);
-                this._watchDebounce = setTimeout(() => {
-                    this._pollOnce().catch(() => {});
-                }, 2000);
-            });
-            this._watcher.on('error', () => { this._watcher = null; });
-        } catch (_) {}
     }
 
     /**
@@ -481,14 +458,6 @@ class ClaudeCodeAdapter extends BaseAdapter {
         if (this._pollTimer) {
             clearInterval(this._pollTimer);
             this._pollTimer = null;
-        }
-        if (this._watcher) {
-            try { this._watcher.close(); } catch (_) {}
-            this._watcher = null;
-        }
-        if (this._watchDebounce) {
-            clearTimeout(this._watchDebounce);
-            this._watchDebounce = null;
         }
     }
 }
