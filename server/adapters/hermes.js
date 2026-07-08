@@ -630,12 +630,7 @@ class HermesAdapter extends BaseAdapter {
                 LIMIT 1
             `);
 
-            const hasWatermarks = this._lastTsBySession.size > 0;
             let whereClause = `WHERE m.role IN ('user', 'assistant', 'tool')`;
-            if (!hasWatermarks) {
-                const cutoff = Math.floor(Date.now() / 1000) - 86400;
-                whereClause += ` AND m.timestamp >= ${cutoff}`;
-            }
             // ponytail: 加 LIMIT 防全表扫描卡死，459MB 的 db 全扫太慢
             const stmt = collectDb.prepare(`
                 SELECT m.*, s.cwd
