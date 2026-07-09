@@ -28,8 +28,8 @@ npm start              # 自动构建前端 + 启动后端，端口 56789
 
 打开 **http://localhost:56789/** 即可看到仪表盘。
 
-> `npm start` 等价于 `node server/cli.js start`，前台运行，按 Ctrl+C 停止。
-> 后台运行加 `--daemon`：`node server/cli.js start --daemon`。
+> `npm start` 等价于 `npx agent-trace start`，前台运行，按 Ctrl+C 停止。
+> 后台运行加 `--daemon`：`npx agent-trace start --daemon`。
 
 ---
 
@@ -62,7 +62,7 @@ agent-trace/
 
 # 开发模式
 npm run dev           # vite dev server（端口 5173），代理 /api 到 56789
-node server/cli.js start   # 启动后端服务（端口 56789）
+npx agent-trace start      # 启动后端服务（端口 56789）
 
 ## 场景指南
 
@@ -122,21 +122,23 @@ npx agent-trace service start    # 后台启动，开机自启
 
 ### 配置 Claude Code / Codex / Cursor / Pi 钩子
 
-在 `~/.claude/settings.json` 中添加：
+运行 `npx agent-trace install` 会自动配置所有工具的 hooks。
+
+如果需要手动配置，在 `~/.claude/settings.json` 中添加（路径指向 `~/.agent-trace/hooks/`）：
 
 ```json
 {
   "hooks": {
     "PreToolUse": [{
       "hooks": [{
-        "command": "node /path/to/agent-trace/server/hooks/prelog.js",
+        "command": "node ~/.agent-trace/hooks/prelog.js",
         "type": "command",
         "timeout": 5
       }]
     }],
     "PostToolUse": [{
       "hooks": [{
-        "command": "node /path/to/agent-trace/server/hooks/log.js",
+        "command": "node ~/.agent-trace/hooks/log.js",
         "type": "command",
         "timeout": 10
       }]
@@ -145,8 +147,6 @@ npx agent-trace service start    # 后台启动，开机自启
 }
 ```
 
-Codex 放在 `~/.codex/hooks.json`，路径相同。
-
 ---
 
 ## CLI 参考
@@ -154,10 +154,10 @@ Codex 放在 `~/.codex/hooks.json`，路径相同。
 ### 服务管理
 
 ```bash
-node server/cli.js start            # 自动构建 + 前台启动（Ctrl+C 停止）
-node server/cli.js start --daemon   # 自动构建 + 后台运行
-node server/cli.js stop             # 停止后台服务
-node server/cli.js status           # 查看运行状态
+npx agent-trace start               # 自动构建 + 前台启动（Ctrl+C 停止）
+npx agent-trace start --daemon      # 自动构建 + 后台运行
+npx agent-trace stop                # 停止后台服务
+npx agent-trace status              # 查看运行状态
 ```
 
 > `start` 命令会自动检测 `dist/` 是否存在，不存在则先执行 `npm run build`。
@@ -189,14 +189,13 @@ npx agent-trace package    # 打包分发
 缺少 `dist/` 目录。`src/` 里的源码需要 Vite 处理才能运行。
 
 **解决**：
-- 用 `npm start`（自动构建）或 `node server/cli.js start`（也会自动构建）
-- 如果用 `node server/server.js` 直接启动，需先手动 `npm run build`
+- 用 `npm start`（自动构建）或 `npx agent-trace start`（也会自动构建）
 - 如果安装了系统服务，重新运行 `npx agent-trace install` 会自动构建
 
 ### 端口 56789 被占了？
 
 ```bash
-node server/cli.js start 8080   # 指定其他端口
+npx agent-trace start 8080       # 指定其他端口
 ```
 
 ---

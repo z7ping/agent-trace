@@ -38,7 +38,7 @@ npx agent-trace service uninstall  # 移除系统服务
 ```bash
 # 前后端联调（推荐）
 npm run dev           # vite dev server（端口 5173），代理 /api 到 56789
-node server/cli.js start          # 后端服务（端口 56789）
+npx agent-trace start             # 后端服务（端口 56789）
 npm run dev:frontend  # 仅 vite dev server
 
 # 构建生产版本
