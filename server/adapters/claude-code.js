@@ -333,6 +333,27 @@ class ClaudeCodeAdapter extends BaseAdapter {
                             if (!record.success && record.error) {
                                 abeatDb.saveError(ts, sessionId, 'claude-code', record.tool_name, record.error);
                             }
+
+                            // 写入 timeline（轮询兜底）
+                            abeatDb.insertTimeline({
+                                source: 'claude-code',
+                                session_id: sessionId,
+                                timestamp: ts,
+                                seq: record.seq || null,
+                                role: record.success ? 'tool_result' : 'tool_error',
+                                tool_name: record.tool_name || null,
+                                content: null,
+                                tool_input: typeof record.input_summary === 'string' ? record.input_summary : JSON.stringify(record.input_summary || {}),
+                                success: record.success ? 1 : 0,
+                                exit_code: null,
+                                duration_ms: record.duration_ms || 0,
+                                output_snippet: null,
+                                error_message: record.error || null,
+                                error_type: null,
+                                error_detail: null,
+                                project_key: record.project_key || '',
+                                parent_seq: record.parent_seq || null,
+                            });
                         }
                     }
 
