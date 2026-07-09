@@ -138,14 +138,13 @@ function shortId(sid) {
 function formatTimeRange(start, end) {
   if (!start) return '';
   const s = new Date(start);
-  const e = end ? new Date(end) : s;
   const fmtDate = (d) => d.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-');
   const fmtTime = (d) => d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-  // 同一天：2026-06-28 13:22:42~13:42:42
+  if (!end) return `${fmtDate(s)} ${fmtTime(s)}`;
+  const e = new Date(end);
   if (fmtDate(s) === fmtDate(e)) {
     return `${fmtDate(s)} ${fmtTime(s)}~${fmtTime(e)}`;
   }
-  // 跨天：2026-06-28 13:22~06-29 01:42
   return `${fmtDate(s)} ${fmtTime(s)}~${fmtDate(e)} ${fmtTime(e)}`;
 }
 
