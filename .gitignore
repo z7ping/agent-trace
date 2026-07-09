@@ -46,3 +46,4 @@ tracker.db-wal
 a-beat.db
 a-beat.db-shm
 a-beat.db-wal
+.playwright-mcp/

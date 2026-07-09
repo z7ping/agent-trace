@@ -1,4 +1,0 @@
-[     308ms] [LOG] [Dashboard] stats: true tools: 136 skills: 1 @ http://localhost:5173/src/dashboard/index.js:38
-[     314ms] [ERROR] [Dashboard] loadDashboardData error: TypeError: errors is not iterable
-    at renderRecentErrors (http://localhost:5173/src/dashboard/index.js:161:22)
-    at loadDashboardData (http://localhost:5173/src/dashboard/index.js:98:5) @ http://localhost:5173/src/dashboard/index.js:99
