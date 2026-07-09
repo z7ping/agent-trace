@@ -344,10 +344,9 @@ function renderCall(call, index, projectPath, sourceColor = '') {
   const exitCode = call.exit_code != null ? call.exit_code : (call.success === 0 ? 1 : 0);
 
   // 状态类
-  let rowClass = 'call-row';
-  rowClass += ' type-' + type;
-  if (isError) rowClass += ' error';
-  else if (isSlow) rowClass += ' slow';
+  let itemClass = 'call-item type-' + type;
+  if (isError) itemClass += ' error';
+  else if (isSlow) itemClass += ' slow';
 
   // 类型特定预览
   const input = parseToolInput(call);
@@ -363,7 +362,8 @@ function renderCall(call, index, projectPath, sourceColor = '') {
   const detailContent = renderCallDetail(call, sourceColor);
 
   return `
-    <div class="${rowClass}" style="padding-left:${32 + depth * 20}px" onclick="toggleCallDetail(this)">
+    <div class="${itemClass}">
+    <div class="call-row" style="padding-left:${16 + depth * 20}px" onclick="toggleCallDetail(this)">
       <span class="tool-badge ${type}">${escapeHtml(toolName)}</span>
       <span class="flex-1 min-w-0">
         <span class="call-preview">${preview}</span>
@@ -374,7 +374,8 @@ function renderCall(call, index, projectPath, sourceColor = '') {
         <span class="call-duration">${duration}</span>
       </span>
     </div>
-    <div class="call-detail hidden type-${type}">${detailContent}</div>
+    <div class="call-detail hidden">${detailContent}</div>
+    </div>
   `;}
 
 /** 类型特定行内预览 */
@@ -759,7 +760,7 @@ export function renderCallChainCalls(calls) {
 
 /** 切换调用行的详情面板 */
 window.toggleCallDetail = function (rowEl) {
-  const detail = rowEl.nextElementSibling;
-  if (!detail || !detail.classList.contains('call-detail')) return;
+  const detail = rowEl.parentElement.querySelector('.call-detail');
+  if (!detail) return;
   detail.classList.toggle('hidden');
 };
