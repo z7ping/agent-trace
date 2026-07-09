@@ -398,8 +398,23 @@ function schtasksStop() {
     try {
         const out = execSync(`schtasks /query /tn "${SCHTASKS_NAME}" /fo csv /nh`, { encoding: 'utf-8', shell: true }).trim();
         if (out) {
-            execSync('taskkill /f /im node.exe 2>nul', { stdio: 'ignore', shell: true });
-            log('[OK] 任务已停止', 'green');
+            // 从 PID 文件读取进程 ID，只杀自身进程，避免误杀其他 node.exe
+            const pid = readPid(INSTALL_DIR);
+            if (pid) {
+                try {
+                    execSync(`taskkill /f /pid ${pid} 2>nul`, { stdio: 'ignore', shell: true });
+                    log('[OK] 任务已停止', 'green');
+                } catch (_) {
+                    // PID 对应进程已不存在，尝试清理残留
+                    log('[OK] 任务已停止', 'green');
+                }
+                // 清理 PID 文件
+                try { fs.unlinkSync(getPidFile(INSTALL_DIR)); } catch (_) {}
+            } else {
+                // 无 PID 文件，回退到按名称停止（最后手段）
+                execSync('taskkill /f /im node.exe 2>nul', { stdio: 'ignore', shell: true });
+                log('[OK] 任务已停止（无 PID 文件，使用全量停止）', 'yellow');
+            }
         }
     } catch {
         log('未找到运行中的任务', 'yellow');

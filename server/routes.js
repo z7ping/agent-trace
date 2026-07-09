@@ -6,7 +6,7 @@
 const fs = require('fs');
 const path = require('path');
 const { getAdapter, getAllAdapters } = require('./adapters');
-const { getDb, queryTimeline } = require('./abeat-db');
+const { getDb, queryStats, queryTimeline } = require('./abeat-db');
 
 const ROOT = path.join(__dirname, '..');
 
@@ -29,44 +29,14 @@ async function handleApiStats(req, res, params) {
             }
         }
 
-        const database = getDb();
-        if (!database) {
+        const db = getDb();
+        if (!db) {
             sendJson(res, { error: 'SQLite 数据库不可用' }, 503);
             return;
         }
 
-        let whereClause = 'WHERE 1=1';
-        const queryParams = [];
-        if (source) { whereClause += ' AND source = ?'; queryParams.push(source); }
-        if (since) { whereClause += ' AND date >= ?'; queryParams.push(since); }
-
-        const byTool = database.prepare(`
-            SELECT tool_name, SUM(call_count) as count, SUM(error_count) as errors, AVG(avg_duration_ms) as avg_duration_ms
-            FROM daily_stats ${whereClause}
-            GROUP BY tool_name ORDER BY count DESC
-        `).all(...queryParams);
-
-        const bySource = database.prepare(`
-            SELECT source, SUM(call_count) as count, SUM(error_count) as errors
-            FROM daily_stats ${whereClause}
-            GROUP BY source ORDER BY count DESC
-        `).all(...queryParams);
-
-        const byDay = database.prepare(`
-            SELECT date, SUM(call_count) as count, SUM(error_count) as errors
-            FROM daily_stats ${whereClause}
-            GROUP BY date ORDER BY date ASC
-        `).all(...queryParams);
-
-        const totals = database.prepare(`
-            SELECT
-                SUM(call_count) as total_calls,
-                SUM(error_count) as total_errors,
-                (SELECT COUNT(*) FROM sessions) as session_count
-            FROM daily_stats ${whereClause}
-        `).get(...queryParams);
-
-        sendJson(res, { totals, byTool, bySource, byDay });
+        const result = queryStats({ source, since });
+        sendJson(res, result);
     } catch (e) {
         sendJson(res, { error: e.message }, 500);
     }

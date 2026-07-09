@@ -7,7 +7,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const Database = require('better-sqlite3');
+const { openDb } = require('./db');
 
 const DB_PATH = path.join(__dirname, '..', 'a-beat.db');
 const SCHEMA_PATH = path.join(__dirname, 'schema.sql');
@@ -18,7 +18,15 @@ let _db = null;
 
 function getDb() {
   if (_db) return _db;
-  _db = new Database(DB_PATH);
+  const lazyDb = openDb(DB_PATH);
+  // better-sqlite3 同步可用；sql.js 需要 await ready()，此处同步初始化
+  try { lazyDb.ready(); } catch (_) {}
+  if (!lazyDb._db) {
+    console.error('[abeat-db] 无可用 SQLite 后端。a-beat.db 功能不可用。');
+    console.error('  修复：npm install better-sqlite3');
+    return null;
+  }
+  _db = lazyDb._db; // 底层原生 db 实例
   _db.pragma('journal_mode = WAL');
   _db.pragma('foreign_keys = ON');
 
