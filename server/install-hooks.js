@@ -158,7 +158,7 @@ function updateCodexTrustHash() {
         groups.forEach((group, groupIdx) => {
             (group.hooks || []).forEach((hook, hookIdx) => {
                 const hash = computeHookHash(eventName, group, hook);
-                const stateKey = `${hooksPath}:${eventKey}:${groupIdx}:${hookIdx}`;
+                const stateKey = `${hooksPath.replace(/\\/g, '\\\\')}:${eventKey}:${groupIdx}:${hookIdx}`;
                 entries.push(`[hooks.state."${stateKey}"]`);
                 entries.push(`trusted_hash = "${hash}"`);
                 entries.push('');
