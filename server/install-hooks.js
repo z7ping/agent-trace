@@ -188,9 +188,31 @@ function updateCodexTrustHash() {
     console.log(`   [OK] Codex 信任 hash 已更新 (${entries.length / 3} 个 hook)`);
 }
 
+// ─── 5. 同步 adapters + abeat-db 到 ~/.agent-trace/ ─────────
+
+function syncModules() {
+    const srcDir = path.join(__dirname, 'adapters');
+    const dstDir = path.join(TOOL_TRACKER_DIR, 'adapters');
+    const srcDb = path.join(__dirname, 'abeat-db.js');
+    const dstDb = path.join(TOOL_TRACKER_DIR, 'abeat-db.js');
+
+    fs.mkdirSync(dstDir, { recursive: true });
+
+    // 复制所有 adapter 文件
+    for (const f of fs.readdirSync(srcDir)) {
+        fs.copyFileSync(path.join(srcDir, f), path.join(dstDir, f));
+    }
+    // 复制 abeat-db.js
+    if (fs.existsSync(srcDb)) {
+        fs.copyFileSync(srcDb, dstDb);
+    }
+    console.log('   [OK] adapters + abeat-db 已同步');
+}
+
 // ─── 执行 ────────────────────────────────────────────────
 
 console.log('   安装 hooks 到所有支持的工具...');
+syncModules();
 installClaudeCode();
 installCodex();
 installCursor();
