@@ -567,10 +567,12 @@ async function cmdInstall() {
         console.log('');
         log('安装依赖...', 'cyan');
         try {
-            execSync('npm install --omit=dev', { cwd: INSTALL_DIR, stdio: 'ignore' });
+            execSync('npm install', { cwd: INSTALL_DIR, stdio: 'inherit' });
             log('[OK] 依赖安装完成', 'green');
         } catch (e) {
             log('[WARN] 依赖安装失败，请手动运行: npm install', 'yellow');
+            log('  Windows 可能需要: npm install -g node-gyp-windows', 'dim');
+            log('  或安装 Visual Studio Build Tools', 'dim');
         }
     }
 
@@ -611,8 +613,9 @@ async function cmdInstall() {
             }
         } catch (e) {
             log(`[OK] 已创建: ${batPath}`, 'green');
-            log(`[WARN] 自动加入 PATH 失败，请手动将以下目录加入 PATH:`, 'yellow');
-            log(`  ${INSTALL_DIR}`, 'dim');
+            log(`[WARN] 自动加入 PATH 失败（可能需要管理员权限）`, 'yellow');
+            log(`  手动添加: 右键此电脑 → 属性 → 高级系统设置 → 环境变量 → Path → 新建`, 'dim');
+            log(`  路径: ${INSTALL_DIR}`, 'dim');
         }
     } else {
         // Unix: 创建符号链接到 ~/.local/bin（XDG 规范）
