@@ -8,7 +8,7 @@ const path = require('path');
 const os = require('os');
 
 const HOME = os.homedir();
-const TOOL_TRACKER_DIR = path.join(HOME, '.claude', 'agent-trace');
+const TOOL_TRACKER_DIR = path.join(HOME, '.agent-trace');
 const PRELOG_PATH = path.join(TOOL_TRACKER_DIR, 'hooks', 'prelog.js').replace(/\\/g, '/');
 const LOG_PATH = path.join(TOOL_TRACKER_DIR, 'hooks', 'log.js').replace(/\\/g, '/');
 
