@@ -229,10 +229,10 @@ function renderSession(session) {
             <path d="M9 18l6-6-6-6"/>
           </svg>
           <span class="session-id font-mono text-xs font-semibold" style="color:${color}" title="会话ID: ${escapeHtml(session.id)}">${escapeHtml(shortId(session.id))}</span>
-          ${sourceLabel ? `<span class="text-[10px] px-1.5 py-0.5 rounded-md font-medium ${sourceColor}">${escapeHtml(sourceLabel)}</span>` : ''}
-          <span class="text-[10px] px-1.5 py-0.5 rounded-md font-medium bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">${escapeHtml(truncate(projectName, 30))}</span>
+          ${sourceLabel ? `<span class="text-xs px-1.5 py-0.5 rounded-md font-medium ${sourceColor}">${escapeHtml(sourceLabel)}</span>` : ''}
+          <span class="text-xs px-1.5 py-0.5 rounded-md font-medium bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">${escapeHtml(truncate(projectName, 30))}</span>
         </div>
-        <div class="flex items-center gap-3 text-[11px] text-neutral-400 mt-1 ml-5">
+        <div class="flex items-center gap-3 text-xs text-neutral-400 mt-1 ml-5">
           <span>${timeRange}</span>
           <span class="text-neutral-300 dark:text-neutral-600">|</span>
           <span>📋 ${toolCount}</span>
