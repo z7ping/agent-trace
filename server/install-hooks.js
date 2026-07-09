@@ -102,10 +102,62 @@ function installCursor() {
     console.log('   [OK] Cursor hooks.json 已更新');
 }
 
+// ─── 4. 更新 Codex 信任 hash ─────────────────────────────
+
+function updateCodexTrustHash() {
+    const configPath = path.join(HOME, '.codex', 'config.toml');
+    const hooksPath = path.join(HOME, '.codex', 'hooks.json');
+    if (!fs.existsSync(hooksPath)) return;
+
+    const crypto = require('crypto');
+    const hash = crypto.createHash('sha256').update(fs.readFileSync(hooksPath)).digest('hex');
+    const hooks = readJson(hooksPath);
+
+    // 读取 config.toml
+    let config = '';
+    try { config = fs.readFileSync(configPath, 'utf-8'); } catch (_) { return; }
+
+    // 生成 hooks.state 条目
+    const entries = [];
+    for (const [eventName, groups] of Object.entries(hooks.hooks || {})) {
+        const eventKey = eventName.toLowerCase().replace('tool_use', '_use');
+        groups.forEach((group, groupIdx) => {
+            (group.hooks || []).forEach((hook, hookIdx) => {
+                const stateKey = `${hooksPath}:${eventKey}:${groupIdx}:${hookIdx}`;
+                entries.push(`[hooks.state."${stateKey}"]`);
+                entries.push(`trusted_hash = "sha256:${hash}"`);
+                entries.push('');
+            });
+        });
+    }
+
+    // 移除旧的 hooks.state 条目，插入新的
+    const lines = config.split('\n');
+    const newLines = [];
+    let skip = false;
+    for (const line of lines) {
+        if (line.startsWith('[hooks.state')) {
+            skip = true;
+            continue;
+        }
+        if (skip && line.startsWith('[')) skip = false;
+        if (!skip) newLines.push(line);
+    }
+
+    // 在合适的位置插入 hooks.state
+    let insertIdx = newLines.findIndex(l => l.startsWith('[features]'));
+    if (insertIdx < 0) insertIdx = newLines.length;
+    newLines.splice(insertIdx, 0, '', '[hooks.state]', ...entries);
+
+    fs.writeFileSync(configPath, newLines.join('\n'));
+    console.log(`   [OK] Codex 信任 hash 已更新 (sha256:${hash.substring(0, 16)}...)`);
+}
+
 // ─── 执行 ────────────────────────────────────────────────
 
 console.log('   安装 hooks 到所有支持的工具...');
 installClaudeCode();
 installCodex();
 installCursor();
+updateCodexTrustHash();
 console.log('   [OK] 全部完成');
