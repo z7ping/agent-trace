@@ -1,61 +1,111 @@
 #!/usr/bin/env node
 /**
- * install-hooks.js - Write/update hooks config in Claude settings.json
- * Called by install.bat / install.sh
+ * install-hooks.js - 更新所有支持工具的 hooks 配置
+ * 覆盖：Claude Code (~/.claude/settings.json)、Codex (~/.codex/hooks.json)、Cursor (~/.cursor/hooks.json)
  */
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-const settingsFile = path.join(os.homedir(), '.claude', 'settings.json');
-const toolTrackerDir = path.join(os.homedir(), '.claude', 'agent-trace');
-const prelogPath = path.join(toolTrackerDir, 'hooks', 'prelog.js').replace(/\\/g, '/');
-const logPath = path.join(toolTrackerDir, 'hooks', 'log.js').replace(/\\/g, '/');
+const HOME = os.homedir();
+const TOOL_TRACKER_DIR = path.join(HOME, '.claude', 'agent-trace');
+const PRELOG_PATH = path.join(TOOL_TRACKER_DIR, 'hooks', 'prelog.js').replace(/\\/g, '/');
+const LOG_PATH = path.join(TOOL_TRACKER_DIR, 'hooks', 'log.js').replace(/\\/g, '/');
 
-let settings = {};
-try {
-    if (fs.existsSync(settingsFile)) {
-        settings = JSON.parse(fs.readFileSync(settingsFile, 'utf-8'));
-    }
-} catch (e) {
-    settings = {};
+const MARKER = 'agent-trace';
+
+// ─── 工具函数 ────────────────────────────────────────────
+
+function readJson(filePath) {
+    try {
+        if (fs.existsSync(filePath)) return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+    } catch (_) {}
+    return {};
 }
 
-// 合并 hooks：移除旧的 agent-trace hooks，再添加新的
-if (!settings.hooks) settings.hooks = {};
+function writeJson(filePath, data) {
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+}
 
-const agentBeatMarker = 'agent-trace';
-
-function removeAgentBeatHooks(hookArray) {
+function removeOldHooks(hookArray, marker = MARKER) {
     if (!Array.isArray(hookArray)) return [];
     return hookArray.filter(entry => {
         if (!entry || !entry.hooks) return true;
-        return !entry.hooks.some(h => h.command && h.command.includes(agentBeatMarker));
+        return !entry.hooks.some(h => h.command && h.command.includes(marker));
     });
 }
 
-settings.hooks.PreToolUse = removeAgentBeatHooks(settings.hooks.PreToolUse);
-settings.hooks.PostToolUse = removeAgentBeatHooks(settings.hooks.PostToolUse);
+function makeHookEntry(command, timeout = 5) {
+    return {
+        hooks: [{ command, type: 'command', timeout, statusMessage: '', async: false }]
+    };
+}
 
-settings.hooks.PreToolUse.push({
-    hooks: [{
-        command: `node ${prelogPath}`,
-        type: 'command',
-        timeout: 5,
-        statusMessage: '',
-        async: false
-    }]
-});
+// ─── 1. Claude Code ──────────────────────────────────────
 
-settings.hooks.PostToolUse.push({
-    hooks: [{
-        command: `node ${logPath}`,
-        type: 'command',
-        timeout: 10,
-        statusMessage: '',
-        async: false
-    }]
-});
+function installClaudeCode() {
+    const settingsFile = path.join(HOME, '.claude', 'settings.json');
+    const settings = readJson(settingsFile);
+    if (!settings.hooks) settings.hooks = {};
 
-fs.writeFileSync(settingsFile, JSON.stringify(settings, null, 2));
-console.log('   [OK] Settings updated');
+    // 清理旧的 agent-beat hooks
+    settings.hooks.PreToolUse = removeOldHooks(settings.hooks.PreToolUse, 'agent-beat');
+    settings.hooks.PostToolUse = removeOldHooks(settings.hooks.PostToolUse, 'agent-beat');
+    // 清理旧的 agent-trace hooks
+    settings.hooks.PreToolUse = removeOldHooks(settings.hooks.PreToolUse, MARKER);
+    settings.hooks.PostToolUse = removeOldHooks(settings.hooks.PostToolUse, MARKER);
+
+    settings.hooks.PreToolUse.push(makeHookEntry(`node ${PRELOG_PATH}`, 5));
+    settings.hooks.PostToolUse.push(makeHookEntry(`node ${LOG_PATH}`, 10));
+
+    writeJson(settingsFile, settings);
+    console.log('   [OK] Claude Code settings.json 已更新');
+}
+
+// ─── 2. Codex ────────────────────────────────────────────
+
+function installCodex() {
+    const hooksFile = path.join(HOME, '.codex', 'hooks.json');
+    const hooks = readJson(hooksFile);
+    if (!hooks.hooks) hooks.hooks = {};
+
+    // 清理旧的 agent-beat / agent-trace hooks
+    hooks.hooks.PreToolUse = removeOldHooks(hooks.hooks.PreToolUse, 'agent-beat');
+    hooks.hooks.PostToolUse = removeOldHooks(hooks.hooks.PostToolUse, 'agent-beat');
+    hooks.hooks.PreToolUse = removeOldHooks(hooks.hooks.PreToolUse, MARKER);
+    hooks.hooks.PostToolUse = removeOldHooks(hooks.hooks.PostToolUse, MARKER);
+
+    hooks.hooks.PreToolUse.push(makeHookEntry(`node ${PRELOG_PATH}`, 5));
+    hooks.hooks.PostToolUse.push(makeHookEntry(`node ${LOG_PATH}`, 10));
+
+    writeJson(hooksFile, hooks);
+    console.log('   [OK] Codex hooks.json 已更新');
+}
+
+// ─── 3. Cursor ───────────────────────────────────────────
+
+function installCursor() {
+    const hooksFile = path.join(HOME, '.cursor', 'hooks.json');
+    const hooks = readJson(hooksFile);
+    if (!hooks.hooks) hooks.hooks = {};
+
+    // 清理旧的 agent-beat / agent-trace hooks
+    hooks.hooks.PreToolUse = removeOldHooks(hooks.hooks.PreToolUse, 'agent-beat');
+    hooks.hooks.PostToolUse = removeOldHooks(hooks.hooks.PostToolUse, 'agent-beat');
+    hooks.hooks.PreToolUse = removeOldHooks(hooks.hooks.PreToolUse, MARKER);
+    hooks.hooks.PostToolUse = removeOldHooks(hooks.hooks.PostToolUse, MARKER);
+
+    hooks.hooks.PreToolUse.push(makeHookEntry(`node ${PRELOG_PATH}`, 5));
+    hooks.hooks.PostToolUse.push(makeHookEntry(`node ${LOG_PATH}`, 10));
+
+    writeJson(hooksFile, hooks);
+    console.log('   [OK] Cursor hooks.json 已更新');
+}
+
+// ─── 执行 ────────────────────────────────────────────────
+
+console.log('   安装 hooks 到所有支持的工具...');
+installClaudeCode();
+installCodex();
+installCursor();
+console.log('   [OK] 全部完成');

@@ -8,6 +8,7 @@
 const fs = require('fs');
 const path = require('path');
 const BaseAdapter = require('./base');
+const { insertTimeline } = require('../abeat-db');
 
 const BASE_DIR = path.join(__dirname, '..');
 
@@ -176,6 +177,27 @@ class CursorAdapter extends BaseAdapter {
             success,
             durationMs,
             error: record.error,
+        });
+
+        // 写入 timeline
+        insertTimeline({
+            source: this.name,
+            session_id: data.session_id || '',
+            timestamp: record.ts || '',
+            seq: callSeq || null,
+            role: 'tool_result',
+            tool_name: toolName || null,
+            content: null,
+            tool_input: record.input_summary ? JSON.stringify(record.input_summary) : null,
+            success: success ? 1 : 0,
+            exit_code: null,
+            duration_ms: durationMs ?? null,
+            output_snippet: typeof response === 'string' ? response.substring(0, 2000) : JSON.stringify(response || {}).substring(0, 2000),
+            error_message: record.error || null,
+            error_type: null,
+            error_detail: null,
+            project_key: projectKey || null,
+            parent_seq: parentSeq || null,
         });
     }
 }
