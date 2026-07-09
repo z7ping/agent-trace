@@ -126,7 +126,12 @@ function hashColor(str) {
 function shortId(sid) {
   if (!sid) return '—';
   if (sid.length <= 12) return sid;
-  return sid.slice(0, 8) + '…';
+  // 格式：20260709_112643_xxx → 20260709 1126
+  const parts = sid.split('_');
+  if (parts.length >= 2 && parts[0].length === 8) {
+    return parts[0] + ' ' + parts[1].slice(0, 4);
+  }
+  return sid.slice(0, 12) + '…';
 }
 
 /** 格式化时间范围 */
@@ -231,6 +236,7 @@ function renderSession(session) {
           <span class="session-id font-mono text-xs font-semibold" style="color:${color}" title="会话ID: ${escapeHtml(session.id)}">${escapeHtml(shortId(session.id))}</span>
           ${sourceLabel ? `<span class="text-xs px-1.5 py-0.5 rounded-md font-medium ${sourceColor}">${escapeHtml(sourceLabel)}</span>` : ''}
           <span class="text-xs px-1.5 py-0.5 rounded-md font-medium bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">${escapeHtml(truncate(projectName, 30))}</span>
+          ${source === 'hermes' ? '<span title="包含对话记录">💬</span>' : ''}
         </div>
         <div class="flex items-center gap-3 text-xs text-neutral-400 mt-1 ml-5">
           <span>${timeRange}</span>

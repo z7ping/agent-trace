@@ -209,7 +209,7 @@
   @apply flex items-center gap-3 px-4 py-2 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-800/30 border-l-[3px] border-l-transparent ml-4;
 }
 .round-badge {
-  @apply text-xs font-semibold px-2 py-0.5 rounded-full bg-neutral-200/60 dark:bg-neutral-700/60 text-neutral-500 dark:text-neutral-400 flex-shrink-0;
+  @apply text-sm font-bold px-2.5 py-0.5 rounded-full bg-neutral-200/60 dark:bg-neutral-700/60 text-neutral-600 dark:text-neutral-300 flex-shrink-0;
 }
 .round-user-msg {
   @apply text-xs text-neutral-500 dark:text-neutral-400 truncate flex-1;
