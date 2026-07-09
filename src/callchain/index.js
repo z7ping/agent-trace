@@ -517,7 +517,7 @@ function renderRound(round, index, sourceColor = '') {
   parts.push(`
     <div class="round-header" style="${borderStyle}">
       <span class="round-badge">第 ${index + 1} 轮</span>
-      ${userContent ? `<span class="round-user-msg">${escapeHtml(truncate(userContent, 80))}</span>` : ''}
+      ${userContent ? `<span class="round-user-msg">💬 ${escapeHtml(truncate(userContent, 120))}</span>` : ''}
       ${round.toolCalls.length > 0 ? `<span class="round-call-count">${round.toolCalls.length} 次调用</span>` : ''}
     </div>
   `);

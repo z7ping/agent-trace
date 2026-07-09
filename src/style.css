@@ -212,7 +212,7 @@
   @apply text-sm font-bold px-2.5 py-0.5 rounded-full bg-neutral-200/60 dark:bg-neutral-700/60 text-neutral-600 dark:text-neutral-300 flex-shrink-0;
 }
 .round-user-msg {
-  @apply text-xs text-neutral-500 dark:text-neutral-400 truncate flex-1;
+  @apply text-sm text-neutral-700 dark:text-neutral-200 truncate flex-1 font-medium;
 }
 .round-call-count {
   @apply text-xs text-neutral-400 dark:text-neutral-500 flex-shrink-0;
