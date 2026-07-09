@@ -86,15 +86,6 @@
   .session-card {
     @apply bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden mb-3 shadow-sm transition-all border-l-[3px];
   }
-  .call-item {
-    @apply border-l-[3px] border-transparent;
-  }
-  .call-item.type-bash  { @apply border-l-warning-500; }
-  .call-item.type-read  { @apply border-l-primary-500; }
-  .call-item.type-write { @apply border-l-success-500; }
-  .call-item.type-mcp   { @apply border-l-info-500; }
-  .call-item.type-agent { @apply border-l-orange-500; }
-  .call-item.type-other { @apply border-l-neutral-400; }
   .session-header {
     @apply px-4 py-2.5 flex items-center justify-between cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors select-none border-b border-neutral-100 dark:border-neutral-800;
   }
@@ -107,30 +98,34 @@
 
   /* 调用行 */
   .call-row {
-    @apply flex items-center gap-2 px-4 py-2.5 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors cursor-pointer text-sm;
+    @apply flex items-center gap-2 px-4 py-2.5 border-l-[3px] border-transparent hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors cursor-pointer text-sm;
   }
   .call-row:hover {
     @apply bg-neutral-50 dark:bg-neutral-800/30;
   }
   /* 工具类型左边线颜色 */
+  .call-row.type-bash  { @apply border-l-warning-500; }
+  .call-row.type-read  { @apply border-l-primary-500; }
   .call-row.type-write { @apply border-l-success-500; }
   .call-row.type-mcp   { @apply border-l-info-500; }
   .call-row.type-agent { @apply border-l-orange-500; }
   .call-row.type-other { @apply border-l-neutral-400; }
   /* 报错/慢调用覆盖类型色 */
-  .call-item.error {
+  .call-row.error {
     @apply border-l-danger-500 bg-danger-50/30 dark:bg-danger-500/5;
   }
-  .call-item.slow {
+  .call-row.slow {
     @apply border-l-warning-500 bg-warning-50/30 dark:bg-warning-500/5;
   }
 
   /* 调用详情面板 */
   .call-detail {
-    @apply mx-4 mb-1.5 rounded-lg border border-neutral-200/60 dark:border-neutral-700/60 bg-neutral-50/80 dark:bg-neutral-800/40 overflow-hidden;
+    @apply ml-12 mr-4 mb-1.5 rounded-lg border border-neutral-200/60 dark:border-neutral-700/60 bg-neutral-50/80 dark:bg-neutral-800/40 overflow-hidden border-l-[3px];
     backdrop-filter: blur(4px);
     padding-left: 48px;
   }
+  .call-detail.type-bash  { @apply border-l-warning-500; }
+  .call-detail.type-read  { @apply border-l-primary-500; }
   .call-detail.type-write { @apply border-l-success-500; }
   .call-detail.type-mcp   { @apply border-l-info-500; }
   .call-detail.type-agent { @apply border-l-orange-500; }

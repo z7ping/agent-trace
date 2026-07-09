@@ -363,8 +363,7 @@ function renderCall(call, index, projectPath, sourceColor = '') {
   const detailContent = renderCallDetail(call, sourceColor);
 
   return `
-    <div class="call-item type-${type}${isError ? ' error' : ''}${isSlow && !isError ? ' slow' : ''}" style="padding-left:${32 + depth * 20}px">
-    <div class="${rowClass}" onclick="toggleCallDetail(this)">
+    <div class="${rowClass}" style="padding-left:${32 + depth * 20}px" onclick="toggleCallDetail(this)">
       <span class="tool-badge ${type}">${escapeHtml(toolName)}</span>
       <span class="flex-1 min-w-0">
         <span class="call-preview">${preview}</span>
@@ -375,8 +374,7 @@ function renderCall(call, index, projectPath, sourceColor = '') {
         <span class="call-duration">${duration}</span>
       </span>
     </div>
-    <div class="call-detail hidden">${detailContent}</div>
-    </div>
+    <div class="call-detail hidden type-${type}">${detailContent}</div>
   `;}
 
 /** 类型特定行内预览 */
@@ -761,7 +759,7 @@ export function renderCallChainCalls(calls) {
 
 /** 切换调用行的详情面板 */
 window.toggleCallDetail = function (rowEl) {
-  const detail = rowEl.parentElement.querySelector('.call-detail');
-  if (!detail) return;
+  const detail = rowEl.nextElementSibling;
+  if (!detail || !detail.classList.contains('call-detail')) return;
   detail.classList.toggle('hidden');
 };
