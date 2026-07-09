@@ -98,18 +98,12 @@
 
   /* 调用行 */
   .call-row {
-    @apply flex items-center gap-2 px-4 py-2.5 border-l-[3px] border-transparent hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors cursor-pointer text-sm;
+    @apply flex items-center gap-2 px-4 py-2.5 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors cursor-pointer text-sm;
   }
   .call-row:hover {
     @apply bg-neutral-50 dark:bg-neutral-800/30;
   }
   /* 工具类型左边线颜色 */
-  .call-row.type-bash  { @apply border-l-warning-500; }
-  .call-row.type-read  { @apply border-l-primary-500; }
-  .call-row.type-write { @apply border-l-success-500; }
-  .call-row.type-mcp   { @apply border-l-info-500; }
-  .call-row.type-agent { @apply border-l-orange-500; }
-  .call-row.type-other { @apply border-l-neutral-400; }
   /* 报错/慢调用覆盖类型色 */
   .call-row.error {
     @apply border-l-danger-500 bg-danger-50/30 dark:bg-danger-500/5;
@@ -120,16 +114,22 @@
 
   /* 调用详情面板 */
   .call-detail {
-    @apply ml-12 mr-4 mb-1.5 rounded-lg border border-neutral-200/60 dark:border-neutral-700/60 bg-neutral-50/80 dark:bg-neutral-800/40 overflow-hidden;
+    @apply ml-12 mr-4 mb-1.5 rounded-lg border border-neutral-200/60 dark:border-neutral-700/60 bg-neutral-50/80 dark:bg-neutral-800/40 overflow-hidden border-l-[3px];
     backdrop-filter: blur(4px);
     padding-left: 48px;
   }
-  .call-detail pre {
+    .call-detail.type-bash  { @apply border-l-warning-500; }
+  .call-detail.type-read  { @apply border-l-primary-500; }
+  .call-detail.type-write { @apply border-l-success-500; }
+  .call-detail.type-mcp   { @apply border-l-info-500; }
+  .call-detail.type-agent { @apply border-l-orange-500; }
+  .call-detail.type-other { @apply border-l-neutral-400; }
+.call-detail pre {
     @apply p-4 text-[11px] leading-relaxed font-mono overflow-x-auto max-h-[320px] m-0;
     color: var(--call-detail-fg, #6b7280);
     tab-size: 2;
   }
-  .dark .call-detail pre {
+.call-detail pre {
     --call-detail-fg: #9ca3af;
   }
   /* JSON 语法高亮 */
