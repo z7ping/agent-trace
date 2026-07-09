@@ -125,9 +125,9 @@
 
   /* 调用详情面板 */
   .call-detail {
-    @apply ml-8 mr-4 rounded-lg border border-neutral-200/60 dark:border-neutral-700/60 bg-neutral-50/80 dark:bg-neutral-800/40 overflow-hidden;
+    @apply mr-4 rounded-lg border border-neutral-200/60 dark:border-neutral-700/60 bg-neutral-50/80 dark:bg-neutral-800/40 overflow-hidden;
     backdrop-filter: blur(4px);
-    padding-left: 48px;
+    padding-left: 24px;
   }
   .call-detail pre {
     @apply p-4 text-[11px] leading-relaxed font-mono overflow-x-auto max-h-[320px] m-0;
