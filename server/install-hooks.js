@@ -104,28 +104,63 @@ function installCursor() {
 
 // ─── 4. 更新 Codex 信任 hash ─────────────────────────────
 
+// Codex 事件名 → hook_event_key_label（snake_case）
+const CODEX_EVENT_LABELS = {
+    SessionStart: 'session_start',
+    UserPromptSubmit: 'user_prompt_submit',
+    PreToolUse: 'pre_tool_use',
+    PermissionRequest: 'permission_request',
+    PostToolUse: 'post_tool_use',
+    PreCompact: 'pre_compact',
+    PostCompact: 'post_compact',
+    SubagentStart: 'subagent_start',
+    SubagentStop: 'subagent_stop',
+    Stop: 'stop',
+};
+
+function canonicalJson(obj) {
+    if (obj === null || typeof obj !== 'object') return obj;
+    if (Array.isArray(obj)) return obj.map(canonicalJson);
+    return Object.keys(obj).sort().reduce((acc, key) => {
+        acc[key] = canonicalJson(obj[key]);
+        return acc;
+    }, {});
+}
+
+function computeHookHash(eventName, group, handler) {
+    const crypto = require('crypto');
+    const identity = {
+        event_name: CODEX_EVENT_LABELS[eventName] || eventName.toLowerCase(),
+        hooks: [handler],
+    };
+    if (group.matcher) identity.matcher = group.matcher;
+    const canonical = canonicalJson(identity);
+    const serialized = JSON.stringify(canonical);
+    const hash = crypto.createHash('sha256').update(serialized, 'utf-8').digest('hex');
+    return `sha256:${hash}`;
+}
+
 function updateCodexTrustHash() {
     const configPath = path.join(HOME, '.codex', 'config.toml');
     const hooksPath = path.join(HOME, '.codex', 'hooks.json');
     if (!fs.existsSync(hooksPath)) return;
 
-    const crypto = require('crypto');
-    const hash = crypto.createHash('sha256').update(fs.readFileSync(hooksPath)).digest('hex');
     const hooks = readJson(hooksPath);
 
     // 读取 config.toml
     let config = '';
     try { config = fs.readFileSync(configPath, 'utf-8'); } catch (_) { return; }
 
-    // 生成 hooks.state 条目
+    // 生成 hooks.state 条目（每个 hook 独立哈希）
     const entries = [];
     for (const [eventName, groups] of Object.entries(hooks.hooks || {})) {
-        const eventKey = eventName.toLowerCase().replace('tool_use', '_use');
+        const eventKey = CODEX_EVENT_LABELS[eventName] || eventName.toLowerCase();
         groups.forEach((group, groupIdx) => {
             (group.hooks || []).forEach((hook, hookIdx) => {
+                const hash = computeHookHash(eventName, group, hook);
                 const stateKey = `${hooksPath}:${eventKey}:${groupIdx}:${hookIdx}`;
                 entries.push(`[hooks.state."${stateKey}"]`);
-                entries.push(`trusted_hash = "sha256:${hash}"`);
+                entries.push(`trusted_hash = "${hash}"`);
                 entries.push('');
             });
         });
@@ -150,7 +185,7 @@ function updateCodexTrustHash() {
     newLines.splice(insertIdx, 0, '', '[hooks.state]', ...entries);
 
     fs.writeFileSync(configPath, newLines.join('\n'));
-    console.log(`   [OK] Codex 信任 hash 已更新 (sha256:${hash.substring(0, 16)}...)`);
+    console.log(`   [OK] Codex 信任 hash 已更新 (${entries.length / 3} 个 hook)`);
 }
 
 // ─── 执行 ────────────────────────────────────────────────
