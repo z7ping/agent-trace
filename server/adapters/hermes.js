@@ -9,8 +9,7 @@ const path = require('path');
 const BaseAdapter = require('./base');
 const { insertTimeline } = require('../abeat-db');
 
-const HOME_DIR = require('os').homedir();
-const STATE_DB = path.join(HOME_DIR, '.hermes', 'state.db');
+const { hermes: { stateDb: STATE_DB } } = require('../paths');
 
 class HermesAdapter extends BaseAdapter {
     constructor() {

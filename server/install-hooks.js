@@ -195,6 +195,8 @@ function syncModules() {
     const dstDir = path.join(TOOL_TRACKER_DIR, 'adapters');
     const srcDb = path.join(__dirname, 'abeat-db.js');
     const dstDb = path.join(TOOL_TRACKER_DIR, 'abeat-db.js');
+    const srcPaths = path.join(__dirname, 'paths.js');
+    const dstPaths = path.join(TOOL_TRACKER_DIR, 'paths.js');
 
     fs.mkdirSync(dstDir, { recursive: true });
 
@@ -205,6 +207,10 @@ function syncModules() {
     // 复制 abeat-db.js
     if (fs.existsSync(srcDb)) {
         fs.copyFileSync(srcDb, dstDb);
+    }
+    // 复制 paths.js
+    if (fs.existsSync(srcPaths)) {
+        fs.copyFileSync(srcPaths, dstPaths);
     }
     console.log('   [OK] adapters + abeat-db 已同步');
 }

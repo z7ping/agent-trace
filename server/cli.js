@@ -528,7 +528,7 @@ async function cmdInstall() {
 
         // server/ 根目录文件
         const rootFiles = [
-            'server.js', 'cli.js', 'db.js', 'config.js', 'abeat-db.js',
+            'server.js', 'cli.js', 'db.js', 'config.js', 'abeat-db.js', 'paths.js',
             'install-hooks.js', 'schema.sql', 'routes.js'
         ];
         rootFiles.forEach(f => {

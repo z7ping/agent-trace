@@ -8,8 +8,7 @@ const fs = require('fs');
 const path = require('path');
 const BaseAdapter = require('./base');
 
-const HOME_DIR = require('os').homedir();
-const PI_SESSIONS_DIR = path.join(HOME_DIR, '.pi', 'agent', 'sessions');
+const { pi: { sessionsDir: PI_SESSIONS_DIR } } = require('../paths');
 const POLL_INTERVAL_MS = parseInt(process.env.PI_POLL_INTERVAL_MS, 10) || 30 * 60 * 1000;
 
 class PiAdapter extends BaseAdapter {

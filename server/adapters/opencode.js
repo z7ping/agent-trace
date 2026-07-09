@@ -9,8 +9,7 @@ const fs = require('fs');
 const path = require('path');
 const BaseAdapter = require('./base');
 
-const HOME_DIR = require('os').homedir();
-const OPENCODE_DB = path.join(HOME_DIR, '.local', 'share', 'opencode', 'opencode.db');
+const { opencode: { db: OPENCODE_DB } } = require('../paths');
 // 可配置：轮询间隔（毫秒），默认 30 分钟
 const POLL_INTERVAL_MS = parseInt(process.env.OPENCODE_POLL_INTERVAL_MS, 10) || 30 * 60 * 1000;
 // 可配置：每次轮询最大处理条数，默认 100
