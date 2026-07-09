@@ -228,6 +228,7 @@ npx agent-trace start 8080       # 指定其他端口
 ## TODO
 
 - [ ] 发布到 npm
+- [ ] 简化 install 流程：去掉文件复制，只做 hooks 配置 + 服务注册（用户直接从源码目录运行即可）
 
 ## 许可证
 
