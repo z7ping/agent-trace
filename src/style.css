@@ -100,16 +100,57 @@
   .session-header {
     @apply px-4 py-2.5 flex items-center justify-between cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors select-none border-b border-neutral-100 dark:border-neutral-800;
   }
-  .session-body {
-    @apply border-t border-neutral-100 dark:border-neutral-800;
+  .session-title-block {
+    @apply flex-1 min-w-0 pr-4;
+  }
+  .session-title-row {
+    @apply flex items-center gap-2 min-w-0;
   }
   .session-id {
-    letter-spacing: -0.02em;
+    @apply font-mono text-sm font-semibold whitespace-nowrap;
+    letter-spacing: 0;
+  }
+  .session-subtitle {
+    @apply text-xs text-neutral-400 mt-1 ml-5 truncate;
+  }
+  .session-status {
+    @apply text-xs px-1.5 py-0.5 rounded-md font-medium;
+  }
+  .session-status.success {
+    @apply bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-400;
+  }
+  .session-status.slow {
+    @apply bg-warning-50 text-warning-600 dark:bg-warning-500/10 dark:text-warning-400;
+  }
+  .session-status.error {
+    @apply bg-danger-50 text-danger-600 dark:bg-danger-500/10 dark:text-danger-400;
+  }
+  .session-metrics {
+    @apply flex items-stretch gap-2 shrink-0;
+  }
+  .session-metric {
+    @apply min-w-[4.5rem] rounded-lg bg-neutral-50 dark:bg-neutral-800/70 px-2.5 py-1.5 text-center border border-neutral-100 dark:border-neutral-700;
+  }
+  .session-metric-value {
+    @apply block text-sm font-semibold text-neutral-800 dark:text-neutral-100 leading-4;
+  }
+  .session-metric-label {
+    @apply block text-[11px] text-neutral-400 mt-0.5;
+  }
+  .session-metric.success .session-metric-value {
+    @apply text-success-600 dark:text-success-400;
+  }
+  .session-metric.error .session-metric-value {
+    @apply text-danger-600 dark:text-danger-400;
+  }
+  .session-body {
+    @apply border-t border-neutral-100 dark:border-neutral-800;
   }
 
   /* 调用行 */
   .call-row {
-    @apply flex items-center gap-2 px-4 py-2.5 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors cursor-pointer text-sm;
+    @apply grid items-center gap-3 px-4 py-2.5 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors cursor-pointer text-sm;
+    grid-template-columns: minmax(6.5rem, 8.5rem) minmax(0, 1fr) auto;
   }
   .call-row:hover {
     @apply bg-neutral-50 dark:bg-neutral-800/30;
@@ -149,7 +190,7 @@
 
   /* 工具类型标签 */
   .tool-badge {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md;
+    @apply inline-flex items-center justify-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md min-w-0 truncate;
   }
   .tool-badge.bash { @apply bg-warning-50 text-warning-600 dark:bg-warning-500/10 dark:text-warning-400; }
   .tool-badge.read { @apply bg-info-50 text-info-600 dark:bg-info-500/10 dark:text-info-400; }
@@ -206,28 +247,63 @@
 
 /* ═══ 轮次分组 ═══ */
 .round-header {
-  @apply flex items-center gap-3 px-4 py-2 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-800/30 border-l-[3px] border-l-transparent ml-4;
+  @apply flex items-start gap-3 px-4 py-3 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-800/30 border-l-[3px] border-l-transparent ml-4;
 }
 .round-badge {
-  @apply text-sm font-bold px-2.5 py-0.5 rounded-full bg-neutral-200/60 dark:bg-neutral-700/60 text-neutral-600 dark:text-neutral-300 flex-shrink-0;
+  @apply w-7 h-7 inline-flex items-center justify-center text-sm font-bold rounded-full bg-neutral-200/60 dark:bg-neutral-700/60 text-neutral-600 dark:text-neutral-300 flex-shrink-0;
+}
+.round-main {
+  @apply min-w-0 flex-1;
+}
+.round-label {
+  @apply text-[11px] font-medium text-neutral-400 mb-0.5;
 }
 .round-user-msg {
-  @apply text-sm text-neutral-700 dark:text-neutral-200 truncate flex-1 font-medium;
+  @apply text-sm text-neutral-800 dark:text-neutral-100 truncate font-medium;
+}
+.round-user-msg.muted {
+  @apply text-neutral-400 font-normal;
 }
 .round-call-count {
-  @apply text-xs text-neutral-400 dark:text-neutral-500 flex-shrink-0;
+  @apply text-xs text-neutral-500 dark:text-neutral-400 flex-shrink-0 rounded-md bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 px-2 py-1;
 }
 .round-assistant {
-  @apply flex gap-3 px-4 py-2 border-b border-neutral-100 dark:border-neutral-800 bg-primary-50/30 dark:bg-primary-500/5;
+  @apply flex gap-3 px-4 py-2 border-b border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-900 ml-4;
 }
 .round-assistant-label {
-  @apply text-xs font-semibold px-1.5 py-0.5 rounded bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400 flex-shrink-0 self-start;
+  @apply text-xs font-semibold px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 flex-shrink-0 self-start;
 }
 .round-assistant-text {
-  @apply text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed;
+  @apply text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed truncate;
 }
 .round-calls {
   @apply ml-4;
+}
+
+/* ═══ 执行概览 ═══ */
+.execution-overview {
+  @apply flex items-center justify-between gap-4 px-4 py-3 bg-neutral-50 dark:bg-neutral-800/40 border-b border-neutral-100 dark:border-neutral-800;
+}
+.overview-label {
+  @apply text-[11px] font-medium text-neutral-400;
+}
+.overview-main {
+  @apply text-sm font-semibold text-neutral-800 dark:text-neutral-100 mt-0.5;
+}
+.overview-pills {
+  @apply flex items-center gap-2 flex-wrap justify-end;
+}
+.overview-pill {
+  @apply text-xs px-2 py-1 rounded-md bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400;
+}
+.overview-pill.success {
+  @apply text-success-600 dark:text-success-400 border-success-100 dark:border-success-500/30 bg-success-50 dark:bg-success-500/10;
+}
+.overview-pill.error {
+  @apply text-danger-600 dark:text-danger-400 border-danger-100 dark:border-danger-500/30 bg-danger-50 dark:bg-danger-500/10;
+}
+.overview-pill.slow {
+  @apply text-warning-600 dark:text-warning-400 border-warning-100 dark:border-warning-500/30 bg-warning-50 dark:bg-warning-500/10;
 }
 .round-calls > .call-row + .call-row {
   border-top: 1px solid rgba(245, 245, 245, 0.6);
@@ -305,6 +381,9 @@
 .call-preview {
   @apply text-sm text-neutral-700 dark:text-neutral-300 truncate block leading-5;
 }
+.call-main {
+  @apply min-w-0;
+}
 .preview-cmd {
   @apply font-mono text-neutral-800 dark:text-neutral-200;
 }
@@ -318,7 +397,7 @@
   @apply text-xs text-neutral-400 dark:text-neutral-500 truncate block leading-4 mt-0.5;
 }
 .call-meta {
-  @apply flex items-center gap-2 flex-shrink-0;
+  @apply flex items-center justify-end gap-2 flex-shrink-0 min-w-[7rem];
 }
 .exit-badge {
   @apply text-xs font-mono px-1 py-0.5 rounded;
@@ -330,7 +409,19 @@
   @apply bg-danger-50 dark:bg-danger-500/10 text-danger-600 dark:text-danger-400;
 }
 .call-duration {
-  @apply text-xs text-neutral-400 w-12 text-right;
+  @apply text-xs text-neutral-400 w-12 text-right font-mono;
+}
+.call-status {
+  @apply inline-flex items-center justify-center min-w-[3rem] px-1.5 py-0.5 rounded text-xs font-medium;
+}
+.call-status.success {
+  @apply bg-success-50 dark:bg-success-500/10 text-success-600 dark:text-success-400;
+}
+.call-status.slow {
+  @apply bg-warning-50 dark:bg-warning-500/10 text-warning-600 dark:text-warning-400;
+}
+.call-status.error {
+  @apply bg-danger-50 dark:bg-danger-500/10 text-danger-600 dark:text-danger-400;
 }
 
 /* ═══ 通用工具 ═══ */

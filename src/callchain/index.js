@@ -148,6 +148,43 @@ function formatTimeRange(start, end) {
   return `${fmtDate(s)} ${fmtTime(s)}~${fmtDate(e)} ${fmtTime(e)}`;
 }
 
+function getSessionStatus(session) {
+  if ((session.errors || 0) > 0) return { label: '有错误', cls: 'error' };
+  if ((session.totalDuration || 0) > 5000) return { label: '偏慢', cls: 'slow' };
+  return { label: '成功', cls: 'success' };
+}
+
+function summarizeCalls(calls) {
+  const summary = {
+    total: calls.length,
+    errors: 0,
+    slow: 0,
+    byType: {},
+    slowest: null,
+  };
+
+  for (const call of calls) {
+    const type = getToolType(call.tool_name || call.name || '');
+    summary.byType[type] = (summary.byType[type] || 0) + 1;
+    if (call.success === 0 || call.success === false || call.error || call.error_message) summary.errors++;
+    if ((call.duration_ms || 0) > 5000) summary.slow++;
+    if (!summary.slowest || (call.duration_ms || 0) > (summary.slowest.duration_ms || 0)) {
+      summary.slowest = call;
+    }
+  }
+
+  return summary;
+}
+
+function renderMetric(label, value, tone = '') {
+  return `
+    <span class="session-metric ${tone}">
+      <span class="session-metric-value">${escapeHtml(String(value))}</span>
+      <span class="session-metric-label">${escapeHtml(label)}</span>
+    </span>
+  `;
+}
+
 /** 构建树形结构 */
 function buildTree(calls) {
   if (!calls || calls.length === 0) return [];
@@ -208,6 +245,7 @@ function renderSession(session) {
   const isActive = (Date.now() - new Date(session.endTime).getTime()) < 5 * 60 * 1000;
   const color = hashColor(session.id);
   const avgDur = (session.toolCount || session.calls?.length || 0) > 0 ? session.totalDuration / (session.toolCount || session.calls.length) : 0;
+  const status = getSessionStatus(session);
 
   // 来源标签样式
   const source = session.source || '';
@@ -224,27 +262,31 @@ function renderSession(session) {
 
   // 项目名（优先使用 project_name，回退到 project_key）
   const projectName = session.projectName || session.project || '';
+  const sessionSubtitle = [
+    timeRange,
+    projectName ? `项目 ${projectName}` : '',
+    avgDur ? `平均 ${formatDuration(avgDur)}` : '',
+  ].filter(Boolean).join(' · ');
 
   const header = `
     <div class="session-header" onclick="toggleSession(event.currentTarget)">
-      <div class="flex-1 min-w-0">
-        <div class="flex items-center gap-2">
+      <div class="session-title-block">
+        <div class="session-title-row">
           <svg class="session-arrow w-3 h-3 text-neutral-400 transition-transform duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M9 18l6-6-6-6"/>
           </svg>
-          <span class="session-id font-mono text-xs font-semibold" style="color:${color}" title="会话ID: ${escapeHtml(session.id)}">${escapeHtml(shortId(session.id))}</span>
+          <span class="session-id" style="color:${color}" title="会话ID: ${escapeHtml(session.id)}">${escapeHtml(shortId(session.id))}</span>
           ${sourceLabel ? `<span class="text-xs px-1.5 py-0.5 rounded-md font-medium ${sourceColor}">${escapeHtml(sourceLabel)}</span>` : ''}
-          <span class="text-xs px-1.5 py-0.5 rounded-md font-medium bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">${escapeHtml(truncate(projectName, 30))}</span>
           ${source === 'hermes' ? '<span title="包含对话记录">💬</span>' : ''}
+          <span class="session-status ${status.cls}">${status.label}</span>
         </div>
-        <div class="flex items-center gap-3 text-xs text-neutral-400 mt-1 ml-5">
-          <span>${timeRange}</span>
-          <span class="text-neutral-300 dark:text-neutral-600">|</span>
-          <span>📋 ${toolCount}</span>
-          <span class="text-success-600 dark:text-success-400">✅ ${okCount}</span>
-          ${hasError ? `<span class="text-danger-500">❌ ${session.errors}</span>` : ''}
-          <span class="text-neutral-400">⚡ ${formatDuration(avgDur)}</span>
-        </div>
+        <div class="session-subtitle">${escapeHtml(sessionSubtitle || '等待调用详情')}</div>
+      </div>
+      <div class="session-metrics">
+        ${renderMetric('调用', toolCount)}
+        ${renderMetric('成功', Math.max(okCount, 0), 'success')}
+        ${hasError ? renderMetric('错误', session.errors, 'error') : ''}
+        ${renderMetric('总耗时', duration)}
       </div>
     </div>
   `;
@@ -358,10 +400,11 @@ function renderCall(call, index, projectPath, sourceColor = '') {
   const preview = getTypePreview(toolName, input, call, projectPath);
   const outputSnippet = getOutputContent(call).substring(0, 120);
 
-  // 状态图标 + exit code
-  const exitBadge = isError
-    ? `<span class="exit-badge error">✘${exitCode}</span>`
-    : `<span class="exit-badge success">✔${exitCode}</span>`;
+  const statusBadge = isError
+    ? `<span class="call-status error">失败 ${exitCode}</span>`
+    : isSlow
+      ? `<span class="call-status slow">偏慢</span>`
+      : `<span class="call-status success">成功</span>`;
 
   // 结构化详情面板
   const detailContent = renderCallDetail(call, sourceColor);
@@ -370,13 +413,13 @@ function renderCall(call, index, projectPath, sourceColor = '') {
     <div class="${itemClass}">
     <div class="call-row" style="padding-left:${16 + depth * 20}px" onclick="toggleCallDetail(this)">
       <span class="tool-badge ${type}">${escapeHtml(toolName)}</span>
-      <span class="flex-1 min-w-0">
+      <span class="call-main">
         <span class="call-preview">${preview}</span>
         ${outputSnippet ? `<span class="call-output">${escapeHtml(outputSnippet)}</span>` : ''}
       </span>
       <span class="call-meta">
-        ${exitBadge}
         <span class="call-duration">${duration}</span>
+        ${statusBadge}
       </span>
     </div>
     <div class="call-detail hidden">${detailContent}</div>
@@ -385,23 +428,24 @@ function renderCall(call, index, projectPath, sourceColor = '') {
 
 /** 类型特定行内预览 */
 function getTypePreview(toolName, input, call, projectPath) {
-  if (toolName === 'bash') {
-    const cmd = input.command || input.cmd || '';
+  const type = getToolType(toolName);
+  if (type === 'bash') {
+    const cmd = input.command || input.cmd || input.raw || '';
     if (cmd) return `<span class="preview-cmd">❯ ${escapeHtml(truncate(cmd, 80))}</span>`;
     const raw = call.tool_input || '';
     if (raw) return `<span class="preview-cmd">❯ ${escapeHtml(truncate(String(raw), 80))}</span>`;
   }
-  if (toolName === 'read') {
+  if (type === 'read') {
     const path = input.path || input.file_path || input.filePath || '';
     if (path) return `<span class="preview-file">📄 ${escapeHtml(truncate(path, 60))}</span>`;
   }
-  if (toolName === 'write') {
+  if (type === 'write') {
     const path = input.path || input.file_path || input.filePath || '';
     if (path) return `<span class="preview-file">✏️ ${escapeHtml(truncate(path, 60))}</span>`;
   }
-  if (toolName === 'edit') {
-    const path = input.path || input.file_path || input.filePath || '';
-    if (path) return `<span class="preview-file">🔧 ${escapeHtml(truncate(path, 60))}</span>`;
+  if (type === 'mcp') {
+    const target = input.tool || input.mcp_server || input.query || input.prompt || input.path || input.raw || '';
+    if (target) return `<span class="preview-fallback">${escapeHtml(truncate(String(target), 80))}</span>`;
   }
   // 通用回退：显示输入摘要
   const inputStr = Object.keys(input).length > 0 ? JSON.stringify(input) : '';
@@ -515,23 +559,28 @@ function renderRound(round, index, sourceColor = '') {
     : '';
   parts.push(`
     <div class="round-header" style="${borderStyle}">
-      <span class="round-badge">第 ${index + 1} 轮</span>
-      ${userContent ? `<span class="round-user-msg">💬 ${escapeHtml(truncate(userContent, 120))}</span>` : ''}
+      <span class="round-badge">${index + 1}</span>
+      <div class="round-main">
+        <div class="round-label">用户问题</div>
+        ${userContent ? `<div class="round-user-msg">${escapeHtml(truncate(userContent, 160))}</div>` : '<div class="round-user-msg muted">无用户消息</div>'}
+      </div>
       ${round.toolCalls.length > 0 ? `<span class="round-call-count">${round.toolCalls.length} 次调用</span>` : ''}
     </div>
   `);
 
   // AI 回复
+  const assistantTexts = [];
   for (const msg of round.assistantMessages) {
     const text = extractAssistantText(msg);
-    if (text) {
-      parts.push(`
-        <div class="round-assistant">
-          <div class="round-assistant-label">AI</div>
-          <div class="round-assistant-text">${escapeHtml(truncate(text, 200))}</div>
-        </div>
-      `);
-    }
+    if (text) assistantTexts.push(text);
+  }
+  if (assistantTexts.length) {
+    parts.push(`
+      <div class="round-assistant">
+        <div class="round-assistant-label">AI 回复</div>
+        <div class="round-assistant-text">${escapeHtml(truncate(assistantTexts.join(' '), 260))}</div>
+      </div>
+    `);
   }
 
   // 工具调用（树形）
@@ -753,14 +802,36 @@ export function renderCallChainCalls(calls) {
   const sourceColor = (sourceColors[src] || {}).light || '';
 
   const rounds = groupByRounds(calls);
+  const summary = summarizeCalls(calls.filter(c => c.role === 'tool_result' || c.role === 'tool_error' || c.tool_name));
+  const topTypes = Object.entries(summary.byType)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([type, count]) => `${type} ${count}`)
+    .join(' · ');
+  const slowest = summary.slowest
+    ? `${summary.slowest.tool_name || '工具'} ${formatDuration(summary.slowest.duration_ms)}`
+    : '—';
+  const overview = `
+    <div class="execution-overview">
+      <div>
+        <div class="overview-label">执行概览</div>
+        <div class="overview-main">${summary.total} 次工具调用${topTypes ? ` · ${escapeHtml(topTypes)}` : ''}</div>
+      </div>
+      <div class="overview-pills">
+        <span class="overview-pill ${summary.errors ? 'error' : 'success'}">错误 ${summary.errors}</span>
+        <span class="overview-pill ${summary.slow ? 'slow' : ''}">慢调用 ${summary.slow}</span>
+        <span class="overview-pill">最慢 ${escapeHtml(slowest)}</span>
+      </div>
+    </div>
+  `;
 
   // 无轮次数据（全是 tool 记录，无 user）,退化到平铺
   if (rounds.length === 0) {
     const tree = buildTree(calls);
-    return tree.map((call, i) => renderCall(call, i, '', sourceColor)).join('');
+    return overview + tree.map((call, i) => renderCall(call, i, '', sourceColor)).join('');
   }
 
-  return rounds.map((round, i) => renderRound(round, i, sourceColor)).join('');
+  return overview + rounds.map((round, i) => renderRound(round, i, sourceColor)).join('');
 }
 
 /** 切换调用行的详情面板 */

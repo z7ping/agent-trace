@@ -182,6 +182,7 @@ export async function fetchErrors(project, source, limit = 20) {
     const res = await fetch(`${CONFIG.API_BASE}/api/errors?${params}`);
     if (res.ok) {
       const data = await res.json();
+      if (Array.isArray(data.recentErrors)) return data.recentErrors.slice(0, limit);
       return data.items || data || [];
     }
   } catch {

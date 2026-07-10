@@ -162,7 +162,7 @@ function renderRecentErrors(errors) {
   container.innerHTML = sorted.map(err => {
     const source = err.source || err.project_key || '—';
     const toolName = err.tool_name || err.name || err.tool || '—';
-    const msg = err.error || err.message || err.error_message || '';
+    const msg = err.error || err.message || err.error_message || err.error_detail || err.error_type || '';
     const ts = err.timestamp || err.ts || err.time || '';
     return `
       <div class="flex flex-col gap-1 py-2 px-2 rounded-lg hover:bg-danger-50/30 dark:hover:bg-danger-500/5 transition-colors">
